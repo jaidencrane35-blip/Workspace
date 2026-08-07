@@ -22,7 +22,7 @@ serde_json = "1"
 chrono = { workspace = true }
 log = { workspace = true }
 env_logger = "0.11"
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["tray-icon"] }
 workspace-kernel = { path = "../../packages/kernel" }
 workspace-domain = { path = "../../packages/domain" }
 workspace-windows-integration = { path = "../../packages/windows-integration" }

@@ -1,6 +1,7 @@
 mod actor;
 mod commands;
 mod file_log;
+mod tray;
 
 use std::sync::{Arc, Mutex};
 
@@ -187,19 +188,7 @@ fn init_logging() {
 
 fn focus_primary_instance(app: &tauri::AppHandle) {
     // Conversation surface is the product; bring it forward on secondary launches.
-    if let Some(main) = app.get_webview_window("main") {
-        let _ = main.unminimize();
-        let _ = main.show();
-        let _ = main.set_focus();
-        log::info!("single-instance: focused main conversation window");
-        return;
-    }
-    if let Some(operator) = app.get_webview_window("operator") {
-        let _ = operator.unminimize();
-        let _ = operator.show();
-        let _ = operator.set_focus();
-        log::info!("single-instance: focused operator window (main unavailable)");
-    }
+    tray::show_conversation(app);
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -461,6 +450,10 @@ pub fn run() {
             app.manage(Arc::new(Mutex::new(kernel)));
             // Hide Voice cold-start (~280ms WinRT create) before the user clicks the mic.
             warm_voice_engine_async();
+            // E1 / PR2: tray serves Conversation — Show / Exit only (no catalogue chrome).
+            if let Err(error) = tray::install_tray(app) {
+                log::warn!("tray unavailable — continuing window-only: {error}");
+            }
             log::info!("workspace application setup complete");
 
             Ok(())

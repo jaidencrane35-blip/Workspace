@@ -73,7 +73,7 @@ Full schema (including Operational Acceptance checklists): catalog.
 | B1 | Complete | Diagnostics + support bundle |
 | A1 | Complete | Artifact checksums |
 | D1 | ReadyNow | IPC quarantine |
-| E1 | ReadyNow | Tray lifecycle |
+| E1 | Complete | Tray lifecycle |
 | C1 | ReadyNow | Config/DB validation UX |
 | F1 | ReleaseOnly | CI automation |
 | A2 | BlockedExternal | Code signing |
@@ -96,7 +96,7 @@ B1-diagnostics ✓
         │
         ├─► A1-artifact-checksums   [Complete]
         ├─► D1-ipc-quarantine       [ReadyNow]  ← next
-        ├─► E1-tray                 [ReadyNow]
+        ├─► E1-tray                 [Complete]
         ├─► C1-config-db-ux         [ReadyNow]
         └─► F1-ci-automation        [ReleaseOnly]
 
@@ -117,7 +117,7 @@ B1 ► B3-crash-local (optional)
 | 1 | B1 — Diagnostics & support bundle | Complete |
 | 2 | A1 — Artifact checksums | Complete |
 | 3 | D1 — IPC quarantine | ReadyNow |
-| 4 | E1 — Tray lifecycle | ReadyNow |
+| 4 | E1 — Tray lifecycle | Complete |
 | 5 | C1 — Config/DB validation UX | ReadyNow |
 | 6 | F1 — CI automation | ReleaseOnly |
 | 7 | A2 — Signing | BlockedExternal |
@@ -148,6 +148,7 @@ B1 ► B3-crash-local (optional)
 | PI3 | Authority + B1 implemented |
 | PI4 | Gate Specification + full schema normalize; **no gate implemented** |
 | PF1 | Premium Finish decision: production trust > UX polish; **A1 implemented** |
+| PR2 | Production Experience Integration; daily trust → **E1 tray** (D1 remains nextReadyNow) |
 | Next implementation | D1 — IPC quarantine (await Owner) |
 
 ---

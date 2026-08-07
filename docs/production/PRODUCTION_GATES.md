@@ -46,7 +46,7 @@ Stop? Or is the next unit in the **canonical order** objectively justified and R
 | **B — Operations** | Diagnostics, updater, crash | B1 done; B2 blocked by A2 |
 | **C — Reliability** | Single instance, validation, shutdown | C0 done |
 | **D — Security** | IPC, permissions | Open |
-| **E — Experience** | Tray, polish | Open |
+| **E — Experience** | Tray, polish | E1 tray Complete; polish/C2 open |
 | **F — Release** | CI, signed release | Open |
 
 ---

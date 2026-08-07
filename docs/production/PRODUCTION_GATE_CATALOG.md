@@ -147,7 +147,7 @@ Every unit below uses the **same field set**. Operational Acceptance is human-tr
 | Field | Value |
 | --- | --- |
 | **Gate family** | E |
-| **Production classification** | ReadyNow |
+| **Production classification** | Complete |
 | **Purpose** | Provide persistent desktop presence that serves Conversation without becoming a second product. |
 | **User value** | Workspace remains reachable from the tray; Exit/Show are obvious. |
 | **Engineering value** | Tray icon, restore, Exit policy foundation for C2. |
@@ -157,10 +157,10 @@ Every unit below uses the **same field set**. Operational Acceptance is human-tr
 | **Blocking conditions** | — |
 | **Entry criteria** | `Gate Spec satisfied`; `C0 Complete`; `Owner authorizes` |
 | **Exit criteria** | `Tray Show Conversation`; `Exit`; `restore`; `no catalogue chrome` |
-| **Verification** | `Manual Operational Acceptance`; `verify script for tray wiring` |
-| **Production readiness delta** | Major perceived Production Ready lift for desktop presence. |
+| **Verification** | `pnpm verify:tray-lifecycle`; `Manual Operational Acceptance` |
+| **Production readiness delta** | Engineering Complete for tray presence; C2 close/hide policy still open; Production Ready pending Owner OA. |
 | **Regression risks** | Zombie processes; Competing with Conversation attention |
-| **Rollback strategy** | Disable tray plugin; keep window-only lifecycle. |
+| **Rollback strategy** | Remove tray module call; keep window-only lifecycle. |
 | **Success metrics** | Tray appears on launch; Exit terminates process |
 
 ### Operational Acceptance

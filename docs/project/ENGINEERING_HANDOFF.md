@@ -7,7 +7,8 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.PF1 — Premium Finish (A1 artifact checksums); await Owner |
+| **Latest program** | P16.PR2 — Production Experience Integration (E1 tray); await Owner |
+| **PR2 audit** | `docs/production/P16_PR2_PRODUCTION_EXPERIENCE_AUDIT.md` |
 | **PF1 audit** | `docs/production/P16_PF1_PREMIUM_FINISH_AUDIT.md` |
 | **nextReadyNow** | `D1-ipc-quarantine` |
 | **Product quality** | `docs/ui/WORKSPACE_PRODUCT_QUALITY_STANDARD.md` — subordinate quality authority (not Spec) |

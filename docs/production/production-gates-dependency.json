@@ -40,7 +40,8 @@
     "A0-installer-foundation",
     "C0-single-instance",
     "B1-diagnostics-support-bundle",
-    "A1-artifact-checksums"
+    "A1-artifact-checksums",
+    "E1-tray-lifecycle"
   ],
   "canonicalOrder": [
     "B1-diagnostics-support-bundle",
@@ -279,7 +280,7 @@
     {
       "id": "E1-tray-lifecycle",
       "gate": "E",
-      "productionClassification": "ReadyNow",
+      "productionClassification": "Complete",
       "purpose": "Provide persistent desktop presence that serves Conversation without becoming a second product.",
       "userValue": "Workspace remains reachable from the tray; Exit/Show are obvious.",
       "engineeringValue": "Tray icon, restore, Exit policy foundation for C2.",
@@ -303,15 +304,15 @@
         "no catalogue chrome"
       ],
       "verification": [
-        "Manual Operational Acceptance",
-        "verify script for tray wiring"
+        "pnpm verify:tray-lifecycle",
+        "Manual Operational Acceptance"
       ],
-      "productionReadinessDelta": "Major perceived Production Ready lift for desktop presence.",
+      "productionReadinessDelta": "Engineering Complete for tray presence; C2 close/hide policy still open; Production Ready pending Owner OA.",
       "regressionRisks": [
         "Zombie processes",
         "Competing with Conversation attention"
       ],
-      "rollbackStrategy": "Disable tray plugin; keep window-only lifecycle.",
+      "rollbackStrategy": "Remove tray module call; keep window-only lifecycle.",
       "successMetrics": [
         "Tray appears on launch",
         "Exit terminates process"

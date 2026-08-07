@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T16:05:08.774Z",
+  "updatedAt": "2026-08-07T16:09:51.958Z",
   "constitution": {
     "document": "docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md",
     "version": "2.1",
@@ -17,7 +17,7 @@
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "note": "P16.PF1: Premium Finish — A1 artifact checksums Complete; nextReadyNow D1. Owner Product Proof still pending. P17 blocked. No Spec/governance reopen."
+    "note": "P16.PR2: Production Experience Integration — E1 tray Complete; nextReadyNow D1. Owner Product Proof still pending. P17 blocked. No Spec/governance reopen."
   },
   "completedExecutionPrograms": [
     {
@@ -809,6 +809,11 @@
       },
       "verify:single-instance": {
         "script": "scripts/verify-single-instance.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:tray-lifecycle": {
+        "script": "scripts/verify-tray-lifecycle.mjs",
         "present": true,
         "wiredInTest": true
       },
