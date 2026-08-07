@@ -20,6 +20,7 @@ This is an **index of settled decisions**, not a redesign surface. Individual ra
 | Repository Confidence Model | Active | Governance | `REPOSITORY_CONFIDENCE_MODEL.md`; Operations Audit | Treating scoped audits as universal certainty |
 | Constitutional Operations posture | Superseded | Governance | Operations Audit | Architecture Discovery |
 | Sustainable Engineering Operations | Active | Governance | `P16_O3_GOVERNANCE_RESILIENCE_REPORT.md`; handoff | Continuous meta-governance / constitutional redesign programs |
+| PR1 Production Readiness Program | Active | Production | `PR1_PRODUCTION_READINESS_PROGRAM.md`; `production-readiness.json` | Treating eng-complete as public-release-ready; mixing P17 with Phase 2 Critical |
 | Product Gravity | Active (principle) | Constitution | Spec §9; `docs/ui/PRODUCT_GRAVITY_RULE.md` | Catalogue / launcher-first product identity |
 | Capability Integration Standard | Active | Constitution | Spec §15 | Provider-specific bespoke architectures |
 | Kernel Operator sole Effect composition | Active | Architecture Standard under Spec | `KERNEL_AUTHORITY_RULE.md`; Operations Audit | Conversation→provider IPC; provider→provider |

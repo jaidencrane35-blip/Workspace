@@ -7,14 +7,15 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.O3 Governance Resilience — **Sustainable Engineering Operations**; no further meta-governance programs |
+| **Latest program** | PR1 Production Readiness — matrix + roadmap; **not** public-release ready; Owner PP still product gate |
+| **Production readiness** | `docs/production/PR1_PRODUCTION_READINESS_PROGRAM.md` · `docs/production/production-readiness.json` |
 | **Governance resilience** | `docs/00-Constitution/P16_O3_GOVERNANCE_RESILIENCE_REPORT.md` |
 | **Product Proof readiness** | `docs/capability-runtime/product-proof/P16_O1_PRODUCT_PROOF_READINESS_REPORT.md` |
 | **Product Proof execution** | `docs/capability-runtime/product-proof/P16_O2_OWNER_PRODUCT_PROOF_EXECUTION_AUTHORITY.md` |
 | **Product Proof workbook** | `docs/capability-runtime/product-proof/P16_O2_PRODUCT_PROOF_SESSION_WORKBOOK.md` |
 | **Rule** | Spec v2 = sole architectural authority. Execution Standard v1 = how all programs run. Classify work, max layer, lowest-layer invariant, compliance checklist. Do not reopen Spec without a Review Trigger. |
 
-**Milestone:** Workspace has completed Constitutional Governance and Constitutional Operations stress-testing. It now operates in **Sustainable Engineering Operations**. Spec v2 and EES v1 are stable constraints. Future effort prioritizes Owner Product Proof, Track A production quality, and capability expansion (P17+ after P16 Accept)—not governance evolution. Architecture is stable by default. Architectural change requires a named Constitutional Review Trigger with objective evidence.
+**Milestone:** Workspace operates in **Sustainable Engineering Operations**. Spec v2 and EES v1 are stable constraints. **PR1** records production truth: not public-release ready (installer/signing/updater/tray/diagnostics/IPC). Future effort: Owner Product Proof → Phase 2 Critical production → P17 after P16 Accept. No meta-governance. Architecture stable by default; Review Trigger required for constitutional change.
 
 **Start here before any execution program.**
 
@@ -216,7 +217,8 @@ Do not redesign constitutional concepts unless a named review trigger is satisfi
 | Docs authority convergence | Backlog G3 |
 | WorkspaceState naming | Backlog G4 |
 | AgentToolGate / AuditIntegrity | Phase B |
-| Tray / native polish | Track A debt |
+| Tray / native polish | Track A / PR1 Phase 2 Critical |
+| Installer · signing · updater · diagnostics · IPC quarantine | Track A / PR1 Phase 2 Critical |
 
 ---
 

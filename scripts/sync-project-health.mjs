@@ -71,6 +71,7 @@ const verifiers = {
   "verify:product-intelligence": "scripts/verify-product-intelligence.mjs",
   "verify:operator-activity": "scripts/verify-operator-activity.mjs",
   "verify:dev-environment": "scripts/verify-dev-environment.mjs",
+  "verify:production-readiness": "scripts/verify-production-readiness.mjs",
 };
 
 const verifierStatus = {};
@@ -484,7 +485,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16.O3: Sustainable Engineering Operations — governance self-sustaining (resilience report). No further meta-governance programs. Prioritize Owner Product Proof, Track A, then P17 after P16 Accept. Spec + EES are stable constraints. P17 blocked until Owner Accept.",
+    note: "PR1: Production Readiness Program — matrix + verifier. Not production-ready for public release. Owner Product Proof remains product gate. Phase 2 Critical: installer/signing/updater/tray/diagnostics/IPC. No meta-governance. P17 blocked until Owner Accept.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -669,7 +670,28 @@ const health = {
     {
       id: "tray-integration",
       track: "A",
-      summary: "System tray integration not yet implemented",
+      summary: "System tray integration not yet implemented (PR1 Phase 2 Critical)",
+    },
+    {
+      id: "installer-signing",
+      track: "A",
+      summary:
+        "Signed professional installer / upgrade / uninstall not productionized (PR1)",
+    },
+    {
+      id: "auto-updater",
+      track: "A",
+      summary: "Auto-updater absent — no Tauri updater plugin (PR1)",
+    },
+    {
+      id: "diagnostics-support-bundle",
+      track: "A",
+      summary: "Support bundle / log rotation / crash reporting not productionized (PR1)",
+    },
+    {
+      id: "ipc-quarantine",
+      track: "A",
+      summary: "197 IPC commands vs ~20 product — quarantine before public release (PR1)",
     },
     {
       id: "window-animations",
@@ -679,7 +701,7 @@ const health = {
     {
       id: "G3-docs",
       track: "A",
-      summary: "Documentation authority still fragmented",
+      summary: "Documentation authority still fragmented (archive hygiene)",
     },
   ],
   repositoryHealth: {

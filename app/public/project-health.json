@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T13:53:07.211Z",
+  "updatedAt": "2026-08-07T14:06:26.826Z",
   "constitution": {
     "document": "docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md",
     "version": "2.1",
@@ -17,7 +17,7 @@
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "note": "P16.O3: Sustainable Engineering Operations — governance self-sustaining (resilience report). No further meta-governance programs. Prioritize Owner Product Proof, Track A, then P17 after P16 Accept. Spec + EES are stable constraints. P17 blocked until Owner Accept."
+    "note": "PR1: Production Readiness Program — matrix + verifier. Not production-ready for public release. Owner Product Proof remains product gate. Phase 2 Critical: installer/signing/updater/tray/diagnostics/IPC. No meta-governance. P17 blocked until Owner Accept."
   },
   "completedExecutionPrograms": [
     {
@@ -566,7 +566,27 @@
     {
       "id": "tray-integration",
       "track": "A",
-      "summary": "System tray integration not yet implemented"
+      "summary": "System tray integration not yet implemented (PR1 Phase 2 Critical)"
+    },
+    {
+      "id": "installer-signing",
+      "track": "A",
+      "summary": "Signed professional installer / upgrade / uninstall not productionized (PR1)"
+    },
+    {
+      "id": "auto-updater",
+      "track": "A",
+      "summary": "Auto-updater absent — no Tauri updater plugin (PR1)"
+    },
+    {
+      "id": "diagnostics-support-bundle",
+      "track": "A",
+      "summary": "Support bundle / log rotation / crash reporting not productionized (PR1)"
+    },
+    {
+      "id": "ipc-quarantine",
+      "track": "A",
+      "summary": "197 IPC commands vs ~20 product — quarantine before public release (PR1)"
     },
     {
       "id": "window-animations",
@@ -576,7 +596,7 @@
     {
       "id": "G3-docs",
       "track": "A",
-      "summary": "Documentation authority still fragmented"
+      "summary": "Documentation authority still fragmented (archive hygiene)"
     }
   ],
   "repositoryHealth": {
@@ -764,6 +784,11 @@
       },
       "verify:dev-environment": {
         "script": "scripts/verify-dev-environment.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:production-readiness": {
+        "script": "scripts/verify-production-readiness.mjs",
         "present": true,
         "wiredInTest": true
       }
