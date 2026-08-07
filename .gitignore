@@ -78,3 +78,6 @@ venv/
 # Cargo.lock — DO commit (application)
 package-lock.json
 yarn.lock
+
+# Local research screenshot dumps (not repository product truth)
+architecture/research/experience/screenshots/snapshot-*/

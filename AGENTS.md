@@ -1,5 +1,15 @@
 # AGENTS.md
 
+## Start here
+
+Before any implementation work, read the canonical engineering handoff:
+
+**[`docs/project/ENGINEERING_HANDOFF.md`](docs/project/ENGINEERING_HANDOFF.md)**
+
+Then reassess machine state in `docs/project-health.json`. Treat repository documentation as authoritative over chat history.
+
+Current handoff posture (see handoff + health for truth): **P16 Voice Input is Engineering Complete; live Product Owner Product Proof is pending — not permanently closed. Do not begin P17.**
+
 ## Cursor Cloud specific instructions
 
 Workspace is a single product: a **Windows-targeted Tauri 2 desktop app** (React 18 + Vite frontend in `app/`, Rust backend in `app/src-tauri` + `packages/*`, embedded SQLite). There are no microservices, Docker, or external databases. Standard commands live in `README.md` and the `package.json` scripts; prefer those. Notes below are the non-obvious gotchas.

@@ -3,11 +3,12 @@
 
 | Field | Value |
 | --- | --- |
-| **Status** | **PERMANENTLY CLOSED — ACCEPTED — REPOSITORY TRUTH — DO NOT REOPEN** (bugfixes only) |
+| **Status** | **Engineering Complete** — live Product Owner Product Proof **pending final acceptance**. **Not permanently closed.** |
 | **Kind** | Conversation **input device** (not a desktop Capability Provider domain) |
 | **Adoption** | WRAP WinRT `SpeechRecognizer` behind `VoicePort` |
 | **Research** | `research/VOICE_RESEARCH.md` |
 | **Independence** | Satisfies Capability Independence Rule |
+| **Handoff** | `docs/project/ENGINEERING_HANDOFF.md` |
 
 ---
 
@@ -63,6 +64,14 @@ On denial, Conversation explains the fix in ordinary language and opens the matc
 | IPC | `voice_*` commands |
 | UI | `VoiceMicButton` in Conversation composer |
 | Intent help | `voiceStatus` / `voiceExplain` (reply-only) |
+
+---
+
+## Closure rule
+
+Permanent closure requires **Product Owner live Product Proof acceptance**.  
+Engineering must not mark P16 permanently closed unilaterally.  
+P17 must not begin until that acceptance is recorded in repository truth.
 
 ---
 

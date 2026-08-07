@@ -1,5 +1,5 @@
 # Rolling Capability Provider Roadmap
-## Updated after P16 permanent closure
+## Updated for repository handoff (P16 Product Proof pending)
 
 UI Architecture, Desktop Operator, Conversation, and Capability Runtime pipeline remain **frozen**.  
 Providers own **operations**. Providers never call each other.  
@@ -23,15 +23,22 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 | **P13** | Notifications Provider | Permanently closed |
 | **P14** | Browser Provider | Permanently closed |
 | **P15** | Screenshot Provider | Permanently closed |
-| **P16** | Voice Input | **PERMANENTLY CLOSED — ACCEPTED — DO NOT REOPEN** |
 
 ---
 
-## Next five (rolling)
+## Current
+
+| Program | Title | Status |
+| --- | --- | --- |
+| **P16** | Voice Input | **Engineering Complete** — live Product Owner Product Proof **pending final acceptance**. **Not permanently closed.** |
+
+---
+
+## Next five (rolling — after P16 acceptance)
 
 | Program | Title | Why |
 | --- | --- | --- |
-| **P17** | File Provider | Next eligible — scoped FS |
+| **P17** | File Provider | Next eligible after P16 Owner acceptance — scoped FS |
 | **P18** | Terminal Provider | Governed ConPTY |
 | **P19** | Memory Provider | Restoration |
 | **P20** | Automation Provider | Multi-step recipes |
@@ -46,5 +53,6 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 3. Product Proof + Natural Language Robustness.  
 4. Provider Acceptance Standard (full sequence).  
 5. Capability Independence Rule.  
-6. P12–P16 — do not reopen except bugfixes.  
+6. P12–P15 — do not reopen except bugfixes. P16 — do not reopen design; finish Owner Product Proof only.  
 7. One program → Owner review → permanent closure → next.  
+8. **Do not begin P17 until P16 is permanently closed.**  

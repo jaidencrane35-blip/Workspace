@@ -7,8 +7,8 @@
 | **P12.5** | Window Product Proof — **ACCEPTED — DO NOT REOPEN** |
 | **P14** | Browser Provider — **PERMANENTLY CLOSED** |
 | **P15** | Screenshot Provider — **PERMANENTLY CLOSED** |
-| **P16** | Voice Input — **PERMANENTLY CLOSED** |
-| **P17** | File Provider — **next eligible** |
+| **P16** | Voice Input — **Engineering Complete — Product Proof pending Owner acceptance** (not permanently closed) |
+| **P17** | File Provider — **next after P16 acceptance** (do not begin yet) |
 | **Acceptance** | [PROVIDER_ACCEPTANCE_STANDARD.md](./PROVIDER_ACCEPTANCE_STANDARD.md) |
 | **Operator law** | Conversation → Intent → Kernel Operator → Runtime |
 | **Composition law** | Kernel owns composition |
@@ -19,7 +19,8 @@
 | Document | Purpose |
 | --- | --- |
 | [PROVIDER_ACCEPTANCE_STANDARD.md](./PROVIDER_ACCEPTANCE_STANDARD.md) | Permanent provider completion sequence + Independence Rule |
-| [VOICE_INPUT.md](./VOICE_INPUT.md) | **P16 Voice Input** (closed) |
+| [VOICE_INPUT.md](./VOICE_INPUT.md) | **P16 Voice Input** (Engineering Complete; Proof pending) |
+| [../project/ENGINEERING_HANDOFF.md](../project/ENGINEERING_HANDOFF.md) | **Canonical agent handoff** |
 | [research/VOICE_RESEARCH.md](./research/VOICE_RESEARCH.md) | WRAP WinRT decision |
 | [product-proof/VOICE_INPUT_PRODUCT_PROOF.md](./product-proof/VOICE_INPUT_PRODUCT_PROOF.md) | Owner checklist |
 | [SCREENSHOT_PROVIDER.md](./SCREENSHOT_PROVIDER.md) | **P15 Screenshot** (closed) |

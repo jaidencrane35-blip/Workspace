@@ -3,8 +3,8 @@
 
 | Field | Value |
 | --- | --- |
-| **Program** | P16 Voice Input (+ P16.5 naturalness remediation) |
-| **Status** | **Product Complete** — immediate listen + first-word capture |
+| **Program** | P16 Voice Input |
+| **Status** | **Pending live Product Owner acceptance** (Engineering Complete; **not** permanently closed) |
 | **Role** | Conversation input device |
 | **Harness** | `voice-input.proof.json` + `tests/voice-input-product-proof.test.ts` |
 | **Verifier** | `scripts/verify-voice-input.mjs` |
@@ -25,24 +25,12 @@
 
 ---
 
-## P16.5 latency findings (measured)
+## Closure stamp (Owner only)
 
-| Stage | Cold | Warm (after pre-warm) |
-| --- | --- | --- |
-| WinRT `SpeechRecognizer::new` | ~280 ms | n/a (reused) |
-| Compile constraints | ~3 ms | n/a (reused) |
-| Second create+compile | — | ~8 ms |
-| Prior UI bug | Listening shown during status probe + create (~300 ms+) before `RecognizeAsync` | Fixed |
+Do **not** apply until live Product Proof is accepted by the Product Owner:
 
-**First-word loss root cause:** UI marked Listening and the user began speaking while status IPC + recognizer create/compile still ran; `RecognizeAsync` had not started capturing yet.
+~~P16 Voice Input — PERMANENTLY CLOSED~~ (not yet)
 
----
+Until then, repository health remains:
 
-## Closure stamp
-
-**P16 Voice Input**  
-**PERMANENTLY CLOSED**  
-**ACCEPTED**  
-**REPOSITORY TRUTH**  
-**DO NOT REOPEN**  
-(Bug fixes only.)
+`P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING`
