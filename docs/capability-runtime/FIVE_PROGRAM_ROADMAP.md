@@ -22,7 +22,8 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 | **P12 COMPLETE** | Final Repository Closure | `030fa3f` |
 | **P13** | Notifications Provider | `f0e03c4` |
 
-P12 series remains **permanently closed**.
+P12 series remains **permanently closed**.  
+**P13 is permanently closed** (Product Proof + Composition Audit).
 
 ---
 
@@ -30,7 +31,7 @@ P12 series remains **permanently closed**.
 
 | Program | Title | Why |
 | --- | --- | --- |
-| **P14** | Browser Provider | URL open (WRAP) |
+| **P14** | Browser Provider | URL open (WRAP) — this execution program Phase B |
 | **P15** | Screenshot Provider | Capture under consent |
 | **P16** | File Provider | Scoped FS for later automation |
 | **P17** | Terminal Provider | Governed ConPTY |

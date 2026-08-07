@@ -134,7 +134,7 @@ function resolveNotificationIntent(raw: string, text: string): IntentAction | nu
   }
 
   if (
-    /\b(can you (send |show )?notifications|are notifications available|notification support|do (you|we) support notifications)\b/.test(
+    /\b(can you (send |show )?(me )?(a )?notifications?|are notifications available|notification support|do (you|we) support notifications)\b/.test(
       text,
     ) ||
     text === "notifications?" ||
@@ -155,6 +155,21 @@ function resolveNotificationIntent(raw: string, text: string): IntentAction | nu
       kind: "notifyDismiss",
       reply: "Trying to dismiss that notification.",
     };
+  }
+
+  const notifyThat = raw
+    .trim()
+    .match(/^notify(?:\s+me)?\s+that\s+(.+)$/i);
+  if (notifyThat?.[1]) {
+    const body = stripTrailingPunctuation(notifyThat[1]);
+    if (body) {
+      return {
+        kind: "notifyShow",
+        title: "Workspace",
+        text: body,
+        reply: "Showing a desktop notification.",
+      };
+    }
   }
 
   const withMessage = raw

@@ -29,6 +29,12 @@
     },
     {
       "category": "status",
+      "utterance": "Can you send me a notification?",
+      "expectedKind": "notifyStatus",
+      "expectedOperation": "status"
+    },
+    {
+      "category": "status",
       "utterance": "Are notifications available?",
       "expectedKind": "notifyStatus",
       "expectedOperation": "status"
@@ -41,9 +47,22 @@
     },
     {
       "category": "show",
+      "utterance": "Show me a desktop notification.",
+      "expectedKind": "notifyShow",
+      "expectedOperation": "show"
+    },
+    {
+      "category": "show",
       "utterance": "Send me a desktop notification.",
       "expectedKind": "notifyShow",
       "expectedOperation": "show"
+    },
+    {
+      "category": "show",
+      "utterance": "Notify me that the build finished.",
+      "expectedKind": "notifyShow",
+      "expectedOperation": "show",
+      "expectedText": "the build finished"
     },
     {
       "category": "show",

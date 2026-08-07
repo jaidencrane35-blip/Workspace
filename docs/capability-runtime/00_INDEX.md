@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | **P10–P12** | Complete (P12 series permanently closed) |
-| **P13** | Notifications Provider — awaiting Owner Product Proof review |
+| **P13** | Notifications Provider — **permanently closed** |
 | **Next** | P14 Browser Provider |
 | **Operator law** | Conversation → Intent → Kernel Operator → Runtime |
 | **Composition law** | Kernel owns composition |

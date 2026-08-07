@@ -3,7 +3,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Status** | Implemented — awaiting Product Owner Product Proof review |
+| **Status** | **Permanently closed** — Product Complete |
 | **Domain** | `notifications` |
 | **Adoption** | WRAP WinRT toast (`tauri-winrt-notification`) |
 | **Research** | `research/NOTIFICATIONS_RESEARCH.md` |

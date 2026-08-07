@@ -402,8 +402,8 @@ const health = {
   currentExecutionProgram: {
     id: "notifications-provider-p13",
     title: "P13 Notifications Provider",
-    status: "complete_awaiting_owner_review",
-    note: "Notifications Provider Levels 1–2 + Conversation Product Proof. Kernel Operator + single IPC. Await Owner review before P14.",
+    status: "permanently_closed",
+    note: "P13 Product Complete and permanently closed. Composition audit complete. P14 Browser is next.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -429,14 +429,14 @@ const health = {
     operatorIntelligence: "superseded_by_kernel_operator",
     kernelOperator: "complete",
     p12Series: "permanently_complete",
-    notificationsProvider: "complete_awaiting_owner_review",
+    notificationsProvider: "permanently_complete",
     notes: [
       "UI Architecture Spec accepted/frozen (P8)",
       "Capability Runtime research accepted (P9)",
       "Capability Runtime Foundation + Clipboard accepted (P10)",
       "Application Provider accepted (P11)",
       "Window Provider + P12 series permanently complete",
-      "P13 Notifications Provider Levels 1–2 + Product Proof harness",
+      "P13 Notifications Provider permanently closed (Product Proof + Composition Audit)",
       "Operator Authority + Kernel Authority + Composition permanent",
       "Providers own operations; independently testable",
     ],
@@ -444,7 +444,7 @@ const health = {
   currentMilestone: {
     id: "notifications-provider-p13",
     title: "P13 Notifications Provider",
-    status: "awaiting_owner_review",
+    status: "permanently_closed",
     commit: milestoneCommit,
   },
   acceptedReviews: [
@@ -513,16 +513,23 @@ const health = {
     {
       id: "p12-complete",
       title: "P12 COMPLETE — Final Repository Closure",
-      commit: milestoneCommit,
+      commit: "030fa3f",
       acceptedAt: "2026-08-07",
       note: "P12 series permanently closed; P13 eligible",
+    },
+    {
+      id: "p13",
+      title: "P13 Notifications Provider",
+      commit: "f0e03c4",
+      acceptedAt: "2026-08-07",
+      note: "Product Complete + Composition Audit; permanently closed",
     },
   ],
   outstandingProductDebt: [
     {
       id: "capability-providers-p14-plus",
       track: "B",
-      summary: "Browser / Screenshot / File providers await Owner acceptance of P13 Notifications",
+      summary: "Browser / Screenshot / File providers — P14+ (P13 closed)",
     },
     {
       id: "tray-integration",
@@ -622,14 +629,15 @@ const health = {
   lastMilestone: {
     date: "2026-08-07",
     document: "docs/engineering-milestone-report.md",
-    title: "P13 Notifications Provider",
-    reviewBrief: "docs/capability-runtime/product-proof/NOTIFICATIONS_PROVIDER_PRODUCT_PROOF.md",
+    title: "P13 Notifications Provider — permanently closed",
+    reviewBrief: "docs/capability-runtime/product-proof/NOTIFICATIONS_PROVIDER_COMPOSITION_AUDIT.md",
   },
-  handoffStatus: "AWAITING_PROJECT_OWNER_NOTIFICATIONS_PRODUCT_PROOF_REVIEW",
+  handoffStatus: "P13_PERMANENTLY_CLOSED_P14_ELIGIBLE",
   nextRecommendedExecutionProgram: {
     id: "browser-provider-p14",
     title: "P14 Browser Provider",
-    blockedUntil: "Project Owner accepts P13 Notifications Product Proof",
+    blockedUntil: null,
+    note: "P13 permanently closed. P14 is the next constitutional execution program.",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",

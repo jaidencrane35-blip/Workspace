@@ -96,16 +96,22 @@ describe("intent bridge", () => {
     expect(resolveIntent("Can you send notifications?").kind).toBe(
       "notifyStatus",
     );
-    expect(resolveIntent("Show me a notification.")).toMatchObject({
+    expect(resolveIntent("Can you send me a notification?").kind).toBe(
+      "notifyStatus",
+    );
+    expect(resolveIntent("Show me a desktop notification.")).toMatchObject({
       kind: "notifyShow",
       text: "Notification from Workspace.",
     });
     expect(
-      resolveIntent("Show me a notification: Restore finished."),
+      resolveIntent("Notify me that the build finished."),
     ).toMatchObject({
       kind: "notifyShow",
-      text: "Restore finished",
+      text: "the build finished",
     });
+    expect(resolveIntent("Dismiss that notification.").kind).toBe(
+      "notifyDismiss",
+    );
     expect(resolveIntent("Notify me when Cursor finishes.").kind).toBe(
       "unknown",
     );
