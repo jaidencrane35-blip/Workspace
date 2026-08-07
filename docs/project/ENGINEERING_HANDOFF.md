@@ -7,7 +7,7 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.11 Voice Technology Validation & Product Completion (awaiting Owner) |
+| **Latest program** | P16.12 Technology Foundation Validation & Product Completion (awaiting Owner) |
 | **Rule** | Ignore prior chat history. Reassess repository truth before any implementation. |
 
 **Start here before any execution program.**
@@ -59,7 +59,7 @@ Conversation
 | --- | --- |
 | Architectural Constitution | `architecture/ARCHITECTURAL_CONSTITUTION_V2.md` (**v2.0**) |
 | Product Constitution | `docs/00-Constitution/PRODUCT_CONSTITUTION.md` |
-| Execution protocol | `.cursor/rules/constitutional-execution-protocol.mdc` (**v1.9**) |
+| Execution protocol | `.cursor/rules/constitutional-execution-protocol.mdc` (**v1.10**) |
 | Machine state | `docs/project-health.json` (synced to `app/public/project-health.json`) |
 | Product Gravity | `docs/ui/PRODUCT_GRAVITY_RULE.md` |
 | Product Proof | `docs/capability-runtime/PRODUCT_PROOF_RULE.md` |
@@ -102,7 +102,7 @@ One execution program
 
 Authoritative rolling list: `docs/capability-runtime/FIVE_PROGRAM_ROADMAP.md`.
 
-| Now | P16 Voice Input — Engineering Complete (through **P16.11** validation); Product Proof pending Owner |
+| Now | P16 Voice Input — Engineering Complete (through **P16.12** foundation validation); Product Proof pending Owner |
 | Next (after P16 acceptance) | **P17 File Provider** |
 | Then | P18 Terminal · P19 Memory · P20 Automation · P21 Workspace Intelligence |
 
@@ -138,7 +138,7 @@ Do not reopen except bugfixes:
 | Notifications | Closed (P13) | |
 | Browser | Closed (P14) | |
 | Screenshots | Closed (P15) | |
-| **Voice Input** | **Engineering Complete** (P16.11) | Conversation input device — **not** a Runtime desktop provider; **Product Proof pending Owner** |
+| **Voice Input** | **Engineering Complete** (P16.12) | Conversation input device — **not** a Runtime desktop provider; **Product Proof pending Owner** |
 | File | Not started | **P17** (blocked) |
 | Terminal / Memory / Automation | Roadmap | P18+ |
 
@@ -202,7 +202,7 @@ Do not redesign without a new constitutional program:
 | Harness / verifiers for Voice + conversation quality | Green (engineering) — do not treat as Owner acceptance |
 | P10–P15 Product Proof | Accepted / closed |
 
-Voice remediations through P16.11 (technology validation, permission recheck, Evidence Before Commitment) do **not** equal permanent closure.
+Voice remediations through P16.12 (Technology Foundation Validation, permission state machine) do **not** equal permanent closure.
 
 ---
 
@@ -214,9 +214,9 @@ Voice remediations through P16.11 (technology validation, permission recheck, Ev
 
 ## 15. Latest commit
 
-| Tip | Use `git log -1 --oneline` on `v2-dev` after P16.11 push |
+| Tip | Use `git log -1 --oneline` on `v2-dev` after P16.12 push |
 | --- | --- |
-| Prior Voice engineering | `fe1e885` (P16.10) · earlier P16.5–P16.9 on `v2-dev` |
+| Prior Voice engineering | `b90529c` (P16.11) · `fe1e885` (P16.10) |
 
 ---
 
@@ -227,7 +227,7 @@ Voice remediations through P16.11 (technology validation, permission recheck, Ev
 | Machine state | `docs/project-health.json` |
 | Handoff status | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
 | Engineering mode | `constitutional-execution` |
-| Protocol | v1.9 |
+| Protocol | v1.10 |
 | Constitution | v2.0 |
 | Sync | `node scripts/sync-project-health.mjs` |
 | Verify | `node scripts/verify-project-health.mjs` |

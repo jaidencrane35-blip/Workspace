@@ -1,9 +1,9 @@
 # Engineering Milestone Report
-## P16.11 Voice Technology Validation & Product Completion
+## P16.12 Technology Foundation Validation & Product Completion
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.11 Voice Technology Validation & Product Completion |
+| **Execution program** | P16.12 Technology Foundation Validation & Product Completion |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
@@ -14,32 +14,24 @@
 ## Repository reassessment
 
 - P10–P15 permanently closed.
-- P16 Engineering Complete (through P16.11 validation).
+- P16 Engineering Complete (through P16.12 foundation validation).
 - P16 Product Proof **OPEN** — awaiting Owner acceptance.
 - P17 blocked until Owner acceptance.
 
-## Evidence Before Commitment (permanent)
+## Technology Foundation Validation (permanent)
 
-Commodity survey recorded in `docs/capability-runtime/research/VOICE_RESEARCH.md`.  
-**Long-term foundation:** WRAP WinRT ContinuousRecognitionSession — confirmed.
+Commodity + desktop permission survey in `docs/capability-runtime/research/VOICE_RESEARCH.md`.
 
-| Stack | Class |
-| --- | --- |
-| WinRT SpeechRecognition (continuous) | **WRAP** |
-| whisper.cpp / Vosk / Sherpa-ONNX | **STUDY** |
-| Azure Speech / Web Speech primary | **REJECT** |
-| Custom VAD ring buffer | **REJECT** (now) |
+**Voice foundation:** WRAP WinRT ContinuousRecognitionSession — **confirmed** (no migration this program).
 
-## Permission workflow
+**Permission architecture:** session gate `explain ? Settings once ? awaiting_return ? recheck ? remember grant`. Never spam Settings on launch or repeated mic clicks while awaiting return.
 
-Peek-only `status()` left Denied cached after Settings grant.  
-**Fix:** `voice_recheck_permission` (spawn_blocking) + mic UI recheck on visibility when Settings guidance is active; remember grant; never auto-reopen Settings on later launches.
+## Product Proof delivery
 
-## Other delivery
-
-- Semantic aliases: Cursor, MSEdge, VS Code phrasing  
-- Mic / glass visibility polish  
-- Lifecycle evidence for permission recheck  
+- Permission state machine (stop repeated Settings / confusing guidance)
+- Browser intent: launch/start site aliases; polite wrappers; no tab.exe fallbacks
+- Near-opaque glass + stronger mic Ready/Listening signalling
+- Capturing?Ready settle 45ms
 
 ## Explicit
 

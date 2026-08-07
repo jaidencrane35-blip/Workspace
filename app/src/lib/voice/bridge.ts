@@ -19,10 +19,10 @@ const DEMO_STATUS: VoiceStatus = {
 };
 
 const SPEECH_PRIVACY_MESSAGE =
-  "Windows needs speech privacy turned on before I can listen. Click the microphone again and I’ll open the right Settings page for you.";
+  "Windows needs speech privacy turned on before I can listen. Click the microphone once and I’ll open the right Settings page — then come back here.";
 
 const MICROPHONE_PERMISSION_MESSAGE =
-  "Workspace can’t use the microphone yet. Click the microphone again and I’ll open Windows Settings so you can allow access — then come back here.";
+  "Workspace can’t use the microphone yet. Click the microphone once and I’ll open Windows Settings so you can allow access — then come back here.";
 
 /** Strip technical IPC / OS detail before Conversation shows a voice error. */
 export function desktopVoiceMessage(raw: string): string {

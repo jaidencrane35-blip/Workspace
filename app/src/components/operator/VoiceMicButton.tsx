@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   cancelListening,
   ensureVoiceListeningBridge,
@@ -9,13 +9,16 @@ import {
   type VoicePhase,
 } from "../../lib/voice";
 import {
-  clearRememberedVoicePermissionGranted,
+  awaitingReturnMessage,
+  currentSettingsKind,
   hasRememberedVoicePermissionGranted,
-  markSettingsGuidanceOffered,
-  permissionGuidanceMessage,
-  rememberVoicePermissionGranted,
+  isAwaitingSettingsReturn,
+  notePermissionDenied,
+  notePermissionGranted,
+  noteSettingsOpened,
+  settingsOpenedMessage,
+  shouldOpenSettingsOnMicClick,
   voiceReadyMessage,
-  wasSettingsGuidanceOffered,
 } from "../../lib/voice/permissionGuidance";
 
 interface VoiceMicButtonProps {
@@ -53,7 +56,7 @@ function phaseLabel(phase: VoicePhase, available: boolean): string {
 /**
  * Microphone control beside the Conversation composer.
  * Ready = Capturing contract. Listening = speech detected.
- * Never auto-opens Windows Settings (Permission Guidance Principle).
+ * Permission architecture: explain once → Settings once → recheck on return → remember.
  */
 export function VoiceMicButton({
   disabled,
@@ -64,13 +67,15 @@ export function VoiceMicButton({
   const [available, setAvailable] = useState(true);
   const [warmed, setWarmed] = useState(false);
   const [soundActive, setSoundActive] = useState(false);
-  const [needsSettingsOffer, setNeedsSettingsOffer] = useState(false);
-  const [settingsKind, setSettingsKind] = useState<"microphone" | "speech">(
-    "microphone",
-  );
+  const [deniedUi, setDeniedUi] = useState(false);
+  const onVoiceMessageRef = useRef(onVoiceMessage);
+  onVoiceMessageRef.current = onVoiceMessage;
 
   const applyStatus = useCallback(
-    (status: Awaited<ReturnType<typeof warmUpVoice>>, announceReady: boolean) => {
+    (
+      status: Awaited<ReturnType<typeof warmUpVoice>>,
+      announceReady: boolean,
+    ) => {
       const ok = status.available || status.recognitionAvailable;
       setAvailable(ok);
       setWarmed(Boolean(status.warmed || status.available));
@@ -79,34 +84,25 @@ export function VoiceMicButton({
         (ok && status.permission !== "denied");
       if (granted) {
         const wasNew = !hasRememberedVoicePermissionGranted();
-        rememberVoicePermissionGranted();
-        setNeedsSettingsOffer(false);
+        notePermissionGranted();
+        setDeniedUi(false);
         if (announceReady && wasNew) {
-          onVoiceMessage(voiceReadyMessage());
+          onVoiceMessageRef.current(voiceReadyMessage());
         }
         return;
       }
       if (status.permission === "denied") {
-        clearRememberedVoicePermissionGranted();
-        setNeedsSettingsOffer(true);
-        setSettingsKind(
-          status.message.toLowerCase().includes("speech privacy")
-            ? "speech"
-            : "microphone",
-        );
-        if (!wasSettingsGuidanceOffered()) {
-          markSettingsGuidanceOffered();
-          onVoiceMessage(
-            permissionGuidanceMessage(
-              status.message.toLowerCase().includes("speech privacy")
-                ? "speech"
-                : "microphone",
-            ),
-          );
+        const kind = status.message.toLowerCase().includes("speech privacy")
+          ? "speech"
+          : "microphone";
+        const { announce, message } = notePermissionDenied(kind);
+        setDeniedUi(true);
+        if (announce) {
+          onVoiceMessageRef.current(message);
         }
       }
     },
-    [onVoiceMessage],
+    [],
   );
 
   useEffect(() => {
@@ -116,51 +112,51 @@ export function VoiceMicButton({
       if (!active) {
         return;
       }
+      // Remembered grant: warm silently; never re-open Settings on launch.
       applyStatus(status, false);
     });
 
-    // Re-probe only after Settings guidance — never on every focus, never peek-only.
     const onVis = () => {
       if (document.visibilityState !== "visible") {
         return;
       }
-      if (!needsSettingsOffer && hasRememberedVoicePermissionGranted()) {
-        return;
-      }
-      if (!needsSettingsOffer) {
+      if (!isAwaitingSettingsReturn()) {
         return;
       }
       void recheckVoicePermission().then((status) => {
         if (!active) {
           return;
         }
-        const wasDenied = needsSettingsOffer;
-        const nowOk =
-          status.permission === "granted" ||
-          (status.available && status.permission !== "denied");
-        applyStatus(status, Boolean(wasDenied && nowOk));
+        applyStatus(status, true);
       });
     };
     document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onVis);
     return () => {
       active = false;
       document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onVis);
     };
-  }, [applyStatus, needsSettingsOffer]);
+  }, [applyStatus]);
 
   const finish = useCallback(async () => {
     await cancelListening();
   }, []);
 
   const start = useCallback(async () => {
-    // Permission Guidance: second click while denied opens Settings once (user intent).
-    if (needsSettingsOffer && !available) {
-      await openVoiceSettings(settingsKind);
-      onVoiceMessage(
-        settingsKind === "speech"
-          ? "I opened Windows Speech settings. Turn on speech recognition, then return here — I’ll check again."
-          : "I opened Windows Microphone settings. Allow Workspace, then return here — I’ll check again.",
-      );
+    // Already opened Settings — do not spam; wait for return + recheck.
+    if (isAwaitingSettingsReturn()) {
+      onVoiceMessage(awaitingReturnMessage());
+      return;
+    }
+
+    // Permission architecture: one Settings open per deny cycle (user click).
+    if (shouldOpenSettingsOnMicClick()) {
+      const kind = currentSettingsKind();
+      noteSettingsOpened();
+      setDeniedUi(true);
+      await openVoiceSettings(kind);
+      onVoiceMessage(settingsOpenedMessage(kind));
       return;
     }
 
@@ -170,22 +166,7 @@ export function VoiceMicButton({
     if (!warmed) {
       const status = await warmUpVoice();
       applyStatus(status, false);
-      if (!status.available && !status.recognitionAvailable) {
-        setPhase("error");
-        setNeedsSettingsOffer(true);
-        setSettingsKind(
-          status.message.toLowerCase().includes("speech privacy")
-            ? "speech"
-            : "microphone",
-        );
-        onVoiceMessage(
-          permissionGuidanceMessage(
-            status.message.toLowerCase().includes("speech privacy")
-              ? "speech"
-              : "microphone",
-          ),
-        );
-        markSettingsGuidanceOffered();
+      if (status.permission === "denied" || (!status.available && !status.recognitionAvailable)) {
         setPhase("idle");
         return;
       }
@@ -203,7 +184,6 @@ export function VoiceMicButton({
         setPhase((prev) =>
           prev === "ready" || prev === "preparing" ? "speechDetected" : prev,
         );
-        // Promote to listening shortly after speech energy.
         window.setTimeout(() => {
           setPhase((prev) =>
             prev === "speechDetected" || prev === "ready" ? "listening" : prev,
@@ -225,12 +205,13 @@ export function VoiceMicButton({
         result.status === "microphone_unavailable"
       ) {
         const speechPrivacy = result.message.toLowerCase().includes("speech privacy");
-        setNeedsSettingsOffer(true);
-        setSettingsKind(speechPrivacy ? "speech" : "microphone");
-        onVoiceMessage(
-          permissionGuidanceMessage(speechPrivacy ? "speech" : "microphone"),
+        const { announce, message } = notePermissionDenied(
+          speechPrivacy ? "speech" : "microphone",
         );
-        markSettingsGuidanceOffered();
+        setDeniedUi(true);
+        if (announce) {
+          onVoiceMessage(message);
+        }
       } else {
         onVoiceMessage(result.message);
       }
@@ -238,8 +219,8 @@ export function VoiceMicButton({
       return;
     }
 
-    rememberVoicePermissionGranted();
-    setNeedsSettingsOffer(false);
+    notePermissionGranted();
+    setDeniedUi(false);
     setPhase("recognizing");
     await new Promise((r) => setTimeout(r, 40));
     setPhase("processing");
@@ -247,15 +228,7 @@ export function VoiceMicButton({
     setPhase("finished");
     await new Promise((r) => setTimeout(r, 180));
     setPhase("idle");
-  }, [
-    applyStatus,
-    available,
-    needsSettingsOffer,
-    onTranscript,
-    onVoiceMessage,
-    settingsKind,
-    warmed,
-  ]);
+  }, [applyStatus, onTranscript, onVoiceMessage, warmed]);
 
   const onToggle = () => {
     if (disabled) {
@@ -287,7 +260,7 @@ export function VoiceMicButton({
     activeCapture ||
     phase === "recognizing" ||
     phase === "processing";
-  const label = phaseLabel(phase, available);
+  const label = phaseLabel(phase, available && !deniedUi);
 
   return (
     <button
@@ -298,7 +271,7 @@ export function VoiceMicButton({
       data-ready={phase === "ready" ? "true" : "false"}
       data-preparing={preparing ? "true" : "false"}
       data-sound={soundActive ? "true" : "false"}
-      data-available={available ? "true" : "false"}
+      data-available={available && !deniedUi ? "true" : "false"}
       onClick={onToggle}
       disabled={disabled}
       aria-label={label}
@@ -317,7 +290,7 @@ export function VoiceMicButton({
                 ? "◎"
                 : phase === "finished"
                   ? "✓"
-                  : phase === "error" || !available
+                  : phase === "error" || deniedUi || !available
                     ? "!"
                     : "◉"}
       </span>

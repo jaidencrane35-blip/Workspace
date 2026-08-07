@@ -142,6 +142,12 @@ Cleanup only after the Product Owner exits normally.
 Before Workspace permanently adopts a major technology: research mature production implementations; understand the complete workflow; verify licensing; document tradeoffs; then classify ADOPT / WRAP / ADAPT / STUDY / REJECT.  
 Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
+### P19 — Technology Foundation Validation (permanent — P16.12)
+
+Before Workspace permanently adopts any foundational technology (speech, OCR, automation, memory, terminal, permissions, etc.), engineering must research mature implementations, understand the complete lifecycle, evaluate licensing / architecture / operational behaviour, document the choice, then classify ADOPT / WRAP / ADAPT / STUDY / REJECT.  
+Permission UX must request once, remember success, and never spam Settings on later launches.  
+Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
 ---
 
 ## 3. Presentation modes (binding intent)

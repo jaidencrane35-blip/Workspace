@@ -1,10 +1,25 @@
 /**
- * Permission Guidance Principle (P16.9) — OS permissions belong to Windows.
- * Workspace detects, explains, guides, verifies — never auto-spams Settings.
+ * Permission Guidance Principle (P16.9) + permanent permission architecture (P16.12).
+ *
+ * OS permissions belong to Windows. Workspace:
+ *   detect → explain once → open Settings once (user click) → remain running →
+ *   re-check on return → remember grant → never interrupt future launches.
+ *
+ * Never auto-open Settings on launch, warm-up, or focus.
  */
 
 const GRANTED_KEY = "workspace.voice.permissionGranted";
-const OFFERED_KEY = "workspace.voice.settingsGuidanceOffered";
+
+export type VoicePermissionGate =
+  | "idle"
+  | "explain"
+  | "awaiting_return"
+  | "still_denied";
+
+/** Session-only gate — never persisted (Settings open is per deny cycle). */
+let gate: VoicePermissionGate = "idle";
+let explainAnnounced = false;
+let settingsKind: "microphone" | "speech" = "microphone";
 
 function storage(): Storage | null {
   try {
@@ -16,6 +31,8 @@ function storage(): Storage | null {
 
 export function rememberVoicePermissionGranted(): void {
   storage()?.setItem(GRANTED_KEY, "1");
+  gate = "idle";
+  explainAnnounced = false;
 }
 
 export function hasRememberedVoicePermissionGranted(): boolean {
@@ -26,19 +43,82 @@ export function clearRememberedVoicePermissionGranted(): void {
   storage()?.removeItem(GRANTED_KEY);
 }
 
-export function markSettingsGuidanceOffered(): void {
-  storage()?.setItem(OFFERED_KEY, "1");
+export function voicePermissionGate(): VoicePermissionGate {
+  return gate;
 }
 
+export function currentSettingsKind(): "microphone" | "speech" {
+  return settingsKind;
+}
+
+/** Call when OS reports denied / unavailable mic or speech privacy. */
+export function notePermissionDenied(kind: "microphone" | "speech"): {
+  announce: boolean;
+  message: string;
+} {
+  settingsKind = kind;
+  clearRememberedVoicePermissionGranted();
+  if (gate === "awaiting_return") {
+    // User returned from Settings but still denied — one fresh explain, then one more open.
+    gate = "still_denied";
+    explainAnnounced = false;
+  } else if (gate === "idle" || gate === "explain") {
+    gate = "explain";
+  }
+  const announce = !explainAnnounced;
+  if (announce) {
+    explainAnnounced = true;
+  }
+  return { announce, message: permissionGuidanceMessage(kind) };
+}
+
+/** User clicked mic to open Settings — only once per cycle. */
+export function noteSettingsOpened(): void {
+  gate = "awaiting_return";
+}
+
+export function shouldOpenSettingsOnMicClick(): boolean {
+  return gate === "explain" || gate === "still_denied";
+}
+
+export function isAwaitingSettingsReturn(): boolean {
+  return gate === "awaiting_return";
+}
+
+/** Successful grant from recheck or successful listen. */
+export function notePermissionGranted(): void {
+  rememberVoicePermissionGranted();
+}
+
+/** @deprecated — kept for verifier / call-site compatibility; prefer notePermissionDenied */
+export function markSettingsGuidanceOffered(): void {
+  explainAnnounced = true;
+  if (gate === "idle") {
+    gate = "explain";
+  }
+}
+
+/** @deprecated */
 export function wasSettingsGuidanceOffered(): boolean {
-  return storage()?.getItem(OFFERED_KEY) === "1";
+  return explainAnnounced || gate !== "idle";
 }
 
 export function permissionGuidanceMessage(kind: "microphone" | "speech"): string {
   if (kind === "speech") {
-    return "Windows needs speech privacy turned on before I can listen. Click the microphone again and I’ll open the right Settings page for you.";
+    return "Windows needs speech privacy turned on before I can listen. Click the microphone once and I’ll open the right Settings page — then come back here.";
   }
-  return "Workspace can’t use the microphone yet. Click the microphone again and I’ll open Windows Settings so you can allow access — then come back here.";
+  return "Workspace can’t use the microphone yet. Click the microphone once and I’ll open Windows Settings so you can allow access — then come back here.";
+}
+
+export function settingsOpenedMessage(kind: "microphone" | "speech"): string {
+  if (kind === "speech") {
+    return "I opened Windows Speech settings. Turn on online speech recognition, then return here — I’ll check again automatically.";
+  }
+  return "I opened Windows Microphone settings. Allow Workspace, then return here — I’ll check again automatically.";
+}
+
+export function awaitingReturnMessage(): string {
+  return "Finish the permission in Windows Settings, then return here — I’ll check again. I won’t keep reopening Settings.";
 }
 
 export function voiceReadyMessage(): string {

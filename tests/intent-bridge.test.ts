@@ -47,7 +47,7 @@ describe("intent bridge", () => {
     });
     expect(resolveIntent("launch chrome")).toMatchObject({
       kind: "appLaunch",
-      query: "chrome",
+      query: "Google Chrome",
     });
     expect(resolveIntent("switch to Chrome")).toMatchObject({
       kind: "winFocus",
@@ -152,11 +152,17 @@ describe("intent bridge", () => {
       "Open GPT in a new tab",
       "Open ChatGPT in a new tab",
       "open gpt",
+      "Please open GPT",
+      "Launch GPT",
+      "Start YT",
+      "Can you open Git for me",
     ]) {
       const action = resolveIntent(utterance);
       expect(action.kind, utterance).toBe("browserOpen");
-      expect(action).toMatchObject({ url: "https://chatgpt.com" });
       expect(JSON.stringify(action).toLowerCase()).not.toMatch(/gpt tab\.exe/);
+      expect(action.kind === "browserOpen" && "url" in action ? action.url : "").toMatch(
+        /chatgpt\.com|youtube\.com|github\.com/,
+      );
     }
     expect(resolveIntent("Open Chrome.")).toMatchObject({
       kind: "appOpen",

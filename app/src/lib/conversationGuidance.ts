@@ -23,7 +23,10 @@ export function softenUtterance(text: string): string {
       /^(could you|would you|can you|will you)\s+(please\s+)?/i,
       "",
     )
+    .replace(/^(i\s+want\s+you\s+to|i\s+need\s+you\s+to|i\s+need\s+to)\s+/i, "")
+    .replace(/^(just\s+)?(go\s+ahead\s+and)\s+/i, "")
     .replace(/\s+please$/i, "")
+    .replace(/\s+for\s+me$/i, "")
     .trim();
 }
 

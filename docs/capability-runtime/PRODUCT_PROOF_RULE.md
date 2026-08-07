@@ -119,6 +119,11 @@ Wait for Owner completion; cleanup only after a normal exit.
 Before Workspace permanently adopts a major technology: research mature production implementations; understand the complete workflow (startup, capture, buffering, permissions, threading, cleanup, failure recovery); verify licensing; document architectural tradeoffs; then classify ADOPT / WRAP / ADAPT / STUDY / REJECT.  
 Do not commit the product surface to a stack on partial evidence.
 
+## Technology Foundation Validation (permanent — P16.12)
+
+Before Workspace permanently adopts any foundational technology (speech, OCR, automation, memory, terminal, permissions, etc.), engineering must: research mature implementations; understand the complete lifecycle; evaluate licensing, architecture, and operational behaviour; document why Workspace chooses its implementation; then classify ADOPT / WRAP / ADAPT / STUDY / REJECT.  
+Permission UX must match modern desktop software: request once, remember success, never spam Settings on later launches.
+
 ## Commodity Before Reinvention — survey obligation
 
 Before major capability work, perform a Commodity Survey (ADOPT / WRAP / ADAPT / STUDY / REJECT) and record it under capability research. Workspace owns identity, contracts, Operator, permissions, conversation, and runtime; commodity stays an implementation detail.

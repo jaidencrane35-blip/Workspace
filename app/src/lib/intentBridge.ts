@@ -534,17 +534,21 @@ function canonicalizeOpenTarget(value: string): string {
 const SEMANTIC_ALIASES: Record<string, string> = {
   gpt: "chatgpt",
   "g p t": "chatgpt",
+  "chat g p t": "chatgpt",
   git: "github",
   yt: "youtube",
   "y t": "youtube",
+  "you tube": "youtube",
   vscode: "visual studio code",
   "vs code": "visual studio code",
   vs: "visual studio code",
+  "code editor": "visual studio code",
   edge: "microsoft edge",
   msedge: "microsoft edge",
   chrome: "google chrome",
   settings: "windows settings",
   cursor: "cursor",
+  "cursor ide": "cursor",
 };
 
 const SITE_ALIASES: Record<string, string> = {
@@ -1657,12 +1661,20 @@ export function resolveIntent(raw: string): IntentAction {
     /^(?:launch|start)\s+(.+)$/i,
   );
   if (appLaunchExplicit?.[1]) {
-    const query = stripTrailingPunctuation(appLaunchExplicit[1]);
-    if (query) {
+    const rawQuery = stripTrailingPunctuation(appLaunchExplicit[1]);
+    const query = expandSemanticAlias(rawQuery) || rawQuery;
+    // Site abbreviations must never become executable launches (User Adaptation).
+    if (resolveSiteAlias(rawQuery) || resolveSiteAlias(query)) {
+      const site = resolveOpenWebsiteTarget(rawQuery);
+      if (site) {
+        return site;
+      }
+    }
+    if (rawQuery) {
       return {
         kind: "appLaunch",
-        query,
-        reply: `Launching “${query}”.`,
+        query: windowMatchLabel(rawQuery),
+        reply: `Launching “${windowMatchLabel(rawQuery)}”.`,
       };
     }
   }
@@ -1673,10 +1685,19 @@ export function resolveIntent(raw: string): IntentAction {
     const query = expandSemanticAlias(rawQuery) || rawQuery;
     // Never treat GPT / site aliases as executable names (User Adaptation).
     if (resolveSiteAlias(rawQuery) || resolveSiteAlias(query)) {
-      const site = resolveOpenWebsiteTarget(rawQuery);
+      const site =
+        resolveOpenWebsiteTarget(rawQuery) ?? resolveOpenWebsiteTarget(query);
       if (site) {
         return site;
       }
+    }
+    // Browser-shaped phrasing without a site alias (e.g. “open a tab”) stays honest.
+    if (/\b(tab|website|site|url|webpage|web page)\b/i.test(rawQuery)) {
+      return {
+        kind: "unknown",
+        reply: "Which website should I open?",
+        suggestion: INVALID_WEBSITE_SUGGESTION,
+      };
     }
     if (query && !/^(workspace|conversation)$/i.test(query)) {
       const label = windowMatchLabel(rawQuery);

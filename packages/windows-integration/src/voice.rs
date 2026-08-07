@@ -14,9 +14,9 @@ use crate::error::{Result, WindowsIntegrationError};
 /// Windows SPERR_PRIVACY_STATEMENT_DECLINED — speech privacy not accepted.
 pub const HRESULT_SPEECH_PRIVACY_DECLINED: u32 = 0x8004_5509;
 
-const SPEECH_PRIVACY_MESSAGE: &str = "Windows needs speech privacy turned on before I can listen. Click the microphone again and I’ll open the right Settings page for you.";
+const SPEECH_PRIVACY_MESSAGE: &str = "Windows needs speech privacy turned on before I can listen. Click the microphone once and I’ll open the right Settings page — then come back here.";
 
-const MICROPHONE_PERMISSION_MESSAGE: &str = "Workspace can’t use the microphone yet. Click the microphone again and I’ll open Windows Settings so you can allow access — then come back here.";
+const MICROPHONE_PERMISSION_MESSAGE: &str = "Workspace can’t use the microphone yet. Click the microphone once and I’ll open Windows Settings so you can allow access — then come back here.";
 
 /// Windows Settings pages Voice may open for the user.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -982,8 +982,8 @@ fn winrt_listen_continuous_when_ready(
                     t0.elapsed()
                 );
             }
-            // Settle so first frames are accepted before inviting speech.
-            std::thread::sleep(Duration::from_millis(90));
+            // Brief settle after Capturing so first frames are retained before Ready.
+            std::thread::sleep(Duration::from_millis(45));
             if let Ok(mut cell) = on_ready_cell.lock() {
                 if let Some(cb) = cell.take() {
                     cb();

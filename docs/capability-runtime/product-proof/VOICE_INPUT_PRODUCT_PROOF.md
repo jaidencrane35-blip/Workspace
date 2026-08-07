@@ -1,58 +1,46 @@
 # Voice Input — Product Proof
-## P16 / P16.11 — Owner checklist
+## P16 / P16.12 — Owner checklist
 
 | Field | Value |
 | --- | --- |
-| **Program** | P16 Voice Input (+ P16.11 technology validation) |
+| **Program** | P16 Voice Input (+ P16.12 Technology Foundation Validation) |
 | **Status** | **Pending live Product Owner acceptance** (**not** Product Complete) |
 | **Role** | Conversation input device |
 
 ---
 
-## Please test (once Workspace is open — leave it running)
+## Please test (Workspace launches once — leave it running)
 
 ### Voice
-1. Click mic → wait for **Ready** (green) before speaking  
+1. Click mic → wait for **Ready** (bright green) before speaking  
 2. Speak immediately after Ready — first words should be kept  
-3. Speak a long natural turn with short pauses; click mic to finish  
-4. Confirm Workspace does **not** freeze or crash  
-5. Confirm Settings does **not** open unless you click mic after a permission message  
+3. Long natural turn with short pauses; click mic to finish  
+4. Confirm no freeze / crash  
 
 ### Permission
-1. If mic is denied: Conversation explains why; click mic again → Settings opens once  
-2. Allow Workspace in Windows Settings; return without quitting Workspace  
-3. Expect automatic re-check and **✓ Voice ready** (no second Settings spam)  
-4. Quit and relaunch later: Settings must **not** reopen by itself once granted  
+1. If denied: one clear explanation (not a loop)  
+2. Click mic once → Settings opens once  
+3. Allow Workspace; return without quitting  
+4. Expect automatic re-check and **✓ Voice ready**  
+5. Extra mic clicks while Settings is open must **not** reopen Settings  
+6. Later launches must **not** reopen Settings after a successful grant  
 
-### Natural language
-- Open GPT  
+### Natural language / browser
+- Please open GPT  
+- Launch GPT  
 - Open YT  
+- Start YT  
 - Open Git  
 - Open VSCode  
 - Open Cursor  
-- Open Edge  
-- Open Chrome  
-- Open Settings  
+- Open Edge / Chrome / Settings  
 - Open ChatGPT beside Cursor  
 - Open YouTube beside GPT  
-- Open my browser  
-- Close Settings  
-- Bring Cursor forward  
-- Maximize Cursor  
 - Take a screenshot  
-- Capture this window  
-- Can you hear me?  
-- What can you do with voice?  
 
-### Browser
-- Site abbreviations open the site (not a wrong executable)  
-- Chrome / Edge phrasing brings the browser forward or opens as expected  
-
-### Expected
-- Ordinary desktop language works (no exact capitalization)  
-- Unsupported asks get an honest nearby suggestion  
-- Shell glass is readable; mic Ready / Listening / speaking states are obvious  
-- No Provider / WinRT / HRESULT language  
+### Visual
+- Conversation glass readable (not see-through)  
+- Mic idle / Ready / Listening / speaking states obvious  
 
 When finished, close Workspace normally and tell engineering testing is complete.
 

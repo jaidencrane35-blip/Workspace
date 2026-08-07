@@ -163,6 +163,56 @@ Surveyed complete workflows (architecture, startup, mic lifecycle, buffering, co
 
 **Fix:** `voice_recheck_permission` clears the mic cache and re-probes via MediaCapture once on `spawn_blocking`; mic UI calls it only when Settings guidance is active and the window becomes visible again; `open_settings` also clears the cache. Granted state is remembered in localStorage — future launches never auto-open Settings.
 
+### P16.12 Technology Foundation Validation
+
+**Principle (permanent):** before Workspace permanently adopts any foundational technology (speech, OCR, automation, memory, terminal, permissions, etc.), engineering must research mature implementations, understand the complete lifecycle, evaluate licensing / architecture / operational behaviour, document the choice, then classify ADOPT / WRAP / ADAPT / STUDY / REJECT.
+
+#### Speech repositories (complete-workflow review)
+
+| Technology | License | Commercial | Linkage / redistribution | Maintenance | Class | Why |
+| --- | --- | --- | --- | --- | --- | --- |
+| **WinRT `Windows.Media.SpeechRecognition`** | OS API | OK on Windows | No bundling | OS-maintained | **WRAP** | Local-first; OS mic + speech privacy; continuous session; fits Conversation input device |
+| **whisper.cpp** | MIT | Permissive | Static/dynamic OK; attribute | Very active | **STUDY** | Excellent offline accuracy; large models / CPU-GPU cost; migration high |
+| **Sherpa-ONNX** | Apache-2.0 | Permissive | NOTICE; patent grant | Active | **STUDY** | Streaming ONNX ASR + VAD patterns; revisit if WinRT fails Owner Proof |
+| **Vosk** | Apache-2.0 | Permissive | NOTICE | Mature / slower cadence | **STUDY** | Streaming decoder reference; model packaging deferred |
+| **Windows / Azure Speech SDK** | Microsoft terms | Cloud keys | Redistribution restricted | Active | **REJECT** (default) | Cloud-first; not local-first CSP/privacy posture |
+| **Web Speech API** | Browser | N/A | N/A | Browser-dependent | **REJECT** (primary) | Wrong host; often cloud; weak desktop permission story |
+
+#### Desktop permission architecture (studied — patterns only)
+
+| Product | Lesson | Workspace adoption |
+| --- | --- | --- |
+| **VS Code** | Ask on first use of voice; remember OS grant; detect deny and guide to system Settings; package identity for mic listing | Explain once → Settings once → remember grant |
+| **Windows Terminal** | Capability declarations; no spam on launch | Never open Settings on launch/warm |
+| **PowerToys** | Per-module enable; settings pages owned by app where possible | Workspace guides to OS pages it does not own |
+| **Kiro** (studied) | Conversational surface stays primary; permissions must not steal product gravity | Conversation remains the product; permission copy is short |
+
+#### Connection architecture (why mature systems feel reliable)
+
+```
+Mic affordance → permission gate (once) → capture start → Ready only when retaining audio
+  → partial/final transcripts → insert as typed text → Intent → Kernel Operator → Runtime → OS
+```
+
+Reliability comes from: (1) heavy work off UI thread, (2) persistent engine, (3) honest Ready signalling, (4) permission state machine that never loops, (5) Conversation treating voice identically to typing after transcript.
+
+#### WinRT foundation recommendation (P16.12)
+
+| | |
+| --- | --- |
+| **Verdict** | **WRAP WinRT ContinuousRecognitionSession remains the correct long-term Voice foundation** |
+| **Strengths** | OS-integrated permissions; continuous recognition; no model bundle; local-first; lowest integration cost |
+| **Weaknesses** | Occasional cold warm latency; Capturing gap before Ready; OS speech privacy prerequisite; less tunable than local ASR |
+| **Migration cost** | High (models, packaging, VAD, permission redesign) — unjustified while WRAP meets Product Proof |
+| **Architectural fit** | Voice as Conversation **input device** — not a Capability Provider |
+
+Do **not** migrate in this program.
+
+#### Permanent permission architecture (P16.12)
+
+Session gate: `idle → explain → awaiting_return → (granted | still_denied)`.  
+Settings opens **once per deny cycle** on explicit mic click. Return triggers `voice_recheck_permission`. Grant remembered in localStorage. Future launches never auto-open Settings.
+
 ---
 
 ## Explicit non-goals

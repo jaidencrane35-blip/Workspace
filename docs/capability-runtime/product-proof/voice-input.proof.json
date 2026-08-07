@@ -45,7 +45,8 @@
     "permissionGuidanceNoAutoSettings": true,
     "permissionRecheckAfterSettingsReturn": true,
     "rememberGrantedNeverReopenSettings": true,
-    "settleBeforeReadyMs": 90,
+    "settleBeforeReadyMs": 45,
+    "permissionStateMachineOncePerDenyCycle": true,
     "spawnBlockingListenAndWarm": true,
     "statusPeekOnly": true
   },
