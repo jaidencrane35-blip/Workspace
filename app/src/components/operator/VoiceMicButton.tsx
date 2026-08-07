@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import {
   cancelListening,
   ensureVoiceListeningBridge,
-  getVoiceStatus,
   listenOnce,
   openVoiceSettings,
+  recheckVoicePermission,
   warmUpVoice,
   type VoicePhase,
 } from "../../lib/voice";
@@ -119,7 +119,7 @@ export function VoiceMicButton({
       applyStatus(status, false);
     });
 
-    // Re-check only after we guided the user to Settings — never on every focus.
+    // Re-probe only after Settings guidance — never on every focus, never peek-only.
     const onVis = () => {
       if (document.visibilityState !== "visible") {
         return;
@@ -127,7 +127,10 @@ export function VoiceMicButton({
       if (!needsSettingsOffer && hasRememberedVoicePermissionGranted()) {
         return;
       }
-      void getVoiceStatus().then((status) => {
+      if (!needsSettingsOffer) {
+        return;
+      }
+      void recheckVoicePermission().then((status) => {
         if (!active) {
           return;
         }

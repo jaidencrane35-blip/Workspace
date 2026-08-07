@@ -49,10 +49,11 @@ On denial, Conversation explains the fix in ordinary language and opens the matc
 | Level | Surface | Effect |
 | --- | --- | --- |
 | 1 | `voice_status` / `voice_warm_up` | Availability + pre-warm |
-| 2 | `voice_listen_once` | Single utterance; emits `voice-listening` when capturing |
-| 2 | `voice_cancel` | Stop listening |
-| 2 | `voice_open_settings` | Open Microphone or Speech privacy Settings |
-| UI | Mic beside composer | Preparing vs Listening; insert + submit |
+| 1 | `voice_recheck_permission` | Clear deny cache + re-probe after Settings return |
+| 2 | `voice_listen_once` | Continuous turn; Ready on Capturing; Listening on speech |
+| 2 | `voice_cancel` | Stop listening (finalize transcript) |
+| 2 | `voice_open_settings` | Open Microphone or Speech privacy Settings (user-driven) |
+| UI | Mic beside composer | Preparing / Ready / Listening; insert + submit |
 
 ---
 

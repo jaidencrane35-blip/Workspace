@@ -1,32 +1,45 @@
 # Engineering Milestone Report
-## P16.10 Product Completion & Engineering Stabilization
+## P16.11 Voice Technology Validation & Product Completion
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.10 Product Completion & Engineering Stabilization |
+| **Execution program** | P16.11 Voice Technology Validation & Product Completion |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Not** | P17 / Product Complete |
+| **Not** | P17 / Product Complete / permanently closed |
 
 ---
 
-## Crash root cause
+## Repository reassessment
 
-Long-running WinRT recognition ran **on the Tauri IPC/async worker**, freezing the shell and destabilizing WebView (exit `0xcfffffff` / abrupt exit). Aggressive continuous-session stitch restart compounded COM teardown races.
+- P10–P15 permanently closed.
+- P16 Engineering Complete (through P16.11 validation).
+- P16 Product Proof **OPEN** — awaiting Owner acceptance.
+- P17 blocked until Owner acceptance.
 
-## Latency root cause
+## Evidence Before Commitment (permanent)
 
-`voice_status` / focus re-checks called `warm_up` + **MediaCapture** probe + recognizer compile on the hot path (5–30s when cold or contended).
+Commodity survey recorded in `docs/capability-runtime/research/VOICE_RESEARCH.md`.  
+**Long-term foundation:** WRAP WinRT ContinuousRecognitionSession — confirmed.
 
-## Fixes
+| Stack | Class |
+| --- | --- |
+| WinRT SpeechRecognition (continuous) | **WRAP** |
+| whisper.cpp / Vosk / Sherpa-ONNX | **STUDY** |
+| Azure Speech / Web Speech primary | **REJECT** |
+| Custom VAD ring buffer | **REJECT** (now) |
 
-- `spawn_blocking` for listen + warm  
-- `status()` peek-only (no compile, no MediaCapture)  
-- MediaCapture once inside `warm_up`  
-- Stitch gap + soft-fail  
-- Bridge no longer auto-opens Settings  
-- Glass denser; Owner Directed Product Proof + Engineering Verification Separation permanent  
+## Permission workflow
+
+Peek-only `status()` left Denied cached after Settings grant.  
+**Fix:** `voice_recheck_permission` (spawn_blocking) + mic UI recheck on visibility when Settings guidance is active; remember grant; never auto-reopen Settings on later launches.
+
+## Other delivery
+
+- Semantic aliases: Cursor, MSEdge, VS Code phrasing  
+- Mic / glass visibility polish  
+- Lifecycle evidence for permission recheck  
 
 ## Explicit
 

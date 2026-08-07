@@ -162,7 +162,7 @@ Cross-capability message envelopes remain governed by `architecture/10_Capabilit
 | **Purpose** | Speech → Conversation composer (P16 Levels 1–2) — **input device**, not desktop provider |
 | **Examples** | Mic → “Open ChatGPT.” / “Take a screenshot.” |
 | **Adoption** | WRAP WinRT `SpeechRecognizer` behind `VoicePort` |
-| **Rust / IPC** | `voice_status` · `voice_listen_once` · `voice_cancel` |
+| **Rust / IPC** | `voice_status` · `voice_warm_up` · `voice_recheck_permission` · `voice_listen_once` · `voice_cancel` · `voice_open_settings` |
 | **UI** | Mic button beside composer; listening pulse |
 | **Results** | Transcript inserted + submitted exactly as typed |
 | **Failures** | Mic missing; permission denied; recognition failure — truthful |

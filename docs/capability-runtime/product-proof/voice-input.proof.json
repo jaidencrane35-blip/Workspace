@@ -19,6 +19,7 @@
     "voice": [
       "voice_status",
       "voice_warm_up",
+      "voice_recheck_permission",
       "voice_listen_once",
       "voice_cancel",
       "voice_open_settings"
@@ -42,7 +43,11 @@
     "readyOnlyOnCapturing": true,
     "listeningOnlyOnSpeechDetected": true,
     "permissionGuidanceNoAutoSettings": true,
-    "settleBeforeReadyMs": 90
+    "permissionRecheckAfterSettingsReturn": true,
+    "rememberGrantedNeverReopenSettings": true,
+    "settleBeforeReadyMs": 90,
+    "spawnBlockingListenAndWarm": true,
+    "statusPeekOnly": true
   },
   "uiPhases": [
     "idle",
@@ -61,7 +66,10 @@
     "voice.lifecycle: on_ready_emitted",
     "voice.lifecycle: speech_detected",
     "voice.lifecycle: stitch_resume",
-    "voice.lifecycle: continuous_complete"
+    "voice.lifecycle: continuous_complete",
+    "voice.lifecycle: permission_recheck_begin",
+    "voice.lifecycle: permission_recheck_done",
+    "voice.lifecycle: mic_probe_begin"
   ],
   "userLanguageRules": [
     "Never expose Provider, Router, Registry, Runtime, Kernel, WinRT, or SpeechRecognizer terminology",

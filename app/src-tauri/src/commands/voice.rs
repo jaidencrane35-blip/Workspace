@@ -213,3 +213,21 @@ pub fn voice_open_settings(target: String) -> IpcResponse<()> {
         )),
     }
 }
+
+/// After the user returns from Windows Settings — re-probe mic once (spawn_blocking).
+#[tauri::command]
+pub async fn voice_recheck_permission() -> IpcResponse<VoiceStatusDto> {
+    let joined =
+        tauri::async_runtime::spawn_blocking(|| voice_port().recheck_microphone()).await;
+    match joined {
+        Ok(Ok(status)) => IpcResponse::success(status_dto(status)),
+        Ok(Err(error)) => IpcResponse::failure(CommandError::new(
+            "voice_failed",
+            sanitize_voice_user_message(error),
+        )),
+        Err(error) => IpcResponse::failure(CommandError::new(
+            "voice_failed",
+            sanitize_voice_user_message(error),
+        )),
+    }
+}

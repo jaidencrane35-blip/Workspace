@@ -118,7 +118,7 @@ Listening ends only when the user clearly finishes speaking, the user explicitly
 
 ### P14 — Semantic Alias Rule (permanent — P16.8)
 
-The Kernel Operator (via the Intent Layer) owns deterministic semantic aliases (GPT→ChatGPT, Git→GitHub, YT→YouTube, VSCode→Visual Studio Code, Edge→Microsoft Edge, Chrome→Google Chrome, Settings→Windows Settings).  
+The Kernel Operator (via the Intent Layer) owns deterministic semantic aliases (GPT→ChatGPT, Git→GitHub, YT→YouTube, VSCode→Visual Studio Code, Edge→Microsoft Edge, Chrome→Google Chrome, Settings→Windows Settings, Cursor→Cursor).  
 Providers remain unaware of aliases. No probabilistic guessing.
 
 ### P15 — Permission Guidance Principle (permanent — P16.9)
@@ -136,6 +136,11 @@ Engineering may declare Engineering Complete. Only the Product Owner may declare
 
 When Product Proof begins: launch Workspace once, leave it running, never auto-restart / relaunch / terminate / steal focus / spam Settings.  
 Cleanup only after the Product Owner exits normally.
+
+### P18 — Evidence Before Commitment (permanent — P16.11)
+
+Before Workspace permanently adopts a major technology: research mature production implementations; understand the complete workflow; verify licensing; document tradeoffs; then classify ADOPT / WRAP / ADAPT / STUDY / REJECT.  
+Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
 ---
 

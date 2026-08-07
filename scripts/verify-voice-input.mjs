@@ -62,6 +62,7 @@ const libRs = fs.readFileSync(
 for (const cmd of [
   "voice_status",
   "voice_warm_up",
+  "voice_recheck_permission",
   "voice_listen_once",
   "voice_cancel",
   "voice_open_settings",
@@ -219,8 +220,25 @@ const guide = fs.readFileSync(guidePath, "utf8");
 if (!guide.includes("rememberVoicePermissionGranted") || !guide.includes("Permission Guidance")) {
   fail("permissionGuidance must remember grants and document the principle");
 }
+if (!voiceRs.includes("recheck_microphone") || !voiceRs.includes("permission_recheck_begin")) {
+  fail("voice port must re-probe microphone after Settings return (P16.11)");
+}
+if (!bridge.includes("recheckVoicePermission") || !bridge.includes("voice_recheck_permission")) {
+  fail("voice bridge must expose recheckVoicePermission (P16.11)");
+}
+if (!micUi.includes("recheckVoicePermission")) {
+  fail("mic UI must recheck permission on return from Settings (not peek-only status)");
+}
 if (!voiceRs.includes("voice.lifecycle:")) {
   fail("voice port must emit lifecycle timing logs for capture evidence");
+}
+const researchP1611 = research.includes("Evidence Before Commitment") &&
+  research.includes("P16.11");
+if (!researchP1611) {
+  fail("VOICE_RESEARCH must record P16.11 Evidence Before Commitment commodity survey");
+}
+if (!proof.responsiveness?.permissionRecheckAfterSettingsReturn) {
+  fail("proof must declare permissionRecheckAfterSettingsReturn");
 }
 if (!proof.responsiveness?.prewarm || !proof.responsiveness?.listeningIndicatorOnlyWhenCapturing) {
   fail("proof must declare P16.5 responsiveness requirements");

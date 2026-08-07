@@ -149,6 +149,22 @@ export async function warmUpVoice(): Promise<VoiceStatus> {
   }
 }
 
+/**
+ * After the user returns from Windows Settings — clear peek cache and re-probe once.
+ * Never use peek-only status here (stale Denied would block “✓ Voice ready”).
+ */
+export async function recheckVoicePermission(): Promise<VoiceStatus> {
+  if (!isTauriRuntime()) {
+    return DEMO_STATUS;
+  }
+  try {
+    const status = await invokeIpc<VoiceStatus>("voice_recheck_permission");
+    return { ...status, message: desktopVoiceMessage(status.message) };
+  } catch {
+    return getVoiceStatus();
+  }
+}
+
 export type ListenOnceHooks = {
   onReady?: () => void;
   onListening?: () => void;

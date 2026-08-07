@@ -129,6 +129,40 @@ Lifecycle evidence (logged as `voice.lifecycle:*`):
 | Azure / cloud STT | **REJECT** | Not local-first default |
 | Custom VAD ring buffer | **REJECT** | Reinvention; stitch + Ready contract preferred |
 
+### P16.11 Evidence Before Commitment — complete commodity survey
+
+**Principle (permanent):** before Workspace permanently adopts a major technology — research mature production implementations, understand the complete workflow, verify licensing, document tradeoffs, then classify ADOPT / WRAP / ADAPT / STUDY / REJECT.
+
+Surveyed complete workflows (architecture, startup, mic lifecycle, buffering, continuous recognition, permissions, UI signalling, threading, init/cleanup, failure recovery, integration boundaries). No code copied; licenses respected.
+
+| Repository / stack | License | Architecture lessons | Class | Why |
+| --- | --- | --- | --- | --- |
+| **WinRT `Windows.Media.SpeechRecognition`** (+ ContinuousRecognitionSession) | OS API (Windows) | Persistent engine; Capturing before UI; continuous session + stitch; OS permission model; keep heavy work off UI/IPC thread | **WRAP** | Local-first, OS mic/speech privacy, lowest integration cost, matches Conversation input-device role |
+| **whisper.cpp** | MIT | Offline models; separate capture→buffer→decode pipeline; warm models off UI thread; excellent privacy | **STUDY** | Strong offline quality; large model bundle + GPU/CPU cost not justified while WinRT WRAP meets product |
+| **Vosk** | Apache-2.0 | Streaming decoder; explicit mic open/close; grammar/models | **STUDY** | Streaming patterns useful; bundling + model management deferred |
+| **Sherpa-ONNX** | Apache-2.0 | ONNX streaming ASR; VAD helpers; multi-backend | **STUDY** | Modern streaming reference; revisit if WinRT fails Owner Proof |
+| **WinRT / Windows Speech platform (broader)** | OS | Same family as WRAP path | **WRAP** (current) | Already the foundation |
+| **Windows Speech SDK / Azure Speech SDK** | Microsoft (cloud + key) | Cloud endpoints; subscription; excellent accuracy | **REJECT** (default) | Not local-first; CSP/privacy posture; keys |
+| **Web Speech API** | Browser | Easy WebView hook; often cloud | **REJECT** (primary) | Wrong host; cloud leakage; weaker desktop permission story |
+| Custom VAD + ring buffer before Capturing | — | Pre-buffer leading audio | **REJECT** (now) | Commodity Before Reinvention; Capturing gate + warm covers Owner cases |
+
+**Architectural ideas adopted (patterns only — not code):**
+
+1. Warm / compile recognizer off the UI and IPC threads (`spawn_blocking`).
+2. Persistent engine instance across turns.
+3. Do not invite speech until capture is actually retaining audio (Capturing contract).
+4. Continuous recognition with explicit user Stop — not short end-silence as session death.
+5. Permission: detect → explain → user-driven Settings → re-probe on return → remember grant → never auto-reopen.
+6. Lifecycle logging at each boundary for evidence.
+
+**Long-term foundation verdict:** **Yes — WRAP WinRT ContinuousRecognitionSession remains the correct long-term Conversation mic foundation** unless Owner Product Proof proves an irrecoverable OS limitation. Local STT (whisper/Vosk/Sherpa) stays STUDY for a future program if needed.
+
+### P16.11 permission re-check root cause
+
+`status()` is peek-only (P16.10). After a denied probe, returning from Settings still peeked **Denied** forever → “✓ Voice ready” never appeared.
+
+**Fix:** `voice_recheck_permission` clears the mic cache and re-probes via MediaCapture once on `spawn_blocking`; mic UI calls it only when Settings guidance is active and the window becomes visible again; `open_settings` also clears the cache. Granted state is remembered in localStorage — future launches never auto-open Settings.
+
 ---
 
 ## Explicit non-goals

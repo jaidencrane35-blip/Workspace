@@ -538,10 +538,13 @@ const SEMANTIC_ALIASES: Record<string, string> = {
   yt: "youtube",
   "y t": "youtube",
   vscode: "visual studio code",
+  "vs code": "visual studio code",
   vs: "visual studio code",
   edge: "microsoft edge",
+  msedge: "microsoft edge",
   chrome: "google chrome",
   settings: "windows settings",
+  cursor: "cursor",
 };
 
 const SITE_ALIASES: Record<string, string> = {
@@ -594,12 +597,15 @@ function windowMatchLabel(name: string): string {
     if (/bing\.com/i.test(alias)) return "Bing";
   }
   const key = normalizeAliasKey(cleaned);
-  if (key === "microsoft edge" || key === "edge") return "Microsoft Edge";
+  if (key === "microsoft edge" || key === "edge" || key === "msedge") {
+    return "Microsoft Edge";
+  }
   if (key === "google chrome" || key === "chrome") return "Google Chrome";
-  if (key === "visual studio code" || key === "vscode" || key === "vs") {
+  if (key === "visual studio code" || key === "vscode" || key === "vs" || key === "vs code") {
     return "Visual Studio Code";
   }
   if (key === "windows settings" || key === "settings") return "Windows Settings";
+  if (key === "cursor") return "Cursor";
   return cleaned || name;
 }
 

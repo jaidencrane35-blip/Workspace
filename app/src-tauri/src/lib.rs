@@ -145,8 +145,8 @@ use commands::application_capability::execute_application_operation;
 use commands::capability_intent::execute_capability_intent;
 use commands::clipboard::{read_clipboard, write_clipboard};
 use commands::voice::{
-    voice_cancel, voice_listen_once, voice_open_settings, voice_status, voice_warm_up,
-    warm_voice_engine_async,
+    voice_cancel, voice_listen_once, voice_open_settings, voice_recheck_permission, voice_status,
+    voice_warm_up, warm_voice_engine_async,
 };
 use commands::window_capability::execute_window_operation;
 use commands::health::get_workspace_health;
@@ -192,6 +192,7 @@ pub fn run() {
             execute_capability_intent,
             voice_status,
             voice_warm_up,
+            voice_recheck_permission,
             voice_listen_once,
             voice_cancel,
             voice_open_settings,

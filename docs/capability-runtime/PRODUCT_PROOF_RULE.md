@@ -114,6 +114,11 @@ Engineering may declare **Engineering Complete**. Only the Product Owner may dec
 Launch Workspace once for Product Proof. Do not auto-restart, relaunch, terminate, steal focus, or reopen Settings.  
 Wait for Owner completion; cleanup only after a normal exit.
 
+## Evidence Before Commitment (permanent — P16.11)
+
+Before Workspace permanently adopts a major technology: research mature production implementations; understand the complete workflow (startup, capture, buffering, permissions, threading, cleanup, failure recovery); verify licensing; document architectural tradeoffs; then classify ADOPT / WRAP / ADAPT / STUDY / REJECT.  
+Do not commit the product surface to a stack on partial evidence.
+
 ## Commodity Before Reinvention — survey obligation
 
 Before major capability work, perform a Commodity Survey (ADOPT / WRAP / ADAPT / STUDY / REJECT) and record it under capability research. Workspace owns identity, contracts, Operator, permissions, conversation, and runtime; commodity stays an implementation detail.

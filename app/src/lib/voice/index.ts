@@ -6,5 +6,6 @@ export {
   getVoiceStatus,
   listenOnce,
   openVoiceSettings,
+  recheckVoicePermission,
   warmUpVoice,
 } from "./bridge";

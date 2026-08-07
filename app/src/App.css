@@ -3344,19 +3344,19 @@ html[data-shell-form="conversation"] #root {
   border: none;
   overflow: hidden;
   border-radius: 14px;
-  /* P16.10 — denser glass so Conversation never fights the desktop. */
+  /* P16.11 — denser glass for Conversation readability over the desktop. */
   background:
     linear-gradient(
       165deg,
-      rgba(14, 18, 26, 0.97) 0%,
-      rgba(8, 11, 16, 0.96) 55%,
-      rgba(6, 9, 14, 0.97) 100%
+      rgba(12, 16, 24, 0.985) 0%,
+      rgba(7, 10, 15, 0.98) 55%,
+      rgba(5, 8, 12, 0.985) 100%
     );
   backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
   -webkit-backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 18px 48px rgba(0, 0, 0, 0.34);
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 20px 52px rgba(0, 0, 0, 0.4);
 }
 
 .op-shell__chrome {
@@ -3522,24 +3522,27 @@ html[data-shell-form="conversation"] #root {
   position: relative;
   appearance: none;
   border: none;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(232, 238, 242, 0.88);
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(245, 248, 250, 0.96);
   border-radius: 12px;
-  width: 3.6rem;
-  height: 3.6rem;
-  flex: 0 0 3.6rem;
+  width: 3.75rem;
+  height: 3.75rem;
+  flex: 0 0 3.75rem;
   display: grid;
   place-items: center;
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 1.28rem;
   line-height: 1;
-  transition: color 120ms ease, background 120ms ease, box-shadow 120ms ease;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: color 120ms ease, background 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 1px 2px rgba(0, 0, 0, 0.22);
 }
 
 .op-shell__mic:hover:not(:disabled) {
-  color: rgba(232, 238, 242, 0.95);
-  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 1);
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
 }
 
 .op-shell__mic:disabled {
@@ -3548,25 +3551,28 @@ html[data-shell-form="conversation"] #root {
 }
 
 .op-shell__mic[data-listening="true"] {
-  color: rgba(95, 208, 216, 1);
-  background: rgba(95, 208, 216, 0.16);
+  color: rgba(70, 230, 235, 1);
+  background: rgba(70, 220, 230, 0.22);
   box-shadow:
-    inset 0 0 0 1px rgba(95, 208, 216, 0.35),
-    0 0 0 2px rgba(95, 208, 216, 0.12);
+    inset 0 0 0 1px rgba(70, 230, 235, 0.55),
+    0 0 0 3px rgba(70, 220, 230, 0.2);
 }
 
 .op-shell__mic[data-phase="ready"],
 .op-shell__mic[data-ready="true"] {
-  color: rgba(120, 220, 180, 1);
-  background: rgba(120, 220, 180, 0.2);
+  color: rgba(110, 235, 175, 1);
+  background: rgba(110, 230, 170, 0.26);
   box-shadow:
-    inset 0 0 0 1px rgba(120, 220, 180, 0.5),
-    0 0 0 3px rgba(120, 220, 180, 0.18);
+    inset 0 0 0 1px rgba(110, 235, 175, 0.62),
+    0 0 0 3px rgba(110, 230, 170, 0.24);
 }
 
 .op-shell__mic[data-phase="speechDetected"] {
-  color: rgba(140, 230, 190, 1);
-  background: rgba(95, 208, 216, 0.14);
+  color: rgba(150, 245, 200, 1);
+  background: rgba(70, 220, 230, 0.2);
+  box-shadow:
+    inset 0 0 0 1px rgba(150, 245, 200, 0.5),
+    0 0 0 3px rgba(70, 220, 230, 0.18);
 }
 
 .op-shell__mic[data-phase="error"],
@@ -3577,12 +3583,15 @@ html[data-shell-form="conversation"] #root {
 }
 
 .op-shell__mic[data-sound="true"] .op-shell__mic-wave i {
-  background: rgba(140, 240, 200, 0.95);
-  animation-duration: 0.45s;
+  background: rgba(160, 255, 210, 1);
+  animation-duration: 0.4s;
 }
 
 .op-shell__mic[data-preparing="true"] {
-  color: rgba(232, 238, 242, 0.82);
+  color: rgba(245, 248, 250, 0.9);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 0 0 2px rgba(255, 255, 255, 0.06);
 }
 
 .op-shell__mic[data-phase="recognizing"],

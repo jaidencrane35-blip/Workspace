@@ -87,7 +87,7 @@ if (!bridge.includes("canonicalizeOpenTarget")) {
 if (!bridge.includes("SEMANTIC_ALIASES") || !bridge.includes("expandSemanticAlias")) {
   fail("intentBridge must own Semantic Alias Rule expansions");
 }
-for (const alias of ["git:", "yt:", "vscode:", "gpt:"]) {
+for (const alias of ["git:", "yt:", "vscode:", "gpt:", "cursor:", "msedge:"]) {
   if (!bridge.includes(alias)) {
     fail(`intentBridge SEMANTIC_ALIASES missing ${alias}`);
   }

@@ -155,6 +155,10 @@ pub trait VoicePort: Send + Sync {
     }
     fn cancel(&self) -> Result<()>;
     fn open_settings(&self, target: VoiceSettingsTarget) -> Result<()>;
+    /// Clear cached mic probe and re-detect (Permission Guidance — after Settings return).
+    fn recheck_microphone(&self) -> Result<VoiceCapabilityStatus> {
+        self.status()
+    }
 }
 
 /// In-process voice port for tests / demo.
@@ -278,6 +282,13 @@ impl VoicePort for MemoryVoicePort {
 
     fn open_settings(&self, target: VoiceSettingsTarget) -> Result<()> {
         open_windows_settings_uri(target.as_settings_uri())
+    }
+
+    fn recheck_microphone(&self) -> Result<VoiceCapabilityStatus> {
+        if self.fail_permission.load(Ordering::SeqCst) {
+            return self.status();
+        }
+        self.status()
     }
 }
 
@@ -496,7 +507,35 @@ impl VoicePort for SystemVoicePort {
         Ok(())
     }
 
+    fn recheck_microphone(&self) -> Result<VoiceCapabilityStatus> {
+        #[cfg(windows)]
+        {
+            let t0 = std::time::Instant::now();
+            log::info!("voice.lifecycle: permission_recheck_begin");
+            if let Ok(mut guard) = self.mic_access.lock() {
+                *guard = None;
+            }
+            let _ = cached_microphone_access(&self.mic_access);
+            let status = self.status()?;
+            log::info!(
+                "voice.lifecycle: permission_recheck_done permission={} +{:?}",
+                status.permission,
+                t0.elapsed()
+            );
+            Ok(status)
+        }
+        #[cfg(not(windows))]
+        {
+            self.status()
+        }
+    }
+
     fn open_settings(&self, target: VoiceSettingsTarget) -> Result<()> {
+        // Next return from Settings must re-probe — never trust a stale deny cache.
+        #[cfg(windows)]
+        if let Ok(mut guard) = self.mic_access.lock() {
+            *guard = None;
+        }
         open_windows_settings_uri(target.as_settings_uri())
     }
 }

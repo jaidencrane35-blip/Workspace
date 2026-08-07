@@ -144,6 +144,7 @@ export const DEVELOPER_IPC_COMMANDS = [
   "voice_cancel",
   "voice_listen_once",
   "voice_open_settings",
+  "voice_recheck_permission",
   "voice_status",
   "voice_warm_up",
 ] as const;
@@ -449,6 +450,7 @@ export const REGISTERED_IPC_COMMANDS = [
   "voice_cancel",
   "voice_listen_once",
   "voice_open_settings",
+  "voice_recheck_permission",
   "voice_status",
   "voice_warm_up",
   "withdraw_pilot_consent",
@@ -459,13 +461,13 @@ export const REGISTERED_IPC_COMMANDS = [
 export type IpcTier = "product" | "developer" | "diagnostic" | "experimental";
 
 export const IPC_TIER_COUNTS = {
-  "registered": 208,
+  "registered": 209,
   "product": 20,
-  "developer": 117,
+  "developer": 118,
   "diagnostic": 37,
   "experimental": 34,
   "quarantine": 16,
-  "reactUsed": 161
+  "reactUsed": 162
 } as const;
 
 const productSet = new Set<string>(PRODUCT_IPC_COMMANDS);
