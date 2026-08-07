@@ -484,7 +484,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "Constitutional Operations: Spec v2.1 + Engineering Execution Standard v1 authoritative. Architecture not negotiated; capabilities negotiated within Spec. Execute under Execution Standard. Do not reopen Spec without Review Trigger. P16 Product Proof still pending. Do not begin P17.",
+    note: "Constitutional Operations: Spec v2.1 + Engineering Execution Standard v1 authoritative. Architecture stable by default; capabilities evolve within it. Architectural change requires named Review Trigger + objective evidence. Execute under Execution Standard. P16 Product Proof still pending. Do not begin P17.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
