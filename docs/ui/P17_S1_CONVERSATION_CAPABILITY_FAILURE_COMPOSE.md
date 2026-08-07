@@ -5,7 +5,7 @@
 | **Program** | Product Optimization — Conversation Capability Failure Compose |
 | **Prior audit** | `docs/ui/P17_A1_UNIFIED_ERROR_EXPERIENCE_AUDIT.md` |
 | **Date** | 2026-08-08 |
-| **Commit** | _(stamped on ship)_ |
+| **Commit** | `7d5aa5c` |
 | **Branch** | `v2-dev` |
 
 ---
@@ -53,8 +53,11 @@ Diagnostics / support bundles / logging unchanged — engineering detail remains
 cargo test -p workspace-kernel compose::tests --lib -- --test-threads=1
 # 6 passed
 
-pnpm exec vitest run tests/operator-intelligence.test.ts
-# (run in deliverable session)
+pnpm --filter @workspace/tests exec vitest run operator-intelligence --config vitest.config.ts
+# 4 passed
+
+pnpm verify:operator-intelligence — ok
+pnpm sync:project-health + verify:project-health — ok
 ```
 
 ---
