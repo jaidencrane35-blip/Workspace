@@ -1,18 +1,26 @@
 /**
- * Intent pipeline evidence (P16.32–P16.34).
+ * Intent pipeline evidence (P16.32–P16.36).
  *
- * Goal → Intent → Capabilities → Execution Plan → Execution → Evidence.
- * Conversation never bypasses Intent → CapabilityIntent for desktop effects.
+ * Speech → Normalize → Grammar → Situation/Semantic → Goal Resolution
+ * → Execution Plan → Capability Registry → Kernel → Evidence.
  */
 
 import { parseDesktopIntent } from "./intentGrammar";
-import { resolveIntent, type IntentAction } from "./intentBridge";
 import {
-  buildExecutionPlan,
+  resolveIntent,
+  resolveIntentBeforeGoalResolution,
+  type IntentAction,
+} from "./intentBridge";
+import {
   summarizeExecutionPlan,
   type ExecutionPlan,
 } from "./executionPlanner";
+import {
+  resolveGoal,
+  type GoalResolution,
+} from "./goalResolution";
 import { resolveDesktopEntity, resolveSemanticIntent } from "./semanticIntentEngine";
+import { resolveSituationGoal } from "./situationGoals";
 import { isCapabilityDiscoveryUtterance } from "./capabilityRegistry";
 
 export interface PipelineStageEvidence {
@@ -20,7 +28,9 @@ export interface PipelineStageEvidence {
     | "normalize"
     | "capability_discovery"
     | "intent_grammar"
+    | "situation_goal"
     | "semantic_engine"
+    | "goal_resolution"
     | "execution_plan"
     | "resolve_intent"
     | "executable_guard";
@@ -33,6 +43,7 @@ export interface IntentPipelineEvidence {
   stages: PipelineStageEvidence[];
   action: IntentAction;
   plan: ExecutionPlan;
+  goal: GoalResolution;
   /** True when Semantic Engine produced the final action (or discovery). */
   semanticOwned: boolean;
   /** True when an unknown open/launch was refused instead of inventing .exe. */
@@ -68,6 +79,13 @@ export function resolveIntentWithEvidence(raw: string): IntentPipelineEvidence {
       : "no grammar match",
   });
 
+  const situation = resolveSituationGoal(utterance);
+  stages.push({
+    stage: "situation_goal",
+    hit: Boolean(situation),
+    detail: situation ? `kind=${situation.kind}` : "no situation match",
+  });
+
   const semantic = resolveSemanticIntent(utterance);
   stages.push({
     stage: "semantic_engine",
@@ -75,14 +93,23 @@ export function resolveIntentWithEvidence(raw: string): IntentPipelineEvidence {
     detail: semantic ? `kind=${semantic.kind}` : "semantic deferred",
   });
 
+  const beforeGoal = resolveIntentBeforeGoalResolution(utterance);
+  const goalFromPre = resolveGoal(utterance, beforeGoal);
   const action = resolveIntent(utterance);
+
   stages.push({
     stage: "resolve_intent",
     hit: true,
-    detail: `kind=${action.kind}`,
+    detail: `pre=${beforeGoal.kind}; post=${action.kind}`,
   });
 
-  const plan = buildExecutionPlan(utterance, action);
+  stages.push({
+    stage: "goal_resolution",
+    hit: true,
+    detail: `outcome=${goalFromPre.intendedOutcome.slice(0, 60)}; candidates=${goalFromPre.candidates.length}; clarify=${goalFromPre.needsClarification}; refined=${goalFromPre.refined}; ${goalFromPre.evidence.join(",")}`,
+  });
+
+  const plan = goalFromPre.selectedPlan;
   stages.push({
     stage: "execution_plan",
     hit: plan.steps.length > 0,
@@ -113,8 +140,7 @@ export function resolveIntentWithEvidence(raw: string): IntentPipelineEvidence {
 
   const semanticOwned = Boolean(
     semantic &&
-      semantic.kind === action.kind &&
-      JSON.stringify(semantic) === JSON.stringify(action),
+      (semantic.kind === action.kind || goalFromPre.refined),
   );
 
   return {
@@ -122,6 +148,7 @@ export function resolveIntentWithEvidence(raw: string): IntentPipelineEvidence {
     stages,
     action,
     plan,
+    goal: goalFromPre,
     semanticOwned: discovery || semanticOwned || Boolean(semantic && action.kind === semantic.kind),
     refusedExecutableGuess: refused,
   };
@@ -133,7 +160,6 @@ export function isInventedExecutableQuery(query: string): boolean {
   if (!q.endsWith(".exe")) {
     return false;
   }
-  // Spaced or multi-word stems before .exe are always invented garbage.
   const stem = q.slice(0, -4);
   if (stem.includes(" ") || stem.includes(" and ") || stem.length > 40) {
     return true;

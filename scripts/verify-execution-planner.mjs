@@ -52,8 +52,15 @@ if (!registry.includes("failureRecovery") || !registry.includes("arguments:")) {
 if (!registry.includes("related:") || !registry.includes("describeCapability")) {
   fail("registry must support related capabilities + describeCapability");
 }
-if (!pipeline.includes("execution_plan") || !pipeline.includes("buildExecutionPlan")) {
+if (!pipeline.includes("execution_plan")) {
   fail("intent pipeline must record execution_plan evidence");
+}
+// Plans may be selected via Goal Resolution (P16.36) rather than calling buildExecutionPlan inline.
+if (
+  !pipeline.includes("selectedPlan") &&
+  !pipeline.includes("buildExecutionPlan")
+) {
+  fail("intent pipeline must obtain an execution plan (selectedPlan or buildExecutionPlan)");
 }
 
 const pkg = fs.readFileSync(path.join(root, "package.json"), "utf8");

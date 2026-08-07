@@ -30,6 +30,7 @@ import {
   resolveSemanticIntent,
   resolveWindowQuery,
 } from "./semanticIntentEngine";
+import { applyGoalResolution } from "./goalResolution";
 
 export type IntentAction =
   | { kind: "navigate"; view: PilotPrimaryView; reply: string }
@@ -1277,7 +1278,7 @@ function resolveWindowIntent(raw: string, text: string): IntentAction | null {
  * Never invents desktop awareness or memory.
  * Raw transcripts never become executable names (Semantic Intent Engine — P16.31).
  */
-export function resolveIntent(raw: string): IntentAction {
+function resolveIntentCore(raw: string): IntentAction {
   const text = normalize(raw);
   if (!text) {
     return {
@@ -1861,6 +1862,22 @@ export function resolveIntent(raw: string): IntentAction {
   }
 
   return resolveUnknownGuidance(matchText);
+}
+
+/**
+ * Intent resolution before Goal Resolution (evidence / audits only).
+ * Ordinary Conversation uses `resolveIntent`.
+ */
+export function resolveIntentBeforeGoalResolution(raw: string): IntentAction {
+  return resolveIntentCore(raw);
+}
+
+/**
+ * Public Intent entry — Goal Resolution finalizes underspecified goals
+ * before CapabilityIntent / Kernel (P16.36).
+ */
+export function resolveIntent(raw: string): IntentAction {
+  return applyGoalResolution(raw, resolveIntentCore(raw));
 }
 
 /** Progressive reveal for reply text (not model streaming). */

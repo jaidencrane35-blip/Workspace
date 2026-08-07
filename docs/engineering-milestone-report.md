@@ -1,30 +1,29 @@
 # Engineering Milestone Report
-## P16.35 Product Cognition Gap Analysis
+## P16.36 Goal Resolution Architecture & Evidence Validation
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.35 Product Cognition Gap Analysis |
+| **Execution program** | P16.36 Goal Resolution Architecture & Evidence Validation |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete for program** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Not** | P17 / permanently closed / Voice rework / alias expansion |
+| **Not** | P17 / Voice / alias / grammar / Situation Goal expansion |
 
 ---
 
 ## Summary
 
-Owner evidence falsified “Intent+Registry+Planner ? premium feel.” P16.35:
+Situation Goals alone were falsified. P16.36 adds a deterministic **Goal Resolution Engine**:
 
-1. **Falsified** discovery?proposal misroute; setup/screenshot/situation gaps  
-2. **Situation Goals** layer (deterministic; not grammar/alias growth)  
-3. **Capability Graph** discoverability / similar / alternatives  
-4. **?250** cognition battery with outcome classification  
-5. **Scorecard** + ownership of top 25 gaps  
+1. Intended outcome / missing info / clarification / ranked candidate plans / recovery / completion criteria  
+2. Fixes pronoun locate (`find it` ? clarify) and underspecified resume (`where was I`, `I was coding`, …)  
+3. ?500 hostile battery with measurable gates  
+4. Pipeline stage `goal_resolution`  
 
-Artifact: `docs/capability-runtime/product-proof/VOICE_P16_35_PRODUCT_COGNITION.md`
+Artifact: `docs/capability-runtime/product-proof/VOICE_P16_36_GOAL_RESOLUTION.md`
 
 ## Explicit
 
-- **Further P16:** Only if Owner proves Intent/Situation/Registry defect  
-- **Further Voice:** No without Voice-owned defect  
-- **P17:** Not begun  
+- **Goal Resolution required?** Yes (evidence-backed)  
+- **Further P16?** Only if Owner proves residual Intent/Goal defects  
+- **P17 / Voice reopen?** No  

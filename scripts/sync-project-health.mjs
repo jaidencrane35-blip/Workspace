@@ -64,6 +64,7 @@ const verifiers = {
   "verify:cognitive-desktop": "scripts/verify-cognitive-desktop.mjs",
   "verify:execution-planner": "scripts/verify-execution-planner.mjs",
   "verify:product-cognition": "scripts/verify-product-cognition.mjs",
+  "verify:goal-resolution": "scripts/verify-goal-resolution.mjs",
   "verify:dev-environment": "scripts/verify-dev-environment.mjs",
 };
 
@@ -463,7 +464,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16.35 Product Cognition Gap Analysis. Situation Goals + ≥250 cognition battery + scorecard. Voice not reopened. Canonical: VOICE_P16_35_PRODUCT_COGNITION.md. Do not mark permanently closed. Do not begin P17.",
+    note: "P16.36 Goal Resolution Architecture & Evidence Validation. Deterministic Goal Resolution Engine + ≥500 battery. Voice/aliases/grammar/Situation Goals not expanded. Canonical: VOICE_P16_36_GOAL_RESOLUTION.md. Do not mark permanently closed. Do not begin P17.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -508,7 +509,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16.35 Product Cognition — Situation Goals + hostile battery + scorecard; Product Proof pending Owner acceptance (NOT permanently closed)",
+      "P16.36 Goal Resolution — deterministic engine + ≥500 evidence battery; Product Proof pending Owner acceptance (NOT permanently closed)",
       "Owner Experience Before Engineering Confidence permanent (P16.21)",
       "Repository Quality Before Milestone Closure permanent (P16.21)",
       "User Adaptation Prohibition permanent (P16.6)",
@@ -530,8 +531,8 @@ const health = {
     ],
   },
   currentMilestone: {
-    id: "product-cognition-p16-35",
-    title: "P16.35 Product Cognition Gap Analysis",
+    id: "goal-resolution-p16-36",
+    title: "P16.36 Goal Resolution Architecture & Evidence Validation",
     status: "engineering_complete_product_proof_pending",
     commit: milestoneCommit,
   },
@@ -633,7 +634,7 @@ const health = {
       id: "p16-voice-product-proof",
       track: "B",
       summary:
-        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.35 Product Cognition; not permanently closed)",
+        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.36 Goal Resolution; not permanently closed)",
     },
     {
       id: "capability-providers-p17-plus",
@@ -674,7 +675,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16.35 Product Cognition — Product Proof pending Owner acceptance; WinRT WRAP frozen; Voice not reopened; Owner evidence outranks engineering confidence",
+      "P16.36 Goal Resolution — Product Proof pending Owner acceptance; WinRT WRAP frozen; Voice not reopened; Owner evidence outranks engineering confidence",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -756,9 +757,9 @@ const health = {
     date: "2026-08-07",
     document: "docs/engineering-milestone-report.md",
     title:
-      "P16.35 Product Cognition — awaiting Owner live Product Proof",
+      "P16.36 Goal Resolution — awaiting Owner live Product Proof",
     reviewBrief:
-      "docs/capability-runtime/product-proof/VOICE_P16_35_PRODUCT_COGNITION.md",
+      "docs/capability-runtime/product-proof/VOICE_P16_36_GOAL_RESOLUTION.md",
   },
   handoffStatus: "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   nextRecommendedExecutionProgram: {
