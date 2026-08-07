@@ -315,21 +315,16 @@ export function OperatorRoot({
     submitUtterance(draft);
   };
 
-  const onVoiceTranscript = useCallback(
-    (transcript: string) => {
-      // F10 dictation: Voice inserts like typing — Owner reviews, then Send or clear.
-      // Never auto-submit; Send / Enter = send; Escape / clear = cancel.
-      setDraft(transcript);
-      setVoiceReviewPending(true);
-      // PQ1: short calm cue — soft Send (PX3) carries the obvious next action; F10 unchanged.
-      void pushWorkspace("Send when you're ready.");
-      window.setTimeout(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
-      }, 0);
-    },
-    [pushWorkspace],
-  );
+  const onVoiceTranscript = useCallback((transcript: string) => {
+    // F10: transcript enters the composer like typing — never auto-submit.
+    // PX4: no Conversation interrupt after dictation; soft Send (PX3) is the one cue.
+    setDraft(transcript);
+    setVoiceReviewPending(true);
+    window.setTimeout(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }, 0);
+  }, []);
 
   const onVoiceMessage = useCallback(
     (message: string) => {

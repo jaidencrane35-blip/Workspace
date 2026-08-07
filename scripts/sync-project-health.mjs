@@ -498,7 +498,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16.PR2: Production Experience Integration — E1 tray Complete; nextReadyNow D1. Owner Product Proof still pending. P17 blocked. No Spec/governance reopen.",
+    note: "P16.PX4: Product Cohesion — silent voice→composer (F10 intact); PQS minimize-steps heuristic. Owner PP pending. P17 blocked. nextReadyNow D1.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,

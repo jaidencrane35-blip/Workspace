@@ -62,7 +62,7 @@ F10 **review-before-send remains unchanged**.
 | Listen | Soft motion; calm chrome (PX2) |
 | Stop | Click, Enter, or Space (PX1) |
 | Cancel | Escape during capture; clear draft after |
-| Review | Transcript in composer; short calm cue (PQ1) |
+| Review | Transcript in composer; no Conversation interrupt (PX4); F10 intact |
 | Send | Enter / Send — softly emphasized after voice (PX3) |
 | Edit | Full edit before Send |
 | Interrupt | Cancel/stop without desktop side effects |
@@ -140,6 +140,7 @@ Reject novelty for its own sake.
 8. Every interaction should reduce effort  
 9. Premium products remove work rather than add features  
 10. Friction preference: prefer reducing user friction over exposing engineering complexity unless Spec or Product Proof forbids it  
+11. **Minimize interaction steps without reducing user agency** (P16.PX4) — if a workflow can feel faster by removing mechanical interactions while preserving explicit user intent (e.g. F10 review-before-send), prefer the simpler interaction  
 
 ---
 
@@ -215,16 +216,12 @@ No feature-count comparison. Branding/visual copying forbidden.
 
 ---
 
-## 15. PQ1 implementation (single improvement)
+## 15. PQ1 / PX4 voice review cues (history)
 
-**Calm post-dictation Conversation line**
-
-Before: `Review your words, then Send — or clear the box to cancel.`  
-After: `Send when you're ready.`
-
-- Preserves F10 (review still required; no auto-send)  
-- Soft Send cue (PX3) carries the “obvious action”  
-- Aligns Interaction Language: fewer words, conversational, calm  
+| Program | Cue |
+| --- | --- |
+| PQ1 | Conversation line: `Send when you're ready.` |
+| **PX4** | **No Conversation line** — composer + soft Send only (cohesion; F10 unchanged) |
 
 ---
 
@@ -232,8 +229,8 @@ After: `Send when you're ready.`
 
 Owner live Product Proof should expect:
 
-- Dictation → stop (click/Enter/Space) → short Conversation cue → soft Send → Enter  
-- Not a tutorial paragraph after every utterance  
+- Dictation → stop (click/Enter/Space) → transcript in composer (selected) → soft Send → Enter  
+- No tutorial or status message after every utterance  
 - Trust remains: transcript editable; Escape clears; never silent submit  
 
 ---

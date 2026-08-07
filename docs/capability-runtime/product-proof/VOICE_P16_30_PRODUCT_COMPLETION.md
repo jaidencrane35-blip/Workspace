@@ -71,7 +71,7 @@ No change to the once-per-cycle Settings architecture. Soft fail vs hard deny ch
 ## 8. Conversation improvements
 
 - Voice transcript inserts into the composer for review (not auto-submit).
-- Guidance: “Send when you're ready.” (P16.PQ1 — calm cue; F10 review-before-send unchanged; soft Send emphasis from PX3)
+- Guidance: none in Conversation after dictation (P16.PX4 — composer + soft Send only; F10 review-before-send unchanged)
 - Escape clears draft (cancel).
 - Mic chrome: Listening — click to stop; Reviewing after recognition.
 

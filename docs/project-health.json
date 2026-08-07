@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T16:09:51.958Z",
+  "updatedAt": "2026-08-07T16:29:15.888Z",
   "constitution": {
     "document": "docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md",
     "version": "2.1",
@@ -17,7 +17,7 @@
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "note": "P16.PR2: Production Experience Integration — E1 tray Complete; nextReadyNow D1. Owner Product Proof still pending. P17 blocked. No Spec/governance reopen."
+    "note": "P16.PX4: Product Cohesion — silent voice→composer (F10 intact); PQS minimize-steps heuristic. Owner PP pending. P17 blocked. nextReadyNow D1."
   },
   "completedExecutionPrograms": [
     {

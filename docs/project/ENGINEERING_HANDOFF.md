@@ -7,7 +7,8 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.PR2 — Production Experience Integration (E1 tray); await Owner |
+| **Latest program** | P16.PX4 — Product Cohesion (silent voice→composer; PQS heuristic #11); await Owner |
+| **PX4 audit** | `docs/ui/P16_PX4_PRODUCT_COHESION_AUDIT.md` |
 | **PR2 audit** | `docs/production/P16_PR2_PRODUCTION_EXPERIENCE_AUDIT.md` |
 | **PF1 audit** | `docs/production/P16_PF1_PREMIUM_FINISH_AUDIT.md` |
 | **nextReadyNow** | `D1-ipc-quarantine` |

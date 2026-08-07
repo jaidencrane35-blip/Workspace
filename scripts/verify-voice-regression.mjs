@@ -379,11 +379,24 @@ if (
 ) {
   fail("F10: onVoiceTranscript must not auto-submit (review → Send)");
 }
-if (!operatorRoot.includes("Send when you're ready.")) {
-  fail("F10/PQ1: after voice, calm Send cue required (no auto-submit)");
+// PX4: no Conversation interrupt after dictation — soft Send + F10 draft review only.
+if (operatorRoot.includes("Send when you're ready.")) {
+  fail("PX4: post-dictation Conversation cue must stay removed");
 }
 if (operatorRoot.includes("Review your words, then Send")) {
-  fail("PQ1: instructional review tutorial copy must stay removed");
+  fail("instructional review tutorial copy must stay removed");
+}
+if (!operatorRoot.includes("voiceReviewPending") || !operatorRoot.includes("data-voice-ready")) {
+  fail("PX3/PX4: soft Send emphasis after voice must remain (agency without chat spam)");
+}
+const voiceTranscriptFn = operatorRoot.match(
+  /const onVoiceTranscript = useCallback\(([\s\S]*?)\n  \},/,
+);
+if (!voiceTranscriptFn) {
+  fail("onVoiceTranscript callback not found");
+}
+if (voiceTranscriptFn[1].includes("pushWorkspace")) {
+  fail("PX4: onVoiceTranscript must not pushWorkspace (no dictation status line)");
 }
 const finalLive = path.join(
   root,

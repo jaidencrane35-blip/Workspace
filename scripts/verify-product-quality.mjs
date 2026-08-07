@@ -45,6 +45,7 @@ for (const token of [
   "Calm over clever",
   "Trust over spectacle",
   "One obvious next action",
+  "Minimize interaction steps without reducing user agency",
   "review-before-send",
   "Does it reduce effort?",
   "Does it feel premium?",
@@ -58,16 +59,33 @@ const rootUi = fs.readFileSync(
   path.join(root, "app/src/components/operator/OperatorRoot.tsx"),
   "utf8",
 );
-if (!rootUi.includes("Send when you're ready.")) {
-  fail("OperatorRoot must use calm post-dictation cue (P16.PQ1)");
+if (rootUi.includes("Send when you're ready.")) {
+  fail("PX4: post-dictation Conversation cue must stay removed");
 }
 if (rootUi.includes("Review your words, then Send")) {
   fail("OperatorRoot must not restore instructional review tutorial copy");
+}
+if (!rootUi.includes("voiceReviewPending") || !rootUi.includes("data-voice-ready")) {
+  fail("soft Send after voice must remain (PX3/PX4 cohesion)");
 }
 if (
   /onVoiceTranscript[\s\S]*?submitUtterance\(transcript\)/.test(rootUi)
 ) {
   fail("F10: onVoiceTranscript must not auto-submit");
+}
+const voiceTranscriptFn = rootUi.match(
+  /const onVoiceTranscript = useCallback\(([\s\S]*?)\n  \},/,
+);
+if (!voiceTranscriptFn) {
+  fail("onVoiceTranscript callback not found");
+}
+if (voiceTranscriptFn[1].includes("pushWorkspace")) {
+  fail("PX4: onVoiceTranscript must not interrupt Conversation with status");
+}
+
+const cohesion = path.join(root, "docs/ui/P16_PX4_PRODUCT_COHESION_AUDIT.md");
+if (!fs.existsSync(cohesion)) {
+  fail("missing docs/ui/P16_PX4_PRODUCT_COHESION_AUDIT.md");
 }
 
 console.log("verify-product-quality: ok");
