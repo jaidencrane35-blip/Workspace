@@ -74,6 +74,9 @@ const verifiers = {
   "verify:production-readiness": "scripts/verify-production-readiness.mjs",
   "verify:installer-foundation": "scripts/verify-installer-foundation.mjs",
   "verify:single-instance": "scripts/verify-single-instance.mjs",
+  "verify:support-bundle": "scripts/verify-support-bundle.mjs",
+  "verify:production-dependency-authority":
+    "scripts/verify-production-dependency-authority.mjs",
 };
 
 const verifierStatus = {};
@@ -487,7 +490,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16.PI2: Gate C single-instance closed (not updater). Production gates model active. Signing/updater/tray/diagnostics still open. Owner Product Proof pending. Do not start another gate until Owner review. P17 blocked.",
+    note: "P16.PI3: Production Dependency Authority canonical. B1 diagnostics/support bundle closed. Next Ready Now=A1 checksums. Signing external-blocked; updater blocked by signing. Eng Complete ≠ Production Ready ≠ Release Ready. Owner PP pending. P17 blocked.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -688,7 +691,8 @@ const health = {
     {
       id: "diagnostics-support-bundle",
       track: "A",
-      summary: "Support bundle / log rotation / crash reporting not productionized (PR1)",
+      summary:
+        "B1 support bundle + log rotation landed (PI3); local crash dumps still optional (B3)",
     },
     {
       id: "ipc-quarantine",

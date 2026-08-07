@@ -164,6 +164,7 @@ export const DIAGNOSTIC_IPC_COMMANDS = [
   "diagnose_ai_workspace_plan",
   "diagnose_model_proposal_generation",
   "ensure_observation_freshness",
+  "export_support_bundle",
   "get_actor_capabilities",
   "get_ai_evaluation_history",
   "get_audit_history",
@@ -312,6 +313,7 @@ export const REGISTERED_IPC_COMMANDS = [
   "execute_resume_plan",
   "execute_window_operation",
   "exit_workspace",
+  "export_support_bundle",
   "generate_decision_engine",
   "generate_decision_queue",
   "generate_task_graph",
@@ -461,13 +463,13 @@ export const REGISTERED_IPC_COMMANDS = [
 export type IpcTier = "product" | "developer" | "diagnostic" | "experimental";
 
 export const IPC_TIER_COUNTS = {
-  "registered": 209,
+  "registered": 210,
   "product": 20,
   "developer": 118,
-  "diagnostic": 37,
+  "diagnostic": 38,
   "experimental": 34,
   "quarantine": 16,
-  "reactUsed": 162
+  "reactUsed": 163
 } as const;
 
 const productSet = new Set<string>(PRODUCT_IPC_COMMANDS);

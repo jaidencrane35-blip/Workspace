@@ -1,0 +1,149 @@
+{
+  "id": "workspace-production-gates-dependency",
+  "version": "1.1.0",
+  "authority": "docs/production/PRODUCTION_DEPENDENCY_AUTHORITY.md",
+  "updated": "2026-08-07",
+  "readinessLevels": ["EngineeringComplete", "ProductionReady", "ReleaseReady"],
+  "current": {
+    "engineeringComplete": "partial",
+    "productionReady": false,
+    "releaseReady": false
+  },
+  "completed": [
+    "A0-installer-foundation",
+    "C0-single-instance",
+    "B1-diagnostics-support-bundle"
+  ],
+  "canonicalOrder": [
+    "B1-diagnostics-support-bundle",
+    "A1-artifact-checksums",
+    "D1-ipc-quarantine",
+    "E1-tray-lifecycle",
+    "C1-config-db-ux",
+    "F1-ci-automation",
+    "A2-code-signing",
+    "B2-auto-updater",
+    "F2-signed-release",
+    "C2-shutdown-policy",
+    "B3-crash-local",
+    "E2-polish",
+    "A3-install-rollback"
+  ],
+  "units": [
+    {
+      "id": "A0-installer-foundation",
+      "gate": "A",
+      "class": "Complete",
+      "prerequisites": [],
+      "dependents": ["A1-artifact-checksums", "A2-code-signing"]
+    },
+    {
+      "id": "C0-single-instance",
+      "gate": "C",
+      "class": "Complete",
+      "prerequisites": [],
+      "dependents": ["E1-tray-lifecycle", "C1-config-db-ux"]
+    },
+    {
+      "id": "B1-diagnostics-support-bundle",
+      "gate": "B",
+      "class": "Complete",
+      "prerequisites": [],
+      "dependents": ["B3-crash-local"],
+      "exitCriteria": ["file-logs", "log-rotation", "support-export", "conversation-path", "verifier"]
+    },
+    {
+      "id": "A1-artifact-checksums",
+      "gate": "A",
+      "class": "ReadyNow",
+      "prerequisites": ["A0-installer-foundation"],
+      "dependents": ["F1-ci-automation"]
+    },
+    {
+      "id": "D1-ipc-quarantine",
+      "gate": "D",
+      "class": "ReadyNow",
+      "prerequisites": [],
+      "dependents": ["D2-permission-audit"]
+    },
+    {
+      "id": "E1-tray-lifecycle",
+      "gate": "E",
+      "class": "ReadyNow",
+      "prerequisites": ["C0-single-instance"],
+      "dependents": ["C2-shutdown-policy"]
+    },
+    {
+      "id": "C1-config-db-ux",
+      "gate": "C",
+      "class": "ReadyNow",
+      "prerequisites": ["C0-single-instance"],
+      "dependents": []
+    },
+    {
+      "id": "F1-ci-automation",
+      "gate": "F",
+      "class": "ReleaseOnly",
+      "prerequisites": ["A0-installer-foundation"],
+      "dependents": []
+    },
+    {
+      "id": "A2-code-signing",
+      "gate": "A",
+      "class": "BlockedExternal",
+      "prerequisites": ["A0-installer-foundation"],
+      "dependents": ["B2-auto-updater", "F2-signed-release"],
+      "externalBlocker": "Authenticode certificate / thumbprint"
+    },
+    {
+      "id": "B2-auto-updater",
+      "gate": "B",
+      "class": "BlockedByGate",
+      "prerequisites": ["A2-code-signing"],
+      "dependents": ["A3-install-rollback"]
+    },
+    {
+      "id": "F2-signed-release",
+      "gate": "F",
+      "class": "BlockedByGate",
+      "prerequisites": ["A2-code-signing"],
+      "dependents": []
+    },
+    {
+      "id": "C2-shutdown-policy",
+      "gate": "C",
+      "class": "BlockedByGate",
+      "prerequisites": ["E1-tray-lifecycle"],
+      "dependents": []
+    },
+    {
+      "id": "D2-permission-audit",
+      "gate": "D",
+      "class": "BlockedByGate",
+      "prerequisites": ["D1-ipc-quarantine"],
+      "dependents": []
+    },
+    {
+      "id": "B3-crash-local",
+      "gate": "B",
+      "class": "OptionalPolish",
+      "prerequisites": ["B1-diagnostics-support-bundle"],
+      "dependents": []
+    },
+    {
+      "id": "E2-polish",
+      "gate": "E",
+      "class": "OptionalPolish",
+      "prerequisites": [],
+      "dependents": []
+    },
+    {
+      "id": "A3-install-rollback",
+      "gate": "A",
+      "class": "BlockedByGate",
+      "prerequisites": ["B2-auto-updater"],
+      "dependents": []
+    }
+  ],
+  "nextReadyNow": "A1-artifact-checksums"
+}

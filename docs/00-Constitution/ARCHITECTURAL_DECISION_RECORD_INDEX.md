@@ -24,6 +24,8 @@ This is an **index of settled decisions**, not a redesign surface. Individual ra
 | P16.PI1 Slice 1 Installer Foundation | Active (complete) | Production | `P16_PI1_SLICE1_INSTALLER_FOUNDATION.md`; NSIS hooks | Starting next work before Owner accepts S1 |
 | Production Gates maturity model | Active | Production | `PRODUCTION_GATES.md` | Ad-hoc slice lists as primary sequencing |
 | P16.PI2 Gate C Single-Instance | Active (complete) | Production | `P16_PI2_GATE_C_SINGLE_INSTANCE.md` | Assuming updater is next; dual Workspace processes |
+| Production Dependency Authority | Active | Production | `PRODUCTION_DEPENDENCY_AUTHORITY.md`; dependency JSON | Ad-hoc gate order; Eng Complete = Release Ready |
+| P16.PI3 Gate B1 Diagnostics | Active (complete) | Production | `P16_PI3_GATE_B1_DIAGNOSTICS.md` | Updater before signing; bundling Moments DB in support export |
 | Product Gravity | Active (principle) | Constitution | Spec §9; `docs/ui/PRODUCT_GRAVITY_RULE.md` | Catalogue / launcher-first product identity |
 | Capability Integration Standard | Active | Constitution | Spec §15 | Provider-specific bespoke architectures |
 | Kernel Operator sole Effect composition | Active | Architecture Standard under Spec | `KERNEL_AUTHORITY_RULE.md`; Operations Audit | Conversation→provider IPC; provider→provider |

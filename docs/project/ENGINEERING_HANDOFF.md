@@ -7,7 +7,8 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.PI2 Gate C — Single-instance reliability; await Owner before next gate |
+| **Latest program** | P16.PI3 — Dependency Authority + Gate B1 diagnostics; await Owner before next gate |
+| **Production dependency authority** | `docs/production/PRODUCTION_DEPENDENCY_AUTHORITY.md` |
 | **Production gates** | `docs/production/PRODUCTION_GATES.md` |
 | **Production readiness** | `docs/production/PR1_PRODUCTION_READINESS_PROGRAM.md` · `docs/production/production-readiness.json` |
 | **Installer** | `docs/production/INSTALLER.md` · `docs/production/P16_PI1_SLICE1_INSTALLER_FOUNDATION.md` |

@@ -1,5 +1,6 @@
 mod actor;
 mod commands;
+mod file_log;
 
 use std::sync::{Arc, Mutex};
 
@@ -153,12 +154,14 @@ use commands::health::get_workspace_health;
 use commands::settings::{get_settings, update_settings};
 use commands::shell::exit_workspace;
 use commands::status::get_workspace_status;
+use commands::support_bundle::export_support_bundle;
 use tauri::Manager;
 use workspace_kernel::WorkspaceKernel;
 
 fn init_logging() {
     // Product builds stay quiet (no console under windows_subsystem).
     // Engineers opt into verbose logs with RUST_LOG / WORKSPACE_DEV_LOG=1.
+    // File sink attaches in setup (Gate B1); format mirrors lines into file_log.
     let default_filter = if cfg!(debug_assertions) {
         if std::env::var_os("WORKSPACE_DEV_LOG").is_some() {
             "info"
@@ -166,10 +169,19 @@ fn init_logging() {
             "warn"
         }
     } else {
-        "error"
+        "info"
     };
     let _ = env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(default_filter))
-        .format_timestamp_secs()
+        .format(|buf, record| {
+            use std::io::Write;
+            let ts = buf.timestamp_seconds();
+            let line = format!("[{ts}] {level} {target} — {args}",
+                level = record.level(),
+                target = record.target(),
+                args = record.args());
+            file_log::write_line(&line);
+            writeln!(buf, "{line}")
+        })
         .try_init();
 }
 
@@ -207,6 +219,7 @@ pub fn run() {
             // Runtime / settings / shell
             get_workspace_status,
             get_workspace_health,
+            export_support_bundle,
             get_settings,
             update_settings,
             read_clipboard,
@@ -430,6 +443,10 @@ pub fn run() {
                     app_data_dir.display()
                 );
             });
+            match file_log::attach_file_logger(&app_data_dir) {
+                Ok(path) => log::info!("file logging attached at {}", path.display()),
+                Err(error) => log::warn!("file logging unavailable: {error}"),
+            }
             let db_path = app_data_dir.join("workspace.db");
             log::info!(
                 "initializing workspace kernel with database {}",

@@ -4,6 +4,7 @@
  */
 
 import { resolveIntent } from "../intentBridge";
+import { invokeIpc } from "../ipc";
 import { getVoiceStatus } from "../voice";
 import { isCapabilityIntentAction, toCapabilityIntent } from "./intentMap";
 import { executeCapabilityIntent } from "./runtimeBridge";
@@ -38,6 +39,20 @@ export async function handleOperatorUtterance(
       kind: "reply",
       text: status.message,
     };
+  }
+
+  if (intent.kind === "supportBundle") {
+    try {
+      const result = await invokeIpc<{ path: string; message: string }>(
+        "export_support_bundle",
+      );
+      return { kind: "reply", text: result.message };
+    } catch {
+      return {
+        kind: "reply",
+        text: "I couldn’t create a support package. Try again in a moment.",
+      };
+    }
   }
 
   if (!isCapabilityIntentAction(intent)) {

@@ -49,6 +49,7 @@ export type IntentAction =
   | { kind: "collapse"; reply: string }
   | { kind: "settings"; reply: string }
   | { kind: "health"; reply: string }
+  | { kind: "supportBundle"; reply: string }
   | { kind: "developer"; enabled: boolean; reply: string }
   | { kind: "proposal"; reply: string }
   | { kind: "clipboardRead"; reply: string }
@@ -1438,6 +1439,17 @@ function resolveIntentCore(raw: string): IntentAction {
       kind: "health",
       reply:
         "Opening repository health (developer surface). If developer mode is off, it will be enabled for this view.",
+    };
+  }
+
+  if (
+    /\b((export|create|make|generate|save)\s+(a\s+)?(support|diagnostic|diagnostics)\s+(package|bundle|report|zip)|support\s+package|diagnostic\s+bundle|export\s+logs)\b/.test(
+      text,
+    )
+  ) {
+    return {
+      kind: "supportBundle",
+      reply: "Creating a local support package (logs and version info — not your Moments).",
     };
   }
 

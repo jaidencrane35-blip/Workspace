@@ -34,6 +34,7 @@
     "diagnose_ai_workspace_plan",
     "diagnose_model_proposal_generation",
     "ensure_observation_freshness",
+    "export_support_bundle",
     "get_actor_capabilities",
     "get_ai_evaluation_history",
     "get_audit_history",

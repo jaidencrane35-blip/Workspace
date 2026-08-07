@@ -107,6 +107,14 @@ export async function demoInvoke<T>(
   // Tiny async tick so callers keep their await shape.
   await Promise.resolve();
 
+  if (command === "export_support_bundle") {
+    return {
+      path: "(demo) support package not written on disk",
+      message:
+        "Demo mode: support package export is available in the desktop app.",
+    } as T;
+  }
+
   if (!isExperienceIpcCommand(command)) {
     throw new DemoIpcError(
       "demo_unsupported",

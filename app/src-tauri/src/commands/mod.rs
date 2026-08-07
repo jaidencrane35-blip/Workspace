@@ -53,6 +53,7 @@ pub mod response;
 pub mod settings;
 pub mod shell;
 pub mod status;
+pub mod support_bundle;
 pub mod voice;
 pub mod suggestion;
 pub mod suggestion_lifecycle;

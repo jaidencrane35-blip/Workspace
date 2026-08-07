@@ -1,17 +1,25 @@
 # Engineering Milestone Report
-## P16.PI2 — Gate C Single-Instance Reliability
+## P16.PI3 — Production Dependency Authority + Gate B1
 
 | Field | Value |
 | --- | --- |
-| **Artifacts** | `tauri-plugin-single-instance`, `lib.rs` focus helper, `PRODUCTION_GATES.md`, `P16_PI2_GATE_C_SINGLE_INSTANCE.md`, `verify-single-instance` |
+| **Artifacts** | `PRODUCTION_DEPENDENCY_AUTHORITY.md`, `production-gates-dependency.json`, B1 file log + support bundle, verifiers |
 | **Date** | 2026-08-07 |
-| **Status** | One gate closed — not updater; signing correctly deferred (cert); stop for Owner |
-| **Max layer** | Production / Runtime |
+| **Status** | Authority established; B1 closed; stop — next Ready Now A1 after Owner review |
+| **Max layer** | Production / Documentation / Presentation (NL path) |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
 
 ### Summary
 
-Evidence-ranked next gate: process singular truth (dual-instance DB risk). Updater not next. Signing blocked without Owner cert. Minimum WRAP + focus. Do not start another gate until Owner review.
+Canonical dependency-ordered Track A authority with Eng/Production/Release readiness levels. Implemented only B1 (diagnostics). Updater remains blocked by signing. Do not start A1 until Owner reviews.
+
+---
+
+## Prior: P16.PI2 — Gate C Single-Instance Reliability
+
+| Field | Value |
+| --- | --- |
+| **Status** | Complete |
 
 ---
 
