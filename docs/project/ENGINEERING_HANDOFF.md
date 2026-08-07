@@ -7,7 +7,8 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.PX3 — Workspace Interaction Language (soft Send after voice); await Owner |
+| **Latest program** | P16.PQ1 — Product Quality Standard + calm post-dictation cue; await Owner |
+| **Product quality** | `docs/ui/WORKSPACE_PRODUCT_QUALITY_STANDARD.md` — subordinate quality authority (not Spec) |
 | **Interaction language** | `docs/ui/WORKSPACE_INTERACTION_LANGUAGE.md` — product feel heuristics (not Spec) |
 | **PX2 report** | `docs/capability-runtime/product-proof/P16_PX2_PREMIUM_CONVERSATION_EXPERIENCE.md` |
 | **PX1 audit** | `docs/capability-runtime/product-proof/P16_PX1_CONVERSATION_EXPERIENCE_AUDIT.md` |
@@ -86,6 +87,7 @@ Conversation
 | Machine state | `docs/project-health.json` (synced to `app/public/project-health.json`) |
 | Product Gravity | `docs/ui/PRODUCT_GRAVITY_RULE.md` — principle under Spec |
 | Interaction Language | `docs/ui/WORKSPACE_INTERACTION_LANGUAGE.md` — product feel heuristics (not Spec) |
+| Product Quality Standard | `docs/ui/WORKSPACE_PRODUCT_QUALITY_STANDARD.md` — excellence criteria for future work (not Spec) |
 | Product Proof | `docs/capability-runtime/PRODUCT_PROOF_RULE.md` — governance under Spec |
 | User Adaptation Prohibition | Permanent (P16.6) — same Product Proof authority |
 | Production Before Expansion | Permanent (P16.15) — same Product Proof authority |

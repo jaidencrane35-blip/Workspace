@@ -157,7 +157,7 @@ Not constitutional laws. Prefer these unless Spec or Product Proof forbids:
 
 | Item | Class |
 | --- | --- |
-| Shorter reviewing copy | Track A |
+| Shorter reviewing copy | **Done (PQ1)** — `Send when you're ready.` |
 | Explicit Stop/Cancel chrome | Track A |
 | Composer empty-state calm | Track A |
 | Hold-to-talk | Future |

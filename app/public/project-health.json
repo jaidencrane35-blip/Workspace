@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T15:36:06.019Z",
+  "updatedAt": "2026-08-07T16:01:34.715Z",
   "constitution": {
     "document": "docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md",
     "version": "2.1",
@@ -17,7 +17,7 @@
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "note": "P16.PI4: Canonical Production Gate Spec + Operational Acceptance. All units schema-normalized. No gate implemented (A1 not started). Order unchanged. No further meta-frameworks. Owner PP pending. P17 blocked."
+    "note": "P16.PQ1: Product Quality Standard established; calm post-dictation cue. Owner Product Proof still pending. P17 blocked. Production A1 await Owner. No Spec/governance reopen."
   },
   "completedExecutionPrograms": [
     {
@@ -457,7 +457,7 @@
     "id": "operator-intelligence-p16-39",
     "title": "P16.39 Product Operator Intelligence Validation",
     "status": "engineering_complete_product_proof_pending",
-    "commit": "2bbbfed"
+    "commit": "pending"
   },
   "acceptedReviews": [
     {
@@ -699,6 +699,11 @@
       },
       "verify:product-gravity": {
         "script": "scripts/verify-product-gravity.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:product-quality": {
+        "script": "scripts/verify-product-quality.mjs",
         "present": true,
         "wiredInTest": true
       },

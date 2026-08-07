@@ -379,8 +379,11 @@ if (
 ) {
   fail("F10: onVoiceTranscript must not auto-submit (review → Send)");
 }
-if (!operatorRoot.includes("Review your words")) {
-  fail("F10: Owner must be guided to review then Send");
+if (!operatorRoot.includes("Send when you're ready.")) {
+  fail("F10/PQ1: after voice, calm Send cue required (no auto-submit)");
+}
+if (operatorRoot.includes("Review your words, then Send")) {
+  fail("PQ1: instructional review tutorial copy must stay removed");
 }
 const finalLive = path.join(
   root,

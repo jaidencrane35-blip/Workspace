@@ -321,9 +321,8 @@ export function OperatorRoot({
       // Never auto-submit; Send / Enter = send; Escape / clear = cancel.
       setDraft(transcript);
       setVoiceReviewPending(true);
-      void pushWorkspace(
-        "Review your words, then Send — or clear the box to cancel.",
-      );
+      // PQ1: short calm cue — soft Send (PX3) carries the obvious next action; F10 unchanged.
+      void pushWorkspace("Send when you're ready.");
       window.setTimeout(() => {
         inputRef.current?.focus();
         inputRef.current?.select();
