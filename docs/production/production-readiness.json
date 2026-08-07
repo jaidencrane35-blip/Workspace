@@ -23,7 +23,7 @@
     { "id": "diagnostics", "maturity": "TrackARequired", "confidence": "Supported", "evidence": "runtime diagnostics exist under packages/domain; no support-bundle export UX" },
     { "id": "supportPackage", "maturity": "TrackARequired", "confidence": "Verified", "evidence": "no support export command/UI found" },
     { "id": "logging", "maturity": "MinorImprovement", "confidence": "Verified", "evidence": "env_logger + log:: in app; no rotation policy" },
-    { "id": "logRotation", "maturity": "TrackARequired", "confidence": "Verified", "evidence": "absent" },
+    { "id": "logRotation", "maturity": "TrackARequired", "confidence": "Verified", "evidence": "no log rotation policy or file sink configuration in app shell" },
     { "id": "telemetry", "maturity": "Complete", "confidence": "Supported", "evidence": "tests assert no network telemetry; privacy-by-design" },
     { "id": "privacy", "maturity": "Complete", "confidence": "Supported", "evidence": "local-first; no cloud telemetry paths in experience modules" },
     { "id": "errorReporting", "maturity": "TrackARequired", "confidence": "Verified", "evidence": "no crash/minidump/Sentry pipeline" },

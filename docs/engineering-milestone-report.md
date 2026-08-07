@@ -1,18 +1,27 @@
 # Engineering Milestone Report
-## P16.O3 — Governance Resilience / Sustainable Engineering Operations
+## PR1 — Production Readiness Program
 
 | Field | Value |
 | --- | --- |
-| **Artifact** | `docs/00-Constitution/P16_O3_GOVERNANCE_RESILIENCE_REPORT.md` |
+| **Artifacts** | `docs/production/PR1_PRODUCTION_READINESS_PROGRAM.md`, `production-readiness.json`, `scripts/verify-production-readiness.mjs` |
 | **Date** | 2026-08-07 |
-| **Status** | Governance self-sustaining — transition to Sustainable Engineering Operations |
-| **Spec / runtime / architecture redesign** | None |
+| **Status** | Assessment + roadmap + verifier — not public-release ready; no Phase 2 runtime implementation in this commit |
+| **Max layer** | Production / Repository Standards / Documentation |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Artifact note** | Audit findings only — no new verifier (resilience assessment; health sync records posture) |
+| **Commit** | `1d07b28` (+ follow-up matrix evidence fix) |
 
 ### Summary
 
-New-team stress test: Spec + EES + hierarchy answer the governance battery. No circular authority. Residual Blueprint/archive noise = Track A hygiene, not a governance program. No further meta-governance. Next: Owner Product Proof ? Track A ? P17.
+Production audit: installer/signing/updater/tray/diagnostics/IPC quarantine are Track A Required. Telemetry absence is Complete by design. Owner Product Proof remains Phase 1 product gate. Phase 2 Critical before broad release. No Spec/governance/P17 work.
+
+---
+
+## Prior: P16.O3 — Governance Resilience / Sustainable Engineering Operations
+
+| Field | Value |
+| --- | --- |
+| **Artifact** | `P16_O3_GOVERNANCE_RESILIENCE_REPORT.md` |
+| **Status** | Sustainable Engineering Operations declared |
 
 ---
 
@@ -45,34 +54,4 @@ New-team stress test: Spec + EES + hierarchy answer the governance battery. No c
 
 ## Prior: Engineering Execution Standard v1
 
-| Field | Value |
-| --- | --- |
-| **Artifact** | `WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md` |
-| **Status** | Meta-architecture complete |
-
----
-
-## Prior: A3.V — Constitutional Repository Alignment
-
-| Field | Value |
-| --- | --- |
-| **Audit** | `docs/00-Constitution/CONSTITUTIONAL_ALIGNMENT_AUDIT.md` |
-| **Status** | Repository aligned to Spec as sole authority |
-
----
-
-## Prior: A3.F — Final Constitutional Review
-
-| Field | Value |
-| --- | --- |
-| **Status** | Spec v2.1 frozen |
-| **Review** | `docs/00-Constitution/CONSTITUTIONAL_FINAL_REVIEW.md` |
-
----
-
-## Prior: P16.39 Product Operator Intelligence Validation
-
-| Field | Value |
-| --- | --- |
-| **Status** | Engineering complete — Product Proof Owner-pending |
-| **Artifact** | `docs/capability-runtime/product-proof/VOICE_P16_39_OPERATOR_INTELLIGENCE.md` |
+See repository history and `docs/00-Constitution/WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md`.
