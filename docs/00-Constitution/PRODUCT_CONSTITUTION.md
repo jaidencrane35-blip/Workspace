@@ -175,6 +175,22 @@ Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 Observed behaviour → Measured evidence → Root cause → Minimal correction → Regression verification → Product Proof verification.  
 Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
+### P25 — Production Quality Includes Repository Quality (permanent — P16.17)
+
+A capability is not Production Complete while avoidable compiler warnings, dead code, stale experiments, unnecessary lifecycle complexity, undocumented technical debt, or architectural ambiguity remain on its owned surfaces.  
+Production quality is measured by both runtime behaviour and repository health.  
+Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
+### P26 — Evidence Before Completion (permanent — P16.17)
+
+Engineering Complete may only be declared after engineering has actively attempted to falsify its own implementation.  
+Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
+### P27 — Repository Health Before Milestone Closure (permanent — P16.17)
+
+A milestone may not permanently close while avoidable technical debt remains that materially affects maintainability, determinism, reliability, or future engineering confidence for that milestone’s owned surfaces.  
+Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
 ---
 
 ## 3. Presentation modes (binding intent)

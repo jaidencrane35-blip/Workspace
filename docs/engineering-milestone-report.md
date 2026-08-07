@@ -1,9 +1,9 @@
 # Engineering Milestone Report
-## P16.16 Final Product Proof Resolution & Production Readiness
+## P16.17 Production Readiness Audit & Final Product Completion
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.16 Final Product Proof Resolution & Production Readiness |
+| **Execution program** | P16.17 Production Readiness Audit & Final Product Completion |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
@@ -11,30 +11,24 @@
 
 ---
 
-## Repository reassessment
+## Falsification summary
 
-- P10–P15 permanently closed.
-- P16 Engineering Complete (through P16.16 Capturing-contract honesty).
-- P16 Product Proof **OPEN** until Owner acceptance.
-- P17 blocked (**Production Before Expansion**).
+Attempted to prove Voice unfinished. Voice-owned dead code and RecognizeAsync residue removed. Capturing honesty (R11) retained. No new reproducible Voice runtime defect found.
 
-## Measured defect (P16.16)
+## Repository quality
 
-| Failure | Evidence | Root cause | Correction |
-| --- | --- | --- | --- |
-| Ready UI without capture ? first-word loss | Code after `capturing_wait_timeout` still called `on_ready` | Ready contract lied | Abort with `capturing_contract_failed`; Ready only when Capturing confirmed |
-
-## Foundation
-
-**WinRT ContinuousRecognitionSession remains WRAP.**  
-Compiled recognizer stays warm; session starts per mic turn (ambient listen REJECT). No migration.
+| Surface | Result |
+| --- | --- |
+| Voice Rust / IPC / TS | Clean of avoidable dead_code after P16.17 |
+| Kernel unused warnings | Documented Track A — not Voice-owned |
+| Audit artifact | `docs/capability-runtime/product-proof/VOICE_PRODUCTION_READINESS_AUDIT.md` |
 
 ## Principles
 
-Evidence Before Modification · Root Cause Before Rewrite (permanent).
+Production Quality Includes Repository Quality · Evidence Before Completion · Repository Health Before Milestone Closure (permanent).
 
 ## Explicit
 
 - **P16 Product Complete:** **No — Owner only**  
 - **P17:** Not begun  
-- **Reproducible engineering defects remaining:** None identified after R11 fix  
+- **Voice-owned reproducible defects remaining:** None identified  

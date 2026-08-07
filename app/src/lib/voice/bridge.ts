@@ -58,7 +58,7 @@ export function desktopVoiceMessage(raw: string): string {
 
 /**
  * Hoisted off the listen hot path — subscribing to events before each invoke
- * previously delayed RecognizeAsync and dropped leading speech.
+ * previously delayed ContinuousRecognitionSession start and dropped leading speech.
  */
 let listeningBridge: Promise<(() => void) | null> | null = null;
 const readyCallbacks = new Set<() => void>();

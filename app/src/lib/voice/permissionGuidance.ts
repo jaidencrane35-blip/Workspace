@@ -52,14 +52,6 @@ export function rememberVoicePermissionDenied(): void {
   clearRememberedVoicePermissionGranted();
 }
 
-export function hasRememberedVoicePermissionDenied(): boolean {
-  return storage()?.getItem(DENIED_KEY) === "1";
-}
-
-export function voicePermissionGate(): VoicePermissionGate {
-  return gate;
-}
-
 export function currentSettingsKind(): "microphone" | "speech" {
   return settingsKind;
 }
@@ -103,19 +95,6 @@ export function isAwaitingSettingsReturn(): boolean {
 /** Successful grant from recheck or successful listen. */
 export function notePermissionGranted(): void {
   rememberVoicePermissionGranted();
-}
-
-/** @deprecated — kept for verifier / call-site compatibility; prefer notePermissionDenied */
-export function markSettingsGuidanceOffered(): void {
-  explainAnnounced = true;
-  if (gate === "idle") {
-    gate = "explain";
-  }
-}
-
-/** @deprecated */
-export function wasSettingsGuidanceOffered(): boolean {
-  return explainAnnounced || gate !== "idle";
 }
 
 export function permissionGuidanceMessage(kind: "microphone" | "speech"): string {

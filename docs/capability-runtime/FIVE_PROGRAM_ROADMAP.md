@@ -1,5 +1,5 @@
 # Rolling Capability Provider Roadmap
-## Updated for P16.16 (Final Product Proof Resolution — Owner Product Proof pending)
+## Updated for P16.17 (Production Readiness Audit — Owner Product Proof pending)
 
 UI Architecture, Desktop Operator, Conversation, and Capability Runtime pipeline remain **frozen**.  
 Providers own **operations**. Providers never call each other.  
@@ -8,6 +8,7 @@ Every provider / input capability requires the **Permanent Provider Acceptance S
 **User Adaptation Prohibition** is permanent (P16.6).  
 **Production Before Expansion** is permanent (P16.15).  
 **Evidence Before Modification** / **Root Cause Before Rewrite** are permanent (P16.16).  
+**Production Quality Includes Repository Quality** / **Evidence Before Completion** are permanent (P16.17).  
 Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).  
 **Capability Independence Rule** is permanent.
 
@@ -33,7 +34,7 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 
 | Program | Title | Status |
 | --- | --- | --- |
-| **P16** | Voice Input | **Engineering Complete** (through **P16.16** Final Product Proof Resolution). Live Product Owner Product Proof **pending final acceptance**. **Not permanently closed.** Production Before Expansion blocks P17. |
+| **P16** | Voice Input | **Engineering Complete** (through **P16.17** Production Readiness Audit). Live Product Owner Product Proof **pending final acceptance**. **Not permanently closed.** Production Before Expansion blocks P17. |
 
 ---
 

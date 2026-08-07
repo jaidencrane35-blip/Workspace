@@ -63,12 +63,6 @@ pub fn warm_voice_engine_async() {
     });
 }
 
-/// Optional test override (unit / harness).
-#[allow(dead_code)]
-pub fn install_voice_port_for_tests(port: Arc<dyn VoicePort>) {
-    let _ = port;
-}
-
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VoiceStatusDto {

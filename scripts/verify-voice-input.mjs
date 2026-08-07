@@ -148,8 +148,13 @@ if (!micUi.includes("op-shell__mic-wave")) {
 if (!micUi.includes("data-sound") || !micUi.includes("onSoundStarted")) {
   fail("mic UI must react to SoundStarted for live speech activity");
 }
-if (!micUi.includes("warmed")) {
-  fail("mic UI must wait for warm engine before listen when possible");
+// P16.17: listen hot path must not gate on frontend warm; mount/startup warm +
+// listen-time cheap warm_up remain. Poison failures clear warm via setWarmed(false).
+if (!micUi.includes("setWarmed(false)")) {
+  fail("mic UI must clear warm cache after poison listen failures");
+}
+if (!micUi.includes("warmUpVoice")) {
+  fail("mic UI must warm on mount (startup readiness)");
 }
 if (!bridge.includes("voice-ready") || !bridge.includes("voice-sound")) {
   fail("voice bridge must subscribe to voice-ready and voice-sound");

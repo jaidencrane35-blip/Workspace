@@ -157,5 +157,36 @@ if (!matrix.includes("R8") || !matrix.includes("noListenPathWarmGate")) {
 if (!matrix.includes("R11") || !matrix.includes("capturing_contract_failed")) {
   fail("regression matrix must cover P16.16 Capturing-contract honesty (R11)");
 }
+if (!matrix.includes("R12") || !matrix.includes("VOICE_PRODUCTION_READINESS_AUDIT")) {
+  fail("regression matrix must cover P16.17 repository-quality cleanup (R12)");
+}
+const auditPath = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_PRODUCTION_READINESS_AUDIT.md",
+);
+if (!fs.existsSync(auditPath)) {
+  fail("missing VOICE_PRODUCTION_READINESS_AUDIT.md (P16.17 artifact)");
+}
+const audit = fs.readFileSync(auditPath, "utf8");
+if (!audit.includes("Evidence Before Completion") && !audit.includes("Falsification")) {
+  fail("production readiness audit must record falsification attempts");
+}
+const voiceCmd = fs.readFileSync(
+  path.join(root, "app/src-tauri/src/commands/voice.rs"),
+  "utf8",
+);
+if (voiceCmd.includes("install_voice_port_for_tests")) {
+  fail("dead install_voice_port_for_tests must remain removed (P16.17)");
+}
+const guide = fs.readFileSync(
+  path.join(root, "app/src/lib/voice/permissionGuidance.ts"),
+  "utf8",
+);
+if (guide.includes("markSettingsGuidanceOffered") || guide.includes("wasSettingsGuidanceOffered")) {
+  fail("deprecated permission helpers must remain removed (P16.17)");
+}
+if (voiceRs.includes("SetEndSilenceTimeout")) {
+  fail("RecognizeAsync EndSilenceTimeout residue must remain removed (P16.17)");
+}
 
 console.log("verify-voice-regression: ok");

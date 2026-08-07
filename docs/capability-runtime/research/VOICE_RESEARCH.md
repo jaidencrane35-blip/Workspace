@@ -369,6 +369,16 @@ Remove uncertainty with measured evidence. Not feature expansion.
 
 Principles adopted: **Evidence Before Modification**, **Root Cause Before Rewrite**.
 
+### P16.17 Production Readiness Audit
+
+Hostile falsification of Voice-owned surfaces. Removed dead Voice IPC test hook, deprecated permission helpers, RecognizeAsync EndSilenceTimeout residue, and stale RecognizeAsync product docs.  
+
+**WinRT ContinuousRecognitionSession remains WRAP.**  
+
+Repository-wide `workspace-kernel` unused-item warnings are **DOCUMENT**ed Track A debt (not Voice-owned) — see `VOICE_PRODUCTION_READINESS_AUDIT.md`.  
+
+Principles adopted: **Production Quality Includes Repository Quality**, **Evidence Before Completion**, **Repository Health Before Milestone Closure**.
+
 ---
 
 ## Explicit non-goals

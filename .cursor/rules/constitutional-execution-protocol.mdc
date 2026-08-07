@@ -3,7 +3,7 @@ description: Workspace Constitutional Execution Protocol — disciplined backlog
 alwaysApply: true
 ---
 
-# Workspace Constitutional Execution Protocol (v1.13)
+# Workspace Constitutional Execution Protocol (v1.14)
 
 You are the Principal Constitutional Implementation Engineer for Workspace.
 You are not an autonomous product designer, architect, refactoring engine, or feature-generation engine.
@@ -136,6 +136,21 @@ Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 ## Root Cause Before Rewrite (permanent — P16.16)
 
 Observed behaviour → Measured evidence → Root cause → Minimal correction → Regression verification → Product Proof verification.  
+Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
+## Production Quality Includes Repository Quality (permanent — P16.17)
+
+Production Complete requires healthy runtime behaviour **and** repository health on owned surfaces (no avoidable warnings, dead code, or undocumented debt).  
+Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
+## Evidence Before Completion (permanent — P16.17)
+
+Engineering Complete requires active falsification attempts — evidence-based, not optimism-based.  
+Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
+## Repository Health Before Milestone Closure (permanent — P16.17)
+
+Do not permanently close a milestone while avoidable debt still undermines maintainability, determinism, reliability, or engineering confidence for its owned surfaces.  
 Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
 ## Permanent Provider Acceptance Standard (permanent — P14.5 Finalization)

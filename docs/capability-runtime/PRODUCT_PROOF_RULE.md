@@ -151,6 +151,20 @@ If evidence cannot prove a defect, do not invent a fix.
 Corrections follow: Observed behaviour → Measured evidence → Root cause → Minimal correction → Regression verification → Product Proof verification.  
 Symptom-only patches and speculative rewrites are forbidden. Prefer the smallest change that removes the proven root cause.
 
+## Production Quality Includes Repository Quality (permanent — P16.17)
+
+A capability is not Production Complete while avoidable compiler warnings, dead code, stale experiments, unnecessary lifecycle complexity, undocumented technical debt, or architectural ambiguity remain in the capability’s owned surfaces.  
+Production quality is measured by **both** runtime behaviour **and** repository health.
+
+## Evidence Before Completion (permanent — P16.17)
+
+Engineering Complete may only be declared after engineering has actively attempted to falsify its own implementation.  
+Completion is evidence-based, not optimism-based. Engineering must attempt to prove itself wrong before declaring success.
+
+## Repository Health Before Milestone Closure (permanent — P16.17)
+
+A milestone may not permanently close while avoidable technical debt remains that materially affects maintainability, determinism, reliability, or future engineering confidence for that milestone’s owned surfaces.
+
 ## Commodity Before Reinvention — survey obligation
 
 Before major capability work, perform a Commodity Survey (ADOPT / WRAP / ADAPT / STUDY / REJECT) and record it under capability research. Workspace owns identity, contracts, Operator, permissions, conversation, and runtime; commodity stays an implementation detail.

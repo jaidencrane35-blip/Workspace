@@ -1,9 +1,9 @@
 # Voice Input — Product Proof
-## P16 / P16.16 — Owner checklist (Final Product Proof Resolution)
+## P16 / P16.17 — Owner checklist (Production Readiness Audit)
 
 | Field | Value |
 | --- | --- |
-| **Program** | P16 Voice Input (+ P16.16 Final Product Proof Resolution) |
+| **Program** | P16 Voice Input (+ P16.17 Production Readiness Audit) |
 | **Status** | **Pending live Product Owner acceptance** (**not** Product Complete) |
 | **Launch** | Engineering leaves Workspace running **exactly once** for this review |
 
@@ -12,33 +12,26 @@
 ## Please test (Workspace is already open — leave it running)
 
 ### Voice reliability
-1. Click mic → bright Ready → speak **immediately** (first words kept)  
+1. Click mic → bright Ready → speak immediately (first words kept)  
 2. Long turn with natural pauses; Stop via mic  
-3. Click mic, say nothing / cancel — next listen must still start quickly  
-4. Repeat several successful sessions — no “couldn’t listen” after prior success  
-5. No freeze / multi-second hang on every click  
-6. Mic should feel permanently ready after first warm  
-7. If listening cannot start, Conversation must say so honestly (never fake Ready)
+3. Quiet cancel / no speech — next listen still quick  
+4. Several successful sessions — no “couldn’t listen” after success  
+5. No freeze; no fake Ready if listening cannot start  
+6. Mic feels ready after first warm  
 
 ### Permission
-1. If denied: one explanation; Settings only on mic click  
-2. Allow → return → **✓ Voice ready**  
-3. Later sessions must not spam Settings after grant  
+1. Denied: one explanation; Settings only on mic click  
+2. Allow → return → ready; later launches never spam Settings  
 
 ### Conversation
-- Open GPT / Launch GPT / Please open YouTube  
-- Open a browser / Open another browser / Open my browser / Open Edge  
-- Open a browser beside Cursor / Open YouTube beside ChatGPT  
-- Open Chrome / Bring Chrome forward / Bring Cursor forward  
-- Close Settings / Take a screenshot / Capture this window  
-- Can you hear me? / What can you do?  
+- Open GPT / Launch GPT / Open Edge / Open another browser  
+- Open YouTube beside Cursor / Bring Chrome forward  
+- Take a screenshot / Capture this window / Can you hear me?  
 
 ### Visual
-- Opaque readable glass; obvious Ready / Listening / Processing / Error  
-- Speaking indicator on speech energy (SoundStarted)
+Readable glass; clear Ready / Listening / Processing / Error; speaking indicator
 
-When finished, **close Workspace normally** and tell engineering testing is complete.  
-Engineering will **not** relaunch automatically.
+When finished, **close Workspace normally**. Engineering will **not** relaunch.
 
 ---
 

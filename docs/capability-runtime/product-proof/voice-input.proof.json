@@ -60,7 +60,12 @@
     "readyOnlyWhenCapturingConfirmed": true,
     "capturingTimeoutFailsHonestly": true,
     "evidenceBeforeModification": true,
-    "rootCauseBeforeRewrite": true
+    "rootCauseBeforeRewrite": true,
+    "productionQualityIncludesRepositoryQuality": true,
+    "evidenceBeforeCompletion": true,
+    "repositoryHealthBeforeMilestoneClosure": true,
+    "noDeadVoiceTestInstallHook": true,
+    "noRecognizeAsyncEndSilenceTimeout": true
   },
   "uiPhases": [
     "idle",

@@ -24,12 +24,12 @@ Kernel Operator is unchanged for recognition.
 
 ---
 
-## Responsiveness (P16.5)
+## Responsiveness (P16.5+)
 
 - Speech engine is **pre-warmed** at Workspace startup and on Conversation mount.
-- Listening indicator appears only after `RecognizeAsync` has started (never during create/compile).
+- Ready appears only after WinRT `Capturing`; Listening follows speech energy (SoundStarted).
 - Mic click does **not** await a heavy status round-trip before listening.
-- Warm engine is reused across listen turns.
+- Compiled recognizer is reused; each turn starts a `ContinuousRecognitionSession`.
 
 ---
 

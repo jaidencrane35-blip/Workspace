@@ -45,6 +45,9 @@ for (const token of [
   "Production Before Expansion",
   "Evidence Before Modification",
   "Root Cause Before Rewrite",
+  "Production Quality Includes Repository Quality",
+  "Evidence Before Completion",
+  "Repository Health Before Milestone Closure",
 ]) {
   if (!rule.includes(token)) {
     fail(`PRODUCT_PROOF_RULE.md missing token: ${token}`);
@@ -120,6 +123,18 @@ if (!constitution.includes("Evidence Before Modification")) {
 }
 if (!constitution.includes("Root Cause Before Rewrite")) {
   fail("PRODUCT_CONSTITUTION must record Root Cause Before Rewrite");
+}
+for (const token of [
+  "Production Quality Includes Repository Quality",
+  "Evidence Before Completion",
+  "Repository Health Before Milestone Closure",
+]) {
+  if (!constitution.includes(token)) {
+    fail(`PRODUCT_CONSTITUTION must record ${token}`);
+  }
+  if (!protocol.includes(token)) {
+    fail(`protocol must document ${token}`);
+  }
 }
 if (!bridge.includes("Open a/another/new browser") && !bridge.includes("another browser")) {
   fail("intentBridge must support open another/new browser phrasing");

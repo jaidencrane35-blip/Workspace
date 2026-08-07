@@ -1,5 +1,5 @@
 # Voice Input — Regression Matrix
-## P16.16 Final Product Proof Resolution
+## P16.17 Production Readiness Audit
 
 Engineering verification only. Does **not** equal Owner Product Complete.
 
@@ -16,6 +16,7 @@ Engineering verification only. Does **not** equal Owner Product Complete.
 | R9 | Ready lag after Capturing | Overlong settle | 20ms settle once Capturing confirmed | proof `settleBeforeReadyMs` |
 | R10 | Repeated warm IPC on click | Extra `warmUpVoice` before listen | Mount warm only; listen warms cheaply | `noListenPathWarmGate` |
 | R11 | Ready UI without capture (first-word) | `capturing_wait_timeout` still emitted Ready | Fail listen if Capturing never confirmed; log `capturing_contract_failed` | `verify-voice-regression` P16.16 |
+| R12 | Declared complete with Voice dead code | Noop test install + deprecated permission helpers | REMOVE dead Voice helpers; repository-quality principles | `VOICE_PRODUCTION_READINESS_AUDIT.md` |
 
 ### Engineering stress (non-Owner)
 

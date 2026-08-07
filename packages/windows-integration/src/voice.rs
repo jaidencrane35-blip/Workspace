@@ -290,9 +290,6 @@ impl VoicePort for MemoryVoicePort {
     }
 
     fn recheck_microphone(&self) -> Result<VoiceCapabilityStatus> {
-        if self.fail_permission.load(Ordering::SeqCst) {
-            return self.status();
-        }
         self.status()
     }
 }
@@ -397,11 +394,10 @@ impl VoicePort for SystemVoicePort {
         #[cfg(windows)]
         {
             let warmed = self.warmed.load(Ordering::SeqCst);
+            // Peek only sees Allowed / ConfirmedDenied / Unknown — MediaCapture
+            // Denied is never sticky-cached (P16.13 soft probe).
             let mic = peek_microphone_access(&self.mic_access);
-            let denied = matches!(
-                mic,
-                MicAccess::ConfirmedDenied | MicAccess::Denied
-            );
+            let denied = matches!(mic, MicAccess::ConfirmedDenied);
             if !warmed {
                 return Ok(VoiceCapabilityStatus {
                     available: !denied,
@@ -427,7 +423,7 @@ impl VoicePort for SystemVoicePort {
                     message: "Voice is ready.".into(),
                     warmed: true,
                 },
-                MicAccess::ConfirmedDenied | MicAccess::Denied => VoiceCapabilityStatus {
+                MicAccess::ConfirmedDenied => VoiceCapabilityStatus {
                     available: false,
                     microphone_available: false,
                     recognition_available: true,
@@ -435,7 +431,7 @@ impl VoicePort for SystemVoicePort {
                     message: MICROPHONE_PERMISSION_MESSAGE.into(),
                     warmed: true,
                 },
-                MicAccess::Unknown => VoiceCapabilityStatus {
+                MicAccess::Denied | MicAccess::Unknown => VoiceCapabilityStatus {
                     available: true,
                     microphone_available: true,
                     recognition_available: true,
@@ -773,17 +769,13 @@ fn create_compiled_recognizer(
     recognizer.Constraints()?.Append(&topic)?;
     recognizer.CompileConstraintsAsync()?.get()?;
 
-    // Initial silence: allow the user to settle after Ready.
-    // End silence is not the primary stop for P16.8 — ContinuousRecognitionSession
-    // AutoStopSilenceTimeout owns "user finished speaking" after natural pauses.
+    // ContinuousRecognitionSession AutoStop owns finish semantics (P16.8).
+    // InitialSilence still helps the post-Ready settle window; EndSilence is
+    // RecognizeAsync-era residue and is intentionally not set.
     if let Ok(timeouts) = recognizer.Timeouts() {
         let _ = timeouts.SetInitialSilenceTimeout(TimeSpan {
             Duration: 15_i64 * 10_000_000,
         });
-        let _ = timeouts.SetEndSilenceTimeout(TimeSpan {
-            Duration: 10_i64 * 10_000_000,
-        });
-        // Keep babble generous — continuous session owns finish semantics.
         let _ = timeouts.SetBabbleTimeout(TimeSpan {
             Duration: 20_i64 * 10_000_000,
         });
