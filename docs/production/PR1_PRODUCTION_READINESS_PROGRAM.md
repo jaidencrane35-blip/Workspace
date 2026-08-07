@@ -6,7 +6,7 @@
 | **Date** | 2026-08-07 |
 | **Max layer** | Production + Repository Standards + Documentation |
 | **Branch** | `v2-dev` |
-| **Baseline commit** | See git tip at acceptance; program authored at `3d90cba`+ |
+| **Commit** | `8907f6a` (`v2-dev`) — assessment + verifier; no Phase 2 runtime impl |
 | **Machine matrix** | `docs/production/production-readiness.json` |
 | **Verifier** | `pnpm verify:production-readiness` |
 | **Spec / governance / P17 / Product Proof redesign?** | No |
