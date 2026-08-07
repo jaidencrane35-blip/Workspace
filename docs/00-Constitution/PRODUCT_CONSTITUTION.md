@@ -127,6 +127,16 @@ Operating system permissions belong to the operating system. Workspace never rep
 Workspace detects permission state, explains it, guides the user, verifies success, and remembers completed permission flows.  
 Workspace never repeatedly opens Settings once permissions are correctly configured.
 
+### P16 — Engineering Verification Separation (permanent — P16.10)
+
+Engineering verifies engineering. Product Proof verifies products.  
+Engineering may declare Engineering Complete. Only the Product Owner may declare Product Complete.
+
+### P17 — Owner Directed Product Proof (permanent — P16.10)
+
+When Product Proof begins: launch Workspace once, leave it running, never auto-restart / relaunch / terminate / steal focus / spam Settings.  
+Cleanup only after the Product Owner exits normally.
+
 ---
 
 ## 3. Presentation modes (binding intent)

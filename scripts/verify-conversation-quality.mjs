@@ -40,6 +40,8 @@ for (const token of [
   "Conversation Continuity",
   "Semantic Alias Rule",
   "Permission Guidance Principle",
+  "Engineering Verification Separation",
+  "Owner Directed Product Proof",
 ]) {
   if (!rule.includes(token)) {
     fail(`PRODUCT_PROOF_RULE.md missing token: ${token}`);

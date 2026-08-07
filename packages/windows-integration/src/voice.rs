@@ -371,45 +371,52 @@ impl SystemVoicePort {
 }
 
 impl VoicePort for SystemVoicePort {
+    /// Lightweight snapshot — never compiles a recognizer or opens MediaCapture.
     fn status(&self) -> Result<VoiceCapabilityStatus> {
         #[cfg(windows)]
         {
-            let warm_result = self.warm_up();
-            let mic = cached_microphone_access(&self.mic_access);
-            match (warm_result, mic) {
-                (Ok(()), MicAccess::Allowed) => Ok(VoiceCapabilityStatus {
+            let warmed = self.warmed.load(Ordering::SeqCst);
+            let mic = peek_microphone_access(&self.mic_access);
+            if !warmed {
+                return Ok(VoiceCapabilityStatus {
+                    available: true,
+                    microphone_available: !matches!(mic, MicAccess::Denied),
+                    recognition_available: true,
+                    permission: match mic {
+                        MicAccess::Denied => "denied".into(),
+                        MicAccess::Allowed => "granted".into(),
+                        MicAccess::Unknown => "prompt".into(),
+                    },
+                    message: "Voice is preparing…".into(),
+                    warmed: false,
+                });
+            }
+            Ok(match mic {
+                MicAccess::Allowed => VoiceCapabilityStatus {
                     available: true,
                     microphone_available: true,
                     recognition_available: true,
                     permission: "granted".into(),
                     message: "Voice is ready.".into(),
-                    warmed: self.warmed.load(Ordering::SeqCst),
-                }),
-                (Ok(()), MicAccess::Denied) => Ok(VoiceCapabilityStatus {
+                    warmed: true,
+                },
+                MicAccess::Denied => VoiceCapabilityStatus {
                     available: false,
                     microphone_available: false,
                     recognition_available: true,
                     permission: "denied".into(),
                     message: MICROPHONE_PERMISSION_MESSAGE.into(),
-                    warmed: self.warmed.load(Ordering::SeqCst),
-                }),
-                (Ok(()), MicAccess::Unknown) => Ok(VoiceCapabilityStatus {
+                    warmed: true,
+                },
+                MicAccess::Unknown => VoiceCapabilityStatus {
                     available: true,
                     microphone_available: true,
                     recognition_available: true,
                     permission: "prompt".into(),
                     message: "Voice is ready.".into(),
-                    warmed: self.warmed.load(Ordering::SeqCst),
-                }),
-                (Err(error), _) => Ok(VoiceCapabilityStatus {
-                    available: false,
-                    microphone_available: false,
-                    recognition_available: false,
-                    permission: "unavailable".into(),
-                    message: sanitize_setup_message(&error.to_string()),
-                    warmed: false,
-                }),
-            }
+                    warmed: true,
+                },
+            })
         }
         #[cfg(not(windows))]
         {
@@ -420,7 +427,16 @@ impl VoicePort for SystemVoicePort {
     fn warm_up(&self) -> Result<()> {
         #[cfg(windows)]
         {
-            winrt_warm_up(&self.engine, &self.warmed)
+            let t0 = std::time::Instant::now();
+            log::info!("voice.lifecycle: warm_up_begin");
+            winrt_warm_up(&self.engine, &self.warmed)?;
+            // One-time MediaCapture probe — never on status/focus/listen hot path.
+            let mic = cached_microphone_access(&self.mic_access);
+            log::info!(
+                "voice.lifecycle: warm_up_done mic={mic:?} +{:?}",
+                t0.elapsed()
+            );
+            Ok(())
         }
         #[cfg(not(windows))]
         {
@@ -522,13 +538,28 @@ fn ensure_com() {
 }
 
 #[cfg(windows)]
+fn peek_microphone_access(cache: &Mutex<Option<MicAccess>>) -> MicAccess {
+    cache
+        .lock()
+        .ok()
+        .and_then(|g| *g)
+        .unwrap_or(MicAccess::Unknown)
+}
+
+#[cfg(windows)]
 fn cached_microphone_access(cache: &Mutex<Option<MicAccess>>) -> MicAccess {
     if let Ok(guard) = cache.lock() {
         if let Some(value) = *guard {
             return value;
         }
     }
+    let t0 = std::time::Instant::now();
+    log::info!("voice.lifecycle: mic_probe_begin");
     let value = probe_microphone_access();
+    log::info!(
+        "voice.lifecycle: mic_probe_done result={value:?} +{:?}",
+        t0.elapsed()
+    );
     if let Ok(mut guard) = cache.lock() {
         *guard = Some(value);
     }
@@ -625,9 +656,15 @@ fn winrt_warm_up(
             }
         }
     }
+    let t0 = std::time::Instant::now();
+    log::info!("voice.lifecycle: compile_recognizer_begin");
     let recognizer = create_compiled_recognizer().map_err(|error| {
         WindowsIntegrationError::VoiceFailed(sanitize_setup_message(&error.to_string()))
     })?;
+    log::info!(
+        "voice.lifecycle: compile_recognizer_done +{:?}",
+        t0.elapsed()
+    );
     if let Ok(mut guard) = engine.lock() {
         *guard = Some(WinrtVoiceEngine { recognizer });
     }
@@ -857,6 +894,14 @@ fn winrt_listen_continuous_when_ready(
             if let Ok(token) = complete_token {
                 let _ = session.RemoveCompleted(token);
             }
+            // Later stitches: prefer returning speech already captured over crashing the turn.
+            if stitch > 1 {
+                log::warn!(
+                    "voice.lifecycle: stitch_start_failed_soft +{:?} — finalizing transcript",
+                    t0.elapsed()
+                );
+                break;
+            }
             hard_fail = Some(outcome_from_winrt_error(error));
             break;
         }
@@ -987,6 +1032,11 @@ fn winrt_listen_continuous_when_ready(
         if cancel_requested.load(Ordering::SeqCst) || t0.elapsed() >= MAX_WALL {
             break;
         }
+        // Let WinRT fully release the prior session before restart (crash prevention).
+        std::thread::sleep(Duration::from_millis(280));
+        if cancel_requested.load(Ordering::SeqCst) {
+            break;
+        }
         log::info!("voice.lifecycle: stitch_resume +{:?}", t0.elapsed());
     }
 
@@ -1007,7 +1057,8 @@ fn winrt_listen_continuous_when_ready(
             .lock()
             .map(|g| g.join(" ").trim().to_string())
             .unwrap_or_default();
-        if !transcript.is_empty() && cancel_requested.load(Ordering::SeqCst) {
+        // Prefer truthful speech already captured over a hard empty failure.
+        if !transcript.is_empty() {
             return Ok(VoiceListenOutcome {
                 ok: true,
                 transcript: Some(transcript),

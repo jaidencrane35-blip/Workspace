@@ -88,6 +88,17 @@ Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 OS permissions belong to Windows. Workspace detects, explains, guides, verifies, and remembers — never auto-spams Settings after grant.  
 Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
+## Engineering Verification Separation (permanent — P16.10)
+
+Engineering verifies engineering. Product Proof verifies products.  
+Only the Product Owner may declare Product Complete.  
+Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
+## Owner Directed Product Proof (permanent — P16.10)
+
+Launch Workspace once for Product Proof. Never auto-restart, relaunch, terminate, steal focus, or spam Settings. Cleanup only after Owner exit.  
+Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
 ## Permanent Provider Acceptance Standard (permanent — P14.5 Finalization)
 
 Every provider from **P15 onward** must complete this sequence before permanent acceptance:

@@ -104,6 +104,20 @@ Providers remain unaware of aliases. Resolution stays deterministic — no AI gu
 
 OS permissions belong to the OS. Workspace detects, explains, guides, verifies, and remembers — it never replaces Windows dialogs and never repeatedly opens Settings after a successful grant.
 
+## Engineering Verification Separation (permanent — P16.10)
+
+Engineering verifies engineering. Product Proof verifies products.  
+Engineering may declare **Engineering Complete**. Only the Product Owner may declare **Product Complete**.
+
+## Owner Directed Product Proof (permanent — P16.10)
+
+Launch Workspace once for Product Proof. Do not auto-restart, relaunch, terminate, steal focus, or reopen Settings.  
+Wait for Owner completion; cleanup only after a normal exit.
+
+## Commodity Before Reinvention — survey obligation
+
+Before major capability work, perform a Commodity Survey (ADOPT / WRAP / ADAPT / STUDY / REJECT) and record it under capability research. Workspace owns identity, contracts, Operator, permissions, conversation, and runtime; commodity stays an implementation detail.
+
 ---
 
 ## Frozen pipeline (no shortcuts)

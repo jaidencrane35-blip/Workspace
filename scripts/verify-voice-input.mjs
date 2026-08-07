@@ -192,6 +192,25 @@ if (voiceRs.includes("outcome_from_winrt_error") && /fn outcome_from_winrt_error
 if (!micUi.includes("permissionGuidance") || !micUi.includes("speechDetected")) {
   fail("mic UI must implement Permission Guidance + speechDetected Ready contract");
 }
+const voiceCmd = fs.readFileSync(
+  path.join(root, "app/src-tauri/src/commands/voice.rs"),
+  "utf8",
+);
+if (!voiceCmd.includes("spawn_blocking")) {
+  fail("voice IPC must run WinRT listen/warm on spawn_blocking (P16.10)");
+}
+if (!voiceCmd.includes("async fn voice_listen_once")) {
+  fail("voice_listen_once must be async so IPC runtime is not blocked");
+}
+if (bridge.includes("void openVoiceSettings")) {
+  fail("voice bridge must not auto-open Settings (Permission Guidance)");
+}
+if (!voiceRs.includes("peek_microphone_access") || !voiceRs.includes("mic_probe_begin")) {
+  fail("mic probe must be warm-only with peek for status (P16.10)");
+}
+if (!voiceRs.includes("stitch_start_failed_soft") || !voiceRs.includes("280")) {
+  fail("stitch path must soft-fail and gap between sessions (crash prevention)");
+}
 const guidePath = path.join(root, "app/src/lib/voice/permissionGuidance.ts");
 if (!fs.existsSync(guidePath)) {
   fail("missing permissionGuidance.ts");

@@ -198,11 +198,7 @@ export async function listenOnce(
       message === SPEECH_PRIVACY_MESSAGE || message === MICROPHONE_PERMISSION_MESSAGE
         ? "permission_denied"
         : "recognition_failed";
-    if (status === "permission_denied") {
-      void openVoiceSettings(
-        message === SPEECH_PRIVACY_MESSAGE ? "speech" : "microphone",
-      );
-    }
+    // Permission Guidance: never auto-open Settings from the bridge.
     return {
       ok: false,
       transcript: null,

@@ -119,15 +119,19 @@ export function VoiceMicButton({
       applyStatus(status, false);
     });
 
+    // Re-check only after we guided the user to Settings — never on every focus.
     const onVis = () => {
       if (document.visibilityState !== "visible") {
+        return;
+      }
+      if (!needsSettingsOffer && hasRememberedVoicePermissionGranted()) {
         return;
       }
       void getVoiceStatus().then((status) => {
         if (!active) {
           return;
         }
-        const wasDenied = needsSettingsOffer || !hasRememberedVoicePermissionGranted();
+        const wasDenied = needsSettingsOffer;
         const nowOk =
           status.permission === "granted" ||
           (status.available && status.permission !== "denied");
@@ -135,11 +139,9 @@ export function VoiceMicButton({
       });
     };
     document.addEventListener("visibilitychange", onVis);
-    window.addEventListener("focus", onVis);
     return () => {
       active = false;
       document.removeEventListener("visibilitychange", onVis);
-      window.removeEventListener("focus", onVis);
     };
   }, [applyStatus, needsSettingsOffer]);
 

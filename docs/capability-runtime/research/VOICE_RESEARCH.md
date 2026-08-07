@@ -111,6 +111,24 @@ Lifecycle evidence (logged as `voice.lifecycle:*`):
 | Mid-speech / long turns | AutoStop ends WinRT session | Stitch sessions until user Stop or 5 min wall |
 | Settings spam | Auto-open on deny/fail | Permission Guidance — explain, user-driven open, remember grant |
 
+### P16.10 stability (measured)
+
+| Symptom | Root cause | Fix |
+| --- | --- | --- |
+| 5–30s before usable / UI freeze | `voice_listen_once` + `voice_status` ran WinRT `CompileConstraintsAsync` / `MediaCapture` on the Tauri IPC thread; focus/`status()` re-warmed | Listen/warm on `spawn_blocking`; `status()` never warms or probes mic; MediaCapture once inside `warm_up` only |
+| Occasional Workspace crash | Long WinRT listen blocked async runtime; aggressive session stitch restart | Blocking listen off IPC thread; 280ms stitch gap; soft-fail stitch returns transcript |
+| Settings still opening | `bridge.ts` catch path still called `openVoiceSettings` | Removed; Permission Guidance only |
+
+### Commodity Survey (P16.10)
+
+| Candidate | Class | Notes |
+| --- | --- | --- |
+| WinRT `SpeechRecognizer` + ContinuousRecognitionSession | **WRAP** | Keep; Workspace owns Ready contract + Permission Guidance |
+| Web Speech API in WebView | **REJECT** | Wrong host; weaker desktop OS permission story |
+| whisper.cpp / local STT | **STUDY** | Heavy; revisit only if WinRT WRAP fails Product Proof |
+| Azure / cloud STT | **REJECT** | Not local-first default |
+| Custom VAD ring buffer | **REJECT** | Reinvention; stitch + Ready contract preferred |
+
 ---
 
 ## Explicit non-goals

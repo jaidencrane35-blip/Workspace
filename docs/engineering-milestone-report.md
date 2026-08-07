@@ -1,34 +1,34 @@
 # Engineering Milestone Report
-## P16.9 Voice Product Completion Program
+## P16.10 Product Completion & Engineering Stabilization
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.9 Voice Product Completion Program |
+| **Execution program** | P16.10 Product Completion & Engineering Stabilization |
 | **Date** | 2026-08-07 |
-| **Status** | **Engineering Complete** — live Product Owner Product Proof **pending** |
+| **Status** | **Engineering Complete** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Not** | P17 |
+| **Not** | P17 / Product Complete |
 
 ---
 
-## Remaining latency (measured)
+## Crash root cause
 
-Hot path after warm: ContinuousRecognition `Start` ? Capturing ? ~90ms settle ? Ready.  
-First-word risk lived in inviting speech before Capturing / before settle. Latency that cannot be removed stays inside **Preparing**.
+Long-running WinRT recognition ran **on the Tauri IPC/async worker**, freezing the shell and destabilizing WebView (exit `0xcfffffff` / abrupt exit). Aggressive continuous-session stitch restart compounded COM teardown races.
 
-## Ready contract
+## Latency root cause
 
-Ready = Capturing only. Listening = SpeechDetected / SoundStarted. Manual mic stop finalizes.
+`voice_status` / focus re-checks called `warm_up` + **MediaCapture** probe + recognizer compile on the hot path (5–30s when cold or contended).
 
-## Continuous speech
+## Fixes
 
-Session stitching on WinRT AutoStop until user Stop or 5 minutes wall clock.
-
-## Permission Guidance
-
-Never auto-open Settings. Explain ? user click opens Settings once ? re-check on return ? “? Voice ready”. Remember grant.
+- `spawn_blocking` for listen + warm  
+- `status()` peek-only (no compile, no MediaCapture)  
+- MediaCapture once inside `warm_up`  
+- Stitch gap + soft-fail  
+- Bridge no longer auto-opens Settings  
+- Glass denser; Owner Directed Product Proof + Engineering Verification Separation permanent  
 
 ## Explicit
 
-- **P16 permanently closed:** **No — awaiting Owner**
-- **P17:** Not begun
+- **P16 Product Complete:** **No — Owner only**  
+- **P17:** Not begun  

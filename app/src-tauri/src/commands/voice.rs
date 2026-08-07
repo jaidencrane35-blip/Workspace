@@ -1,7 +1,10 @@
-//! Voice Input IPC — Conversation input device (P16 / P16.5).
+//! Voice Input IPC — Conversation input device (P16 / P16.10).
 //!
 //! Does not route through Kernel Operator / Capability Runtime.
 //! Transcripts are inserted into Conversation and submitted as typed text.
+//!
+//! P16.10: WinRT listen/warm run on spawn_blocking so the Tauri IPC/UI
+//! runtime is never blocked for seconds–minutes (crash / freeze root cause).
 
 use std::sync::{Arc, Mutex, OnceLock};
 
@@ -43,10 +46,19 @@ fn voice_port() -> &'static Arc<dyn VoicePort> {
 }
 
 /// Warm the speech engine in the background (app startup / UI mount).
+/// Never probes MediaCapture on the UI path — warm_up owns one-time setup.
 pub fn warm_voice_engine_async() {
     std::thread::spawn(|| {
-        let _ = voice_port().warm_up();
-        let _ = voice_port().status();
+        let t0 = std::time::Instant::now();
+        log::info!("voice.lifecycle: startup_warm_begin");
+        match voice_port().warm_up() {
+            Ok(()) => log::info!("voice.lifecycle: startup_warm_done +{:?}", t0.elapsed()),
+            Err(error) => log::warn!(
+                "voice.lifecycle: startup_warm_failed +{:?} err={}",
+                t0.elapsed(),
+                error
+            ),
+        }
     });
 }
 
@@ -87,18 +99,23 @@ fn current_input_state() -> String {
         .unwrap_or_else(|_| "idle".into())
 }
 
+fn status_dto(status: VoiceCapabilityStatus) -> VoiceStatusDto {
+    VoiceStatusDto {
+        available: status.available,
+        microphone_available: status.microphone_available,
+        recognition_available: status.recognition_available,
+        permission: status.permission,
+        message: status.message,
+        input_state: current_input_state(),
+        warmed: status.warmed,
+    }
+}
+
+/// Lightweight — must not compile recognizers or open MediaCapture.
 #[tauri::command]
 pub fn voice_status() -> IpcResponse<VoiceStatusDto> {
     match voice_port().status() {
-        Ok(status) => IpcResponse::success(VoiceStatusDto {
-            available: status.available,
-            microphone_available: status.microphone_available,
-            recognition_available: status.recognition_available,
-            permission: status.permission,
-            message: status.message,
-            input_state: current_input_state(),
-            warmed: status.warmed,
-        }),
+        Ok(status) => IpcResponse::success(status_dto(status)),
         Err(error) => IpcResponse::failure(CommandError::new(
             "voice_failed",
             sanitize_voice_user_message(error),
@@ -107,35 +124,63 @@ pub fn voice_status() -> IpcResponse<VoiceStatusDto> {
 }
 
 #[tauri::command]
-pub fn voice_warm_up() -> IpcResponse<VoiceStatusDto> {
-    let _ = voice_port().warm_up();
+pub async fn voice_warm_up() -> IpcResponse<VoiceStatusDto> {
+    let warm = tauri::async_runtime::spawn_blocking(|| voice_port().warm_up()).await;
+    match warm {
+        Ok(Ok(())) => {}
+        Ok(Err(error)) => {
+            return IpcResponse::failure(CommandError::new(
+                "voice_failed",
+                sanitize_voice_user_message(error),
+            ));
+        }
+        Err(error) => {
+            return IpcResponse::failure(CommandError::new(
+                "voice_failed",
+                sanitize_voice_user_message(error),
+            ));
+        }
+    }
     voice_status()
 }
 
+/// Long-running WinRT session — never on the async IPC worker thread.
 #[tauri::command]
-pub fn voice_listen_once(app: AppHandle) -> IpcResponse<VoiceListenOutcome> {
+pub async fn voice_listen_once(app: AppHandle) -> IpcResponse<VoiceListenOutcome> {
     set_input_state("preparing");
     let app_for_ready = app.clone();
     let app_for_sound = app.clone();
-    let outcome = voice_port().listen_once_when_ready(
-        Box::new(move || {
-            // Ready contract: Capturing established — invite speech (not yet "Listening").
-            set_input_state("ready");
-            let _ = app_for_ready.emit("voice-ready", ());
-        }),
-        Some(std::sync::Arc::new(move || {
-            // Speech detected — Listening UI may show.
-            set_input_state("listening");
-            let _ = app_for_sound.emit("voice-sound", ());
-            let _ = app_for_sound.emit("voice-listening", ());
-        })),
-    );
+    let joined = tauri::async_runtime::spawn_blocking(move || {
+        log::info!("voice.lifecycle: ipc_listen_blocking_begin");
+        let t0 = std::time::Instant::now();
+        let outcome = voice_port().listen_once_when_ready(
+            Box::new(move || {
+                set_input_state("ready");
+                let _ = app_for_ready.emit("voice-ready", ());
+            }),
+            Some(std::sync::Arc::new(move || {
+                set_input_state("listening");
+                let _ = app_for_sound.emit("voice-sound", ());
+                let _ = app_for_sound.emit("voice-listening", ());
+            })),
+        );
+        log::info!(
+            "voice.lifecycle: ipc_listen_blocking_end +{:?}",
+            t0.elapsed()
+        );
+        outcome
+    })
+    .await;
     set_input_state("idle");
-    match outcome {
-        Ok(mut result) => {
+    match joined {
+        Ok(Ok(mut result)) => {
             result.message = sanitize_voice_user_message(&result.message);
             IpcResponse::success(result)
         }
+        Ok(Err(error)) => IpcResponse::failure(CommandError::new(
+            "voice_failed",
+            sanitize_voice_user_message(error),
+        )),
         Err(error) => IpcResponse::failure(CommandError::new(
             "voice_failed",
             sanitize_voice_user_message(error),
@@ -166,18 +211,5 @@ pub fn voice_open_settings(target: String) -> IpcResponse<()> {
             "voice_failed",
             sanitize_voice_user_message(error),
         )),
-    }
-}
-
-#[allow(dead_code)]
-fn _status_shape(status: VoiceCapabilityStatus) -> VoiceStatusDto {
-    VoiceStatusDto {
-        available: status.available,
-        microphone_available: status.microphone_available,
-        recognition_available: status.recognition_available,
-        permission: status.permission,
-        message: status.message,
-        input_state: current_input_state(),
-        warmed: status.warmed,
     }
 }

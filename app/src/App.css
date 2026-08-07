@@ -3344,13 +3344,13 @@ html[data-shell-form="conversation"] #root {
   border: none;
   overflow: hidden;
   border-radius: 14px;
-  /* P16.9 — premium desktop glass; prioritize Conversation readability. */
+  /* P16.10 — denser glass so Conversation never fights the desktop. */
   background:
     linear-gradient(
       165deg,
-      rgba(18, 24, 32, 0.94) 0%,
-      rgba(10, 14, 20, 0.92) 55%,
-      rgba(8, 11, 16, 0.93) 100%
+      rgba(14, 18, 26, 0.97) 0%,
+      rgba(8, 11, 16, 0.96) 55%,
+      rgba(6, 9, 14, 0.97) 100%
     );
   backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
   -webkit-backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
@@ -3431,8 +3431,8 @@ html[data-shell-form="conversation"] #root {
   background:
     linear-gradient(
       180deg,
-      rgba(12, 16, 22, 0.95) 0%,
-      rgba(8, 11, 16, 0.93) 100%
+      rgba(12, 16, 22, 0.97) 0%,
+      rgba(8, 11, 16, 0.96) 100%
     );
   backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
   -webkit-backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
