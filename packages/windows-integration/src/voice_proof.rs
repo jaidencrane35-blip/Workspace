@@ -162,18 +162,6 @@ pub fn proof_note_recovery(reason: &str) {
     proof_mark(&format!("recovery:{reason}"));
 }
 
-pub fn proof_note_retry(reason: &str) {
-    if !voice_proof_enabled() {
-        return;
-    }
-    if let Ok(mut guard) = ACTIVE.lock() {
-        if let Some(session) = guard.as_mut() {
-            session.retry_reason = Some(reason.into());
-        }
-    }
-    proof_mark(&format!("retry:{reason}"));
-}
-
 pub fn proof_mark_reused() {
     if !voice_proof_enabled() {
         return;

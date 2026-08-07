@@ -43,6 +43,10 @@ See also: `VOICE_PRODUCTION_FAILURE_MATRIX.md`, `VOICE_LIFECYCLE_STATE_MACHINE.m
 | R34 | Soft×2 count stuck after Settings | Counter never reset on return/open | Reset `softMicDenyCountRef` on Settings open/return | P16.25 |
 | R35 | Ready lag after Capturing | Unnecessary 20ms settle | Immediate Ready after Capturing (`settleBeforeReadyMs: 0`) | P16.25 |
 | R36 | Late Ready/Listening UI drop | Bridge deleted callbacks when IPC returned | Defer callback teardown 120ms (`setTimeout`) | P16.26 |
+| R37 | Concurrent double-listen race | No listen mutex; phase lag | `warm_lock` for whole listen + `listenInFlightRef` | P16.27 |
+| R38 | False “I opened Settings” | Gate armed before open; errors swallowed | Open first; `Promise<boolean>`; truth on fail | P16.27 |
+| R39 | Product-copy reclassify landmine | Bare `"access"` matched “allow access” | Classify on denied/unavailable phrases only | P16.27 |
+| R40 | False available via recognitionAvailable | `available \|\| recognitionAvailable` | Use `status.available` only | P16.27 |
 
 ### Engineering stress (non-Owner)
 

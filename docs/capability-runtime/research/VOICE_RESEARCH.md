@@ -467,6 +467,11 @@ Doc: `VOICE_FINAL_OWNER_READINESS_INVESTIGATION.md`. **WinRT remains WRAP.**
 Canonical Owner checklist + finding→fix→regression traceability. R36 documents bridge teardown. Product Gravity cross-ref in Product Proof Rule.  
 Docs: `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`, `VOICE_OWNER_FINDINGS_TRACEABILITY.md`. **WinRT remains WRAP.**
 
+### P16.27 Final Owner Readiness Falsification
+
+Hostile pass fixed: whole-listen warm_lock + UI in-flight (R37), Settings open honesty (R38), classify bare-access landmine (R39), available chrome (R40). Dead Voice scaffolding removed.  
+Doc: `VOICE_FINAL_OWNER_READINESS_FALSIFICATION.md`. **WinRT remains WRAP.**
+
 ---
 
 ## Explicit non-goals

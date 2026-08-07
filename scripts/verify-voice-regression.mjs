@@ -187,8 +187,14 @@ const bridge = fs.readFileSync(
 if (micUi.includes("if (!warmed)") && micUi.includes("warmUpVoice()")) {
   fail("mic UI must not gate listen on frontend warmed + warmUpVoice (P16.15)");
 }
-if (!micUi.includes("setWarmed(false)")) {
-  fail("mic UI must clear warmed after poison listen failures (P16.15)");
+if (!micUi.includes("listenInFlightRef")) {
+  fail("mic UI must serialize concurrent listen starts (P16.27)");
+}
+if (/contains\("unavailable"\) \|\| lower\.contains\("access"\)/.test(voiceRs)) {
+  fail("classify must not match bare access (P16.27 product-copy landmine)");
+}
+if (!voiceRs.includes("hold warm_lock for the whole listen")) {
+  fail("listen must hold warm_lock for entire listen (P16.27)");
 }
 const matrixPath = path.join(
   root,
@@ -240,10 +246,10 @@ if (!voiceRs.includes("mic_unavailable_soft")) {
   fail("listen recovery must soft-handle microphone_unavailable (P16.18)");
 }
 if (
-  !voiceRs.includes("Serialize warm with startup/UI warm") ||
+  !voiceRs.includes("hold warm_lock for the whole listen") ||
   !voiceRs.includes("self.warm_lock.lock()")
 ) {
-  fail("SystemVoicePort listen must take warm_lock before warm (P16.18)");
+  fail("SystemVoicePort listen must hold warm_lock for entire listen (P16.18/P16.27)");
 }
 // First soft microphone_unavailable must not Settings-trap; only after retry count (P16.21).
 if (
@@ -295,6 +301,21 @@ if (
 }
 if (!matrix.includes("R36") || !matrix.includes("callback teardown")) {
   fail("regression matrix must cover P16.26 bridge callback teardown (R36)");
+}
+if (
+  !matrix.includes("R37") ||
+  !matrix.includes("R38") ||
+  !matrix.includes("R39") ||
+  !matrix.includes("R40")
+) {
+  fail("regression matrix must cover P16.27 Owner-readiness falsification (R37–R40)");
+}
+const falsify = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_FINAL_OWNER_READINESS_FALSIFICATION.md",
+);
+if (!fs.existsSync(falsify)) {
+  fail("missing VOICE_FINAL_OWNER_READINESS_FALSIFICATION.md (P16.27 artifact)");
 }
 const finalLive = path.join(
   root,

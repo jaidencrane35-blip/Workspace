@@ -79,14 +79,14 @@ export function VoiceMicButton({
 }: VoiceMicButtonProps) {
   const [phase, setPhase] = useState<VoicePhase>("idle");
   const [available, setAvailable] = useState(true);
-  // Track native warm for poison-reset sync only (listen path does not gate on this).
-  const [, setWarmed] = useState(false);
   const [soundActive, setSoundActive] = useState(false);
   const [deniedUi, setDeniedUi] = useState(false);
   /** Soft mic fail chrome — distinct from sticky Settings deny (P16.24). */
   const [softFailUi, setSoftFailUi] = useState(false);
   /** Consecutive soft mic failures — Settings only after retry (P16.21 Owner experience). */
   const softMicDenyCountRef = useRef(0);
+  /** Serialize listen starts before React phase paints (P16.27). */
+  const listenInFlightRef = useRef(false);
   const onVoiceMessageRef = useRef(onVoiceMessage);
   onVoiceMessageRef.current = onVoiceMessage;
 
@@ -95,9 +95,8 @@ export function VoiceMicButton({
       status: Awaited<ReturnType<typeof warmUpVoice>>,
       announceReady: boolean,
     ) => {
-      const ok = status.available || status.recognitionAvailable;
-      setAvailable(ok);
-      setWarmed(Boolean(status.warmed || status.available));
+      // P16.27: do not treat recognitionAvailable alone as mic available.
+      setAvailable(Boolean(status.available));
       // P16.20: only explicit granted stamps remember — never treat "prompt" as grant
       // (MediaCapture recheck cannot prove speech privacy).
       if (status.permission === "granted") {
@@ -157,8 +156,7 @@ export function VoiceMicButton({
         softMicDenyCountRef.current = 0;
         setDeniedUi(false);
         setSoftFailUi(false);
-        setAvailable(Boolean(status.available || status.recognitionAvailable));
-        setWarmed(Boolean(status.warmed || status.available));
+        setAvailable(Boolean(status.available));
         onVoiceMessageRef.current(
           status.message.toLowerCase().includes("confirm")
             ? status.message
@@ -187,124 +185,124 @@ export function VoiceMicButton({
     }
 
     // Permission architecture: one Settings open per deny cycle (user click).
+    // P16.27: open first — never arm awaiting_return or claim opened on failure.
     if (shouldOpenSettingsOnMicClick()) {
       const kind = currentSettingsKind();
-      noteSettingsOpened();
       softMicDenyCountRef.current = 0;
       setDeniedUi(true);
       setSoftFailUi(false);
-      await openVoiceSettings(kind);
+      const opened = await openVoiceSettings(kind);
+      if (!opened) {
+        onVoiceMessage(
+          "I couldn’t open Windows Settings just now. Try the microphone again, or open Microphone privacy in Windows Settings yourself.",
+        );
+        return;
+      }
+      noteSettingsOpened();
       onVoiceMessage(settingsOpenedMessage(kind));
       return;
     }
 
+    if (listenInFlightRef.current) {
+      void finish();
+      return;
+    }
+    listenInFlightRef.current = true;
     setPhase("preparing");
     setSoundActive(false);
     setSoftFailUi(false);
 
-    // P16.15: do not await a separate warm IPC on the listen hot path.
-    // Mount/startup already warms; listen warms cheaply if the engine is ready.
-    // A stale frontend `warmed` flag after engine_reset previously skipped warm
-    // and caused “couldn’t listen” after earlier successes.
-    // P16.21: single SoundStarted hook — dual listening events raced Ready/Listening UI.
-    // P16.24: never roll Listening back to Ready if speech already started.
-    const result = await listenOnce({
-      onReady: () => {
-        setWarmed(true);
-        setPhase((prev) =>
-          prev === "speechDetected" || prev === "listening" ? prev : "ready",
-        );
-      },
-      onSoundStarted: () => {
-        setSoundActive(true);
-        setPhase((prev) =>
-          prev === "ready" || prev === "preparing" ? "speechDetected" : prev,
-        );
-        window.setTimeout(() => {
+    try {
+      // P16.21: single SoundStarted hook. P16.24: never roll Listening back to Ready.
+      const result = await listenOnce({
+        onReady: () => {
           setPhase((prev) =>
-            prev === "speechDetected" || prev === "ready" ? "listening" : prev,
+            prev === "speechDetected" || prev === "listening" ? prev : "ready",
           );
-        }, 40);
-      },
-    });
+        },
+        onSoundStarted: () => {
+          setSoundActive(true);
+          setPhase((prev) =>
+            prev === "ready" || prev === "preparing" ? "speechDetected" : prev,
+          );
+          window.setTimeout(() => {
+            setPhase((prev) =>
+              prev === "speechDetected" || prev === "ready" ? "listening" : prev,
+            );
+          }, 40);
+        },
+      });
 
-    setSoundActive(false);
+      setSoundActive(false);
 
-    if (!result.ok || !result.transcript?.trim()) {
-      if (result.status === "cancelled" || result.status === "no_speech") {
-        setPhase("idle");
-        if (result.status === "no_speech") {
-          onVoiceMessage(result.message);
+      if (!result.ok || !result.transcript?.trim()) {
+        if (result.status === "cancelled" || result.status === "no_speech") {
+          setPhase("idle");
+          if (result.status === "no_speech") {
+            onVoiceMessage(result.message);
+          }
+          return;
         }
-        return;
-      }
-      setPhase("error");
-      // Poison / soft mic failures reset the native engine — clear frontend warm cache.
-      if (
-        result.status === "recognition_failed" ||
-        result.status === "recognition_unavailable" ||
-        result.status === "microphone_unavailable" ||
-        result.status === "permission_denied"
-      ) {
-        setWarmed(false);
-      }
-      // Speech privacy → Settings once. Soft mic → retry first; Settings only after 2 fails.
-      if (result.status === "permission_denied") {
-        softMicDenyCountRef.current = 0;
-        const speechPrivacy = result.message
-          .toLowerCase()
-          .includes("speech privacy");
-        const { announce, message } = notePermissionDenied(
-          speechPrivacy ? "speech" : "microphone",
-        );
-        setDeniedUi(true);
-        setSoftFailUi(false);
-        if (announce) {
-          onVoiceMessage(message);
-        } else {
-          onVoiceMessage(result.message);
-        }
-      } else if (result.status === "microphone_unavailable") {
-        softMicDenyCountRef.current += 1;
-        if (softMicDenyCountRef.current >= 2) {
-          // Always announce Settings guidance when arming the gate (never soft "Try again.").
-          const { message } = notePermissionDenied("microphone");
+        setPhase("error");
+        // Speech privacy → Settings once. Soft mic → retry first; Settings only after 2 fails.
+        if (result.status === "permission_denied") {
+          softMicDenyCountRef.current = 0;
+          const speechPrivacy = result.message
+            .toLowerCase()
+            .includes("speech privacy");
+          const { announce, message } = notePermissionDenied(
+            speechPrivacy ? "speech" : "microphone",
+          );
           setDeniedUi(true);
           setSoftFailUi(false);
-          onVoiceMessage(message);
+          if (announce) {
+            onVoiceMessage(message);
+          } else {
+            onVoiceMessage(result.message);
+          }
+        } else if (result.status === "microphone_unavailable") {
+          softMicDenyCountRef.current += 1;
+          if (softMicDenyCountRef.current >= 2) {
+            const { message } = notePermissionDenied("microphone");
+            setDeniedUi(true);
+            setSoftFailUi(false);
+            onVoiceMessage(message);
+          } else {
+            setDeniedUi(false);
+            setSoftFailUi(true);
+            onVoiceMessage(result.message);
+          }
         } else {
-          setDeniedUi(false);
           setSoftFailUi(true);
           onVoiceMessage(result.message);
         }
-      } else {
-        setSoftFailUi(true);
-        onVoiceMessage(result.message);
+        await new Promise((r) => setTimeout(r, 720));
+        setPhase("idle");
+        return;
       }
-      // Paint error affordance long enough to read (transitions are 120ms).
-      await new Promise((r) => setTimeout(r, 720));
-      setPhase("idle");
-      return;
-    }
 
-    softMicDenyCountRef.current = 0;
-    notePermissionGranted();
-    setDeniedUi(false);
-    setSoftFailUi(false);
-    setPhase("recognizing");
-    await new Promise((r) => setTimeout(r, 40));
-    setPhase("processing");
-    onTranscript(result.transcript.trim());
-    setPhase("finished");
-    await new Promise((r) => setTimeout(r, 480));
-    setPhase("idle");
-  }, [onTranscript, onVoiceMessage]);
+      softMicDenyCountRef.current = 0;
+      notePermissionGranted();
+      setDeniedUi(false);
+      setSoftFailUi(false);
+      setPhase("recognizing");
+      await new Promise((r) => setTimeout(r, 40));
+      setPhase("processing");
+      onTranscript(result.transcript.trim());
+      setPhase("finished");
+      await new Promise((r) => setTimeout(r, 480));
+      setPhase("idle");
+    } finally {
+      listenInFlightRef.current = false;
+    }
+  }, [finish, onTranscript, onVoiceMessage]);
 
   const onToggle = () => {
     if (disabled) {
       return;
     }
     if (
+      listenInFlightRef.current ||
       phase === "preparing" ||
       phase === "ready" ||
       phase === "speechDetected" ||

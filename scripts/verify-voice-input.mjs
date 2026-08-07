@@ -110,11 +110,17 @@ const bridge = fs.readFileSync(
 if (!bridge.includes("desktopVoiceMessage")) {
   fail("voice bridge must sanitize user-facing voice messages");
 }
-if (!bridge.includes("warmUpVoice") || !bridge.includes("voice-listening")) {
-  fail("voice bridge must support warm-up and listening-ready events");
+if (!bridge.includes("warmUpVoice") || !bridge.includes("voice-ready")) {
+  fail("voice bridge must support warm-up and voice-ready events");
 }
 if (!bridge.includes("ensureVoiceListeningBridge")) {
-  fail("voice bridge must hoist voice-listening subscription off the listen hot path");
+  fail("voice bridge must hoist voice event subscription off the listen hot path");
+}
+if (bridge.includes('listen("voice-listening"') || bridge.includes("listeningCallbacks")) {
+  fail("voice bridge must not subscribe to unused voice-listening (P16.27)");
+}
+if (!/openVoiceSettings[\s\S]*Promise<boolean>/.test(bridge)) {
+  fail("openVoiceSettings must return Promise<boolean> (P16.27 Settings honesty)");
 }
 
 const micUi = fs.readFileSync(
@@ -163,10 +169,12 @@ if (!micUi.includes("720") || !micUi.includes("480")) {
 if (!micUi.includes("data-sound") || !micUi.includes("onSoundStarted")) {
   fail("mic UI must react to SoundStarted for live speech activity");
 }
-// P16.17: listen hot path must not gate on frontend warm; mount/startup warm +
-// listen-time cheap warm_up remain. Poison failures clear warm via setWarmed(false).
-if (!micUi.includes("setWarmed(false)")) {
-  fail("mic UI must clear warm cache after poison listen failures");
+// P16.27: serialize listen starts before React phase paints.
+if (!micUi.includes("listenInFlightRef")) {
+  fail("mic UI must serialize concurrent listen starts (P16.27)");
+}
+if (!micUi.includes("couldn’t open Windows Settings") && !micUi.includes("couldn't open Windows Settings")) {
+  fail("mic UI must tell truth when Settings open fails (P16.27)");
 }
 if (!micUi.includes("warmUpVoice")) {
   fail("mic UI must warm on mount (startup readiness)");

@@ -3,7 +3,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Program** | P16 Voice Input (+ P16.26 Final Live Product Proof Preparation) |
+| **Program** | P16 Voice Input (+ P16.27 Final Owner Readiness Falsification) |
 | **Status** | **Pending live Product Owner acceptance** (**not** Product Complete) |
 | **Launch** | **Do not launch until Owner requests** |
 | **Canonical live checklist** | **`VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`** ← use this during review |

@@ -1,9 +1,9 @@
 # Engineering Milestone Report
-## P16.26 Final Live Product Proof Preparation
+## P16.27 Final Owner Readiness Falsification
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.26 Final Live Product Proof Preparation |
+| **Execution program** | P16.27 Final Owner Readiness Falsification |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
@@ -13,27 +13,23 @@
 
 ## Summary
 
-Final engineering program before definitive Owner Product Proof. Purpose: remove uncertainty via evidence packaging — not another hardening cycle.
+Hostile self-falsification disproved several readiness assumptions. Fixed and regresssed:
 
-Delivered:
-- Canonical live checklist: `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`
-- Owner finding traceability: `VOICE_OWNER_FINDINGS_TRACEABILITY.md`
-- Preparation audit: `VOICE_FINAL_LIVE_PRODUCT_PROOF_PREPARATION.md`
-- R36 (bridge callback teardown) · Product Gravity cross-ref in Product Proof Rule
+- R37 — concurrent double-listen (whole-listen `warm_lock` + UI `listenInFlightRef`)
+- R38 — false “I opened Settings”
+- R39 — product-copy classify landmine (bare `access`)
+- R40 — false available via `recognitionAvailable`
 
-No new Voice-owned reproducible defect was proven while packaging. No code behaviour change except documentation/regression authority.
+Repository quality: removed dead warmed state, unused voice-listening path, write-only DENIED_KEY, voiceReadyMessage alias, unused proof_note_retry.
+
+Artifact: `VOICE_FINAL_OWNER_READINESS_FALSIFICATION.md`.  
+Canonical Owner checklist unchanged: `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`.
 
 Engineering statement: **No remaining reproducible Voice-owned engineering defects were identified.**
 
 ## Explicit
 
-- **Recommend Owner acceptance review:** Yes (evidence packaged)  
+- **Recommend Owner acceptance review:** Yes (after hostile pass)  
 - **P16 permanently closed:** **No**  
 - **Workspace launched:** **No**  
 - **P17:** Not begun  
-
----
-
-# Prior — P16.25 Final Owner Readiness Investigation
-
-Hostile falsification R32–R35. See `VOICE_FINAL_OWNER_READINESS_INVESTIGATION.md`.

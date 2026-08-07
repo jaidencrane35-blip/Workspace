@@ -50,19 +50,16 @@ export function desktopVoiceMessage(raw: string): string {
   ) {
     return LISTEN_RETRY_MESSAGE;
   }
-  if (lower.includes("couldn’t listen") || lower.includes("couldn't listen")) {
-    return LISTEN_RETRY_MESSAGE;
-  }
-  return raw;
+  return raw.trim() || LISTEN_RETRY_MESSAGE;
 }
 
 /**
  * Hoisted off the listen hot path — subscribing to events before each invoke
  * previously delayed ContinuousRecognitionSession start and dropped leading speech.
+ * P16.27: voice-ready + voice-sound only (voice-listening removed — unused dual path).
  */
 let listeningBridge: Promise<(() => void) | null> | null = null;
 const readyCallbacks = new Set<() => void>();
-const listeningCallbacks = new Set<() => void>();
 const soundCallbacks = new Set<() => void>();
 
 export async function ensureVoiceListeningBridge(): Promise<void> {
@@ -76,17 +73,6 @@ export async function ensureVoiceListeningBridge(): Promise<void> {
         unsubs.push(
           await listen("voice-ready", () => {
             for (const cb of readyCallbacks) {
-              try {
-                cb();
-              } catch {
-                /* ignore */
-              }
-            }
-          }),
-        );
-        unsubs.push(
-          await listen("voice-listening", () => {
-            for (const cb of listeningCallbacks) {
               try {
                 cb();
               } catch {
@@ -157,7 +143,7 @@ export async function warmUpVoice(): Promise<VoiceStatus> {
 
 /**
  * After the user returns from Windows Settings — clear peek cache and re-probe once.
- * Never use peek-only status here (stale Denied would block “✓ Voice ready”).
+ * Never use peek-only status here (stale Denied would block grant paths).
  */
 export async function recheckVoicePermission(): Promise<VoiceStatus> {
   if (!isTauriRuntime()) {
@@ -173,7 +159,6 @@ export async function recheckVoicePermission(): Promise<VoiceStatus> {
 
 export type ListenOnceHooks = {
   onReady?: () => void;
-  onListening?: () => void;
   onSoundStarted?: () => void;
 };
 
@@ -181,11 +166,11 @@ export type ListenOnceHooks = {
  * Continuous listen turn (Conversation Continuity).
  * Ends when the user finishes speaking (long silence), toggles the mic (Stop),
  * or a genuine recognition error occurs — never on a short mid-speech pause.
- * `onReady` / `onListening` fire only after WinRT Capturing (trustworthy contract).
+ * `onReady` fires only after WinRT Capturing (trustworthy contract).
  * `onSoundStarted` fires when WinRT reports speech energy (SoundStarted).
  */
 export async function listenOnce(
-  onListeningOrHooks?: (() => void) | ListenOnceHooks,
+  hooks: ListenOnceHooks = {},
 ): Promise<VoiceListenResult> {
   if (!isTauriRuntime()) {
     return {
@@ -197,14 +182,8 @@ export async function listenOnce(
     };
   }
 
-  const hooks: ListenOnceHooks =
-    typeof onListeningOrHooks === "function"
-      ? { onListening: onListeningOrHooks }
-      : (onListeningOrHooks ?? {});
-
   await ensureVoiceListeningBridge();
   if (hooks.onReady) readyCallbacks.add(hooks.onReady);
-  if (hooks.onListening) listeningCallbacks.add(hooks.onListening);
   if (hooks.onSoundStarted) soundCallbacks.add(hooks.onSoundStarted);
 
   try {
@@ -228,13 +207,11 @@ export async function listenOnce(
       message,
     };
   } finally {
-    // Defer teardown so late Tauri emits after IPC return still paint Ready/Listening (P16.25).
+    // Defer teardown so late Tauri emits after IPC return still paint Ready/Listening (R36).
     const ready = hooks.onReady;
-    const listening = hooks.onListening;
     const sound = hooks.onSoundStarted;
     globalThis.setTimeout(() => {
       if (ready) readyCallbacks.delete(ready);
-      if (listening) listeningCallbacks.delete(listening);
       if (sound) soundCallbacks.delete(sound);
     }, 120);
   }
@@ -251,15 +228,17 @@ export async function cancelListening(): Promise<void> {
   }
 }
 
+/** Returns true only when Settings URI launch succeeded (P16.27 — never lie). */
 export async function openVoiceSettings(
   target: "microphone" | "speech" = "microphone",
-): Promise<void> {
+): Promise<boolean> {
   if (!isTauriRuntime()) {
-    return;
+    return false;
   }
   try {
     await invokeIpc<void>("voice_open_settings", { target });
+    return true;
   } catch {
-    // Best-effort settings launch.
+    return false;
   }
 }

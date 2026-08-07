@@ -87,8 +87,13 @@ pub fn classify_speech_failure(code: u32, detail: &str) -> VoiceListenOutcome {
         };
     }
     // Transient device busy / unavailable — never sticky-deny (P16.18 Owner finding).
+    // P16.27: do not match bare "access" (product copy “allow access” must not reclassify).
     if lower.contains("microphone")
-        && (lower.contains("unavailable") || lower.contains("access"))
+        && (lower.contains("unavailable")
+            || lower.contains("access is denied")
+            || lower.contains("access denied")
+            || lower.contains("in use")
+            || lower.contains("not available"))
     {
         return VoiceListenOutcome {
             ok: false,
@@ -476,13 +481,13 @@ impl VoicePort for SystemVoicePort {
                     warmed: true,
                 },
                 // MediaCapture Denied is never sticky-cached — treat as Unknown.
-                // P16.22: never claim "Voice is ready" / mic available until Allowed (successful listen).
+                // P16.22/P16.27: never claim ready/set-up until Allowed (successful listen).
                 MicAccess::Denied | MicAccess::Unknown => VoiceCapabilityStatus {
                     available: true,
                     microphone_available: false,
                     recognition_available: true,
                     permission: "prompt".into(),
-                    message: "Voice is set up — click the microphone to speak.".into(),
+                    message: "Click the microphone beside the message box to speak.".into(),
                     warmed: true,
                 },
             })
@@ -523,6 +528,11 @@ impl VoicePort for SystemVoicePort {
         self.cancel_requested.store(false, Ordering::SeqCst);
         #[cfg(windows)]
         {
+            // P16.27: hold warm_lock for the whole listen — serialize concurrent listens,
+            // warm IPC, and engine reset so WinRT never contends with itself.
+            let _engine_lock = self.warm_lock.lock().map_err(|_| {
+                WindowsIntegrationError::VoiceFailed("voice warm lock poisoned".into())
+            })?;
             let cold = !self.warmed.load(Ordering::SeqCst);
             proof_begin_listen(cold);
             proof_mark("engine_available");
@@ -541,27 +551,20 @@ impl VoicePort for SystemVoicePort {
                 let _ = proof_end_listen(&outcome.status);
                 return Ok(outcome);
             }
-            // Serialize warm with startup/UI warm — listen previously raced CompileConstraints.
-            {
-                let _warm = self.warm_lock.lock().map_err(|_| {
-                    WindowsIntegrationError::VoiceFailed("voice warm lock poisoned".into())
-                })?;
-                if let Err(error) = winrt_warm_up(&self.engine, &self.warmed) {
-                    log::warn!("voice.lifecycle: listen_warm_failed_classified");
-                    let outcome = listen_outcome_from_engine_error(&error);
-                    // P16.25: warm-fail must use the same soft-mic remap as post-listen
-                    // (Access Denied → unavailable + retry; speech privacy → sticky).
-                    let outcome = apply_listen_failure_policy(
-                        outcome,
-                        &self.mic_access,
-                        &self.engine,
-                        &self.warmed,
-                        &self.active_session,
-                    );
-                    proof_note_permission(&outcome.status);
-                    let _ = proof_end_listen(&outcome.status);
-                    return Ok(outcome);
-                }
+            if let Err(error) = winrt_warm_up(&self.engine, &self.warmed) {
+                log::warn!("voice.lifecycle: listen_warm_failed_classified");
+                let outcome = listen_outcome_from_engine_error(&error);
+                // P16.25: warm-fail must use the same soft-mic remap as post-listen.
+                let outcome = apply_listen_failure_policy(
+                    outcome,
+                    &self.mic_access,
+                    &self.engine,
+                    &self.warmed,
+                    &self.active_session,
+                );
+                proof_note_permission(&outcome.status);
+                let _ = proof_end_listen(&outcome.status);
+                return Ok(outcome);
             }
             let mut outcome = winrt_listen_continuous_when_ready(
                 &self.engine,

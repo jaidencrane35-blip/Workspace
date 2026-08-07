@@ -9,7 +9,6 @@
  */
 
 const GRANTED_KEY = "workspace.voice.permissionGranted";
-const DENIED_KEY = "workspace.voice.permissionDenied";
 const DENIED_GUIDANCE_KEY = "workspace.voice.deniedGuidanceOffered";
 
 export type VoicePermissionGate =
@@ -33,7 +32,6 @@ function storage(): Storage | null {
 
 export function rememberVoicePermissionGranted(): void {
   storage()?.setItem(GRANTED_KEY, "1");
-  storage()?.removeItem(DENIED_KEY);
   storage()?.removeItem(DENIED_GUIDANCE_KEY);
   gate = "idle";
   explainAnnounced = false;
@@ -48,7 +46,6 @@ export function clearRememberedVoicePermissionGranted(): void {
 }
 
 export function rememberVoicePermissionDenied(): void {
-  storage()?.setItem(DENIED_KEY, "1");
   clearRememberedVoicePermissionGranted();
 }
 
@@ -134,9 +131,4 @@ export function awaitingReturnMessage(): string {
  */
 export function voicePermissionSetMessage(): string {
   return "Permission set — click the microphone to speak.";
-}
-
-/** @deprecated Prefer voicePermissionSetMessage — kept name alias for verifiers during rename. */
-export function voiceReadyMessage(): string {
-  return voicePermissionSetMessage();
 }

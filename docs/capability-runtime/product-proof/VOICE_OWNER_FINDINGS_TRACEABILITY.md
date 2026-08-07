@@ -50,6 +50,10 @@ Status legend: **CLOSED** (engineering + regression) · **OWNER-LIVE** (requires
 | R34 Soft count after Settings | Counter not reset | `42263bf` | R34 | VoiceMicButton reset | CLOSED |
 | R35 Ready settle lag | 20ms sleep after Capturing | `42263bf` | R35 | settleBeforeReadyMs: 0 | CLOSED |
 | Bridge Ready paint race | Callback delete on IPC return | `42263bf` | R36 | deferred teardown 120ms | CLOSED |
+| Concurrent double-listen | No whole-listen lock / phase lag | *(P16.27)* | R37 | warm_lock whole listen + listenInFlightRef | CLOSED |
+| False “opened Settings” | Gate before open; swallow errors | *(P16.27)* | R38 | open returns boolean | CLOSED |
+| Classify “allow access” landmine | Bare `access` match | *(P16.27)* | R39 | denied/unavailable phrases only | CLOSED |
+| False available chrome | `available \|\| recognitionAvailable` | *(P16.27)* | R40 | `status.available` only | CLOSED |
 
 ---
 

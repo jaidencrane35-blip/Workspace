@@ -8,7 +8,7 @@ Before any implementation work, read the canonical engineering handoff:
 
 Then reassess machine state in `docs/project-health.json`. Treat repository documentation as authoritative over chat history.
 
-Current handoff posture (see handoff + health for truth): **P16 Voice Input is Engineering Complete (P16.26 Final Live Product Proof Preparation); live Product Owner Product Proof is pending — not permanently closed. Canonical checklist: docs/capability-runtime/product-proof/VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md. For Owner review set WORKSPACE_VOICE_PRODUCT_PROOF=1. Do not launch until Owner requests. After Owner closes Workspace: cleanup only, never relaunch. Do not begin P17.**
+Current handoff posture (see handoff + health for truth): **P16 Voice Input is Engineering Complete (P16.27 Final Owner Readiness Falsification); live Product Owner Product Proof is pending — not permanently closed. Canonical checklist: docs/capability-runtime/product-proof/VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md. For Owner review set WORKSPACE_VOICE_PRODUCT_PROOF=1. Do not launch until Owner requests. After Owner closes Workspace: cleanup only, never relaunch. Do not begin P17.**
 
 ## Cursor Cloud specific instructions
 
