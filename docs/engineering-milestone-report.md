@@ -1,11 +1,11 @@
 # Engineering Milestone Report
-## P16.27 Final Owner Readiness Falsification
+## P16.28 Final Engineering Exit Audit
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.27 Final Owner Readiness Falsification |
+| **Execution program** | P16.28 Final Engineering Exit Audit |
 | **Date** | 2026-08-07 |
-| **Status** | **Engineering Complete** — Product Complete **Owner-only** |
+| **Status** | **Engineering Exit Complete** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
 | **Not** | P17 / Product Complete / permanently closed / Workspace launched |
 
@@ -13,23 +13,16 @@
 
 ## Summary
 
-Hostile self-falsification disproved several readiness assumptions. Fixed and regresssed:
+Engineering exit audit. No reproducible Voice-owned engineering defect identified after P16.27. Remaining concerns are Owner subjective experience, Windows/WinRT limitations, Intent/Conversation residuals, or Track A — not Voice engineering blockers.
 
-- R37 — concurrent double-listen (whole-listen `warm_lock` + UI `listenInFlightRef`)
-- R38 — false “I opened Settings”
-- R39 — product-copy classify landmine (bare `access`)
-- R40 — false available via `recognitionAvailable`
+WinRT ContinuousRecognitionSession WRAP **frozen**. Instrumentation sufficient (`WORKSPACE_VOICE_PRODUCT_PROOF=1`). No further Voice engineering justified by current evidence. Next step exclusively Product Owner live review via `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`.
 
-Repository quality: removed dead warmed state, unused voice-listening path, write-only DENIED_KEY, voiceReadyMessage alias, unused proof_note_retry.
-
-Artifact: `VOICE_FINAL_OWNER_READINESS_FALSIFICATION.md`.  
-Canonical Owner checklist unchanged: `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`.
-
-Engineering statement: **No remaining reproducible Voice-owned engineering defects were identified.**
+Artifact: `docs/capability-runtime/product-proof/VOICE_ENGINEERING_EXIT_AUDIT.md`.
 
 ## Explicit
 
-- **Recommend Owner acceptance review:** Yes (after hostile pass)  
+- **Recommend Owner live review:** Yes — exclusively  
+- **Further Voice engineering justified?** **No**  
 - **P16 permanently closed:** **No**  
 - **Workspace launched:** **No**  
 - **P17:** Not begun  

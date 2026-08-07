@@ -317,6 +317,26 @@ const falsify = path.join(
 if (!fs.existsSync(falsify)) {
   fail("missing VOICE_FINAL_OWNER_READINESS_FALSIFICATION.md (P16.27 artifact)");
 }
+const exitAudit = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_ENGINEERING_EXIT_AUDIT.md",
+);
+if (!fs.existsSync(exitAudit)) {
+  fail("missing VOICE_ENGINEERING_EXIT_AUDIT.md (P16.28 engineering exit)");
+}
+const exitBody = fs.readFileSync(exitAudit, "utf8");
+if (
+  !exitBody.includes("NO FURTHER VOICE ENGINEERING") &&
+  !exitBody.includes("no further Voice engineering")
+) {
+  fail("engineering exit audit must state no further Voice engineering justified (P16.28)");
+}
+if (!exitBody.includes("FROZEN") && !exitBody.includes("frozen")) {
+  fail("engineering exit audit must freeze WinRT WRAP decision (P16.28)");
+}
+if (!matrix.includes("R37") || !matrix.includes("R40")) {
+  fail("regression matrix must still cover P16.27 R37–R40 through engineering exit");
+}
 const finalLive = path.join(
   root,
   "docs/capability-runtime/product-proof/VOICE_FINAL_LIVE_PRODUCT_PROOF.md",

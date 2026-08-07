@@ -5,7 +5,8 @@
 | --- | --- |
 | **Authority** | This document is the **single canonical** live Product Proof checklist for P16 |
 | **Status** | Pending Product Owner acceptance — **not** Product Complete |
-| **Engineering tip** | See `git log -1` on `v2-dev` after P16.26 |
+| **Engineering** | Exit complete (P16.28) — `VOICE_ENGINEERING_EXIT_AUDIT.md` |
+| **Engineering tip** | See `git log -1` on `v2-dev` after P16.28 |
 | **Launch** | **Do not launch until Product Owner requests** |
 | **Live timings** | Set `WORKSPACE_VOICE_PRODUCT_PROOF=1` for the review session only |
 | **Companion evidence** | Traceability → `VOICE_OWNER_FINDINGS_TRACEABILITY.md` · Regressions → `VOICE_REGRESSION_MATRIX.md` · Instrumentation → `VOICE_LIVE_INSTRUMENTATION.md` |

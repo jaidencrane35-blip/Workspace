@@ -3,8 +3,8 @@
 | Field | Value |
 | --- | --- |
 | **Program** | P16 Voice Input |
-| **Status** | **Implemented — WRAP decision locked** |
-| **Primary recommendation** | **WRAP** WinRT `SpeechRecognizer` (dictation) behind `VoicePort` |
+| **Status** | **Implemented — WRAP decision FROZEN (P16.28 engineering exit)** |
+| **Primary recommendation** | **WRAP** WinRT `SpeechRecognizer` + `ContinuousRecognitionSession` behind `VoicePort` |
 | **Role** | Conversation **input device** — not a desktop Capability Provider |
 
 ---
@@ -471,6 +471,13 @@ Docs: `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`, `VOICE_OWNER_FINDINGS_TRACEABILITY.
 
 Hostile pass fixed: whole-listen warm_lock + UI in-flight (R37), Settings open honesty (R38), classify bare-access landmine (R39), available chrome (R40). Dead Voice scaffolding removed.  
 Doc: `VOICE_FINAL_OWNER_READINESS_FALSIFICATION.md`. **WinRT remains WRAP.**
+
+### P16.28 Final Engineering Exit Audit
+
+No reproducible Voice-owned engineering defect identified at tip after P16.27.  
+Further Voice engineering not justified by evidence — diminishing returns; next step exclusively Owner live Product Proof.  
+**Foundation FROZEN:** WinRT ContinuousRecognitionSession WRAP. Local ASR STUDY. Ambient REJECT.  
+Doc: `VOICE_ENGINEERING_EXIT_AUDIT.md`.
 
 ---
 

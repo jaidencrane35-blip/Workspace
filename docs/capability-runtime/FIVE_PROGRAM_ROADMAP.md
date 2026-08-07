@@ -34,7 +34,7 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 
 | Program | Title | Status |
 | --- | --- | --- |
-| **P16** | Voice Input | **Engineering Complete** (through **P16.27** Final Owner Readiness Falsification). Canonical checklist: `product-proof/VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`. Live Product Owner Product Proof **pending final acceptance**. **Not permanently closed.** Production Before Expansion blocks P17. |
+| **P16** | Voice Input | **Engineering Exit Complete** (**P16.28**). No further Voice engineering justified. Canonical checklist: `product-proof/VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`. Exit: `VOICE_ENGINEERING_EXIT_AUDIT.md`. Live Product Owner Product Proof **pending**. **Not permanently closed.** Production Before Expansion blocks P17. |
 
 ---
 
