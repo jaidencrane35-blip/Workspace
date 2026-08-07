@@ -39,7 +39,7 @@ P12 series remains **permanently closed**.
 
 | Program | Title | Why |
 | --- | --- | --- |
-| **P15** | Screenshot Provider | Capture under consent — eligible after P14 Owner acceptance |
+| **P15** | Screenshot Provider | Prep pack ready (`SCREENSHOT_PROVIDER_PREPARATION.md`) — implement only after P14 Owner acceptance |
 | **P16** | File Provider | Scoped FS for later automation |
 | **P17** | Terminal Provider | Governed ConPTY |
 | **P18** | Voice Provider | Spoken operator entry |

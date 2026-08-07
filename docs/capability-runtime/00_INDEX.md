@@ -4,8 +4,9 @@
 | --- | --- |
 | **P10–P12** | Complete (P12 series permanently closed) |
 | **P13** | Notifications Provider — **permanently closed** |
-| **P14** | Browser Provider — engineering complete; Owner Product Proof review |
-| **Next** | P15 Screenshot Provider (after P14 Owner acceptance) |
+| **P14** | Browser Provider — engineering complete; **Owner Product Proof review** |
+| **P15** | Screenshot Provider — **preparation docs only** (no implementation) |
+| **Next** | P15 implementation after P14 Owner acceptance |
 | **Operator law** | Conversation → Intent → Kernel Operator → Runtime |
 | **Composition law** | Kernel owns composition |
 
@@ -13,6 +14,10 @@
 
 | Document | Purpose |
 | --- | --- |
+| [SCREENSHOT_PROVIDER_PREPARATION.md](./SCREENSHOT_PROVIDER_PREPARATION.md) | **P15 prep pack** (no code) |
+| [research/SCREENSHOT_RESEARCH.md](./research/SCREENSHOT_RESEARCH.md) | Capture API / WRAP decision |
+| [research/SCREENSHOT_ARCHITECTURE_PROPOSAL.md](./research/SCREENSHOT_ARCHITECTURE_PROPOSAL.md) | Architecture proposal |
+| [product-proof/SCREENSHOT_PROVIDER_PRODUCT_PROOF_DRAFT.md](./product-proof/SCREENSHOT_PROVIDER_PRODUCT_PROOF_DRAFT.md) | Product Proof draft |
 | [BROWSER_PROVIDER.md](./BROWSER_PROVIDER.md) | **P14 Browser** |
 | [research/BROWSER_RESEARCH.md](./research/BROWSER_RESEARCH.md) | WRAP decision |
 | [product-proof/BROWSER_PROVIDER_PRODUCT_PROOF.md](./product-proof/BROWSER_PROVIDER_PRODUCT_PROOF.md) | Owner checklist |
