@@ -1,4 +1,4 @@
-//! Capability Runtime — P10 foundation + P11 Application + P12 Window providers.
+//! Capability Runtime — P10–P13 providers (Clipboard, Application, Window, Notifications).
 //!
 //! Permanent pipeline:
 //! Conversation → Intent Layer → execute_capability_intent → Kernel Operator →
@@ -12,6 +12,7 @@
 
 mod application_provider;
 mod clipboard_provider;
+mod notification_provider;
 mod registry;
 mod router;
 mod types;
@@ -19,6 +20,7 @@ mod window_provider;
 
 pub use application_provider::{ApplicationPorts, ApplicationProvider};
 pub use clipboard_provider::ClipboardProvider;
+pub use notification_provider::NotificationProvider;
 pub use registry::ProviderRegistry;
 pub use router::CapabilityRouter;
 pub use types::{
@@ -31,12 +33,12 @@ use std::sync::{Arc, OnceLock, RwLock};
 
 use workspace_windows_integration::{
     platform_desktop_capturer, platform_process_launcher, platform_window_enumerator,
-    platform_window_mutator, ClipboardPort,
+    platform_window_mutator, ClipboardPort, NotificationPort,
 };
 #[cfg(test)]
 use workspace_windows_integration::{
-    FixtureWindowEnumerator, MemoryClipboard, StubDesktopCapturer, StubProcessLauncher,
-    StubWindowMutator,
+    FixtureWindowEnumerator, MemoryClipboard, MemoryNotificationPort, StubDesktopCapturer,
+    StubProcessLauncher, StubWindowMutator,
 };
 
 use crate::error::{KernelError, Result};
@@ -58,6 +60,9 @@ impl CapabilityRuntime {
         registry
             .register(Box::new(WindowProvider::new(window_ports())))
             .expect("window provider registers once at bootstrap");
+        registry
+            .register(Box::new(NotificationProvider::new(notification_port())))
+            .expect("notification provider registers once at bootstrap");
         Self {
             registry: RwLock::new(registry),
         }
@@ -131,6 +136,17 @@ fn window_ports() -> WindowPorts {
     }
 }
 
+fn notification_port() -> Arc<dyn NotificationPort> {
+    #[cfg(test)]
+    {
+        Arc::new(MemoryNotificationPort::new())
+    }
+    #[cfg(not(test))]
+    {
+        workspace_windows_integration::platform_notification()
+    }
+}
+
 static RUNTIME: OnceLock<CapabilityRuntime> = OnceLock::new();
 
 /// Shared Capability Runtime for the process.
@@ -150,6 +166,9 @@ mod tests {
             .iter()
             .any(|d| d.domain.as_str() == "application"));
         assert!(descriptors.iter().any(|d| d.domain.as_str() == "window"));
+        assert!(descriptors
+            .iter()
+            .any(|d| d.domain.as_str() == "notifications"));
     }
 
     #[test]
@@ -211,6 +230,30 @@ mod tests {
             .unwrap();
         assert!(snapped.ok);
         assert_eq!(snapped.status.as_deref(), Some("snapped"));
+    }
+
+    #[test]
+    fn notifications_status_and_show_through_router() {
+        let status = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::notifications(),
+                operation: CapabilityOperation::Status,
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(status.ok);
+
+        let shown = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::notifications(),
+                operation: CapabilityOperation::Show,
+                title: Some("Workspace".into()),
+                text: Some("P13 proof".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(shown.ok);
+        assert_eq!(shown.status.as_deref(), Some("shown"));
     }
 
     #[test]

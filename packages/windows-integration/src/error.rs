@@ -15,4 +15,7 @@ pub enum WindowsIntegrationError {
 
     #[error("Clipboard failed: {0}")]
     ClipboardFailed(String),
+
+    #[error("Notification failed: {0}")]
+    NotificationFailed(String),
 }

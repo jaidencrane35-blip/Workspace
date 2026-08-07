@@ -91,4 +91,23 @@ describe("intent bridge", () => {
     });
     expect(resolveIntent("Move this window.").kind).toBe("unknown");
   });
+
+  it("routes notifications provider operations", () => {
+    expect(resolveIntent("Can you send notifications?").kind).toBe(
+      "notifyStatus",
+    );
+    expect(resolveIntent("Show me a notification.")).toMatchObject({
+      kind: "notifyShow",
+      text: "Notification from Workspace.",
+    });
+    expect(
+      resolveIntent("Show me a notification: Restore finished."),
+    ).toMatchObject({
+      kind: "notifyShow",
+      text: "Restore finished",
+    });
+    expect(resolveIntent("Notify me when Cursor finishes.").kind).toBe(
+      "unknown",
+    );
+  });
 });

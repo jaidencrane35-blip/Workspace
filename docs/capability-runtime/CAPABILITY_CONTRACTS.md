@@ -218,14 +218,19 @@ Cross-capability message envelopes remain governed by `architecture/10_Capabilit
 | | |
 | --- | --- |
 | **Purpose** | Sparse OS attention signals |
-| **Examples** | System: “Restore finished.” |
-| **Permissions** | `notify.show` (user preference) |
-| **Arguments** | `title` · `body` · `action?` |
-| **Results** | `{ shown: bool }` |
-| **Failures** | OS focus assist |
+| **Examples** | “Show me a notification.” / “Can you send notifications?” |
+| **Permissions** | `notify.read`, `notify.show` |
+| **Arguments** | `title` · `text`/body · `category?` · `priority?` · `duration?` |
+| **Results** | `{ ok, status, target?, message }` |
+| **Failures** | OS blocks toast; unavailable platform; missing message |
 | **Rollback** | N/A |
-| **Audit** | template id |
-| **Future** | Actionable toasts → conversation |
+| **Audit** | lengths + category — not full body by default |
+| **P13 status** | **Notifications Provider Levels 1–2 shipped** — Product Proof pending Owner review |
+| **Adoption** | WRAP WinRT toast (`tauri-winrt-notification`) |
+| **Rust** | `NotificationProvider` + `ShowNotification` / `NotificationStatus` |
+| **TypeScript** | `notifyStatus` / `notifyShow` / `notifyDismiss` → CapabilityIntent |
+| **Conversation IPC** | `execute_capability_intent` |
+| **Future** | Scheduled watching; actionable toasts → Conversation |
 
 ---
 

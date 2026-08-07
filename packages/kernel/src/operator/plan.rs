@@ -18,6 +18,10 @@ pub struct OperatorPlanStep {
     pub height: Option<i32>,
     pub monitor_index: Option<i32>,
     pub snap: Option<String>,
+    pub title: Option<String>,
+    pub category: Option<String>,
+    pub priority: Option<String>,
+    pub duration: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -45,6 +49,10 @@ fn step_from_intent(
         height: intent.height,
         monitor_index: intent.monitor_index,
         snap: intent.snap.clone(),
+        title: intent.title.clone(),
+        category: intent.category.clone(),
+        priority: intent.priority.clone(),
+        duration: intent.duration.clone(),
     }
 }
 
@@ -102,12 +110,28 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
             | CapabilityOperation::Center
             | CapabilityOperation::Snap,
         ) => {}
+        (
+            "notifications",
+            CapabilityOperation::Status
+            | CapabilityOperation::Show
+            | CapabilityOperation::Dismiss,
+        ) => {}
         (d, op) => {
             return Err(KernelError::CapabilityRuntime {
                 message: format!(
                     "operation '{}' is not valid for domain '{d}'",
                     op.as_str()
                 ),
+            });
+        }
+    }
+
+    if domain.as_str() == "notifications" && operation == CapabilityOperation::Show {
+        let title = intent.title.as_deref().unwrap_or("").trim();
+        let body = intent.text.as_deref().unwrap_or("").trim();
+        if title.is_empty() && body.is_empty() {
+            return Err(KernelError::CapabilityRuntime {
+                message: "What should the notification say?".into(),
             });
         }
     }

@@ -84,4 +84,14 @@ All capability kinds map to one IPC: **`execute_capability_intent`**.
 | `winFocus` | window | focus |
 | `winFind` | window | find |
 
+### Notifications (P13)
+
+| Kind | Domain | Operation |
+| --- | --- | --- |
+| `notifyStatus` | notifications | status |
+| `notifyShow` | notifications | show |
+| `notifyDismiss` | notifications | dismiss |
+
+Deferred “notify me when…” watching clarifies truthfully (not Level 1–2).
+
 Provider-specific IPC remains registered for diagnostics/legacy but **must not** be called from Conversation or the TS Operator façade.

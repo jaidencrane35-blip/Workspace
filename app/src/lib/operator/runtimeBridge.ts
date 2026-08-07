@@ -38,6 +38,10 @@ export async function executeCapabilityIntent(
         height: intent.height ?? null,
         monitorIndex: intent.monitorIndex ?? null,
         snap: intent.snap ?? null,
+        title: intent.title ?? null,
+        category: intent.category ?? null,
+        priority: intent.priority ?? null,
+        duration: intent.duration ?? null,
       },
     });
   } catch (error) {

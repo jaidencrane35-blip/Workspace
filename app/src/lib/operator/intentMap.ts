@@ -11,6 +11,24 @@ export function toCapabilityIntent(action: IntentAction): CapabilityIntent | nul
       return { domain: "clipboard", operation: "read" };
     case "clipboardWrite":
       return { domain: "clipboard", operation: "write", text: action.text };
+    case "notifyStatus":
+      return { domain: "notifications", operation: "status" };
+    case "notifyShow":
+      return {
+        domain: "notifications",
+        operation: "show",
+        title: action.title ?? "Workspace",
+        text: action.text,
+        category: action.category,
+        priority: action.priority,
+        duration: action.duration,
+      };
+    case "notifyDismiss":
+      return {
+        domain: "notifications",
+        operation: "dismiss",
+        query: action.id,
+      };
     case "appEnumerate":
       return { domain: "application", operation: "enumerate" };
     case "appLaunch":

@@ -3,9 +3,11 @@ use crate::operator::intent::{CapabilityIntent, OperatorTurnResult};
 use crate::operator::plan::OperatorPlan;
 
 fn strip_jargon(text: &str) -> String {
-    text.replace("Capability Runtime", "Workspace")
+    text        .replace("Capability Runtime", "Workspace")
         .replace("Window Provider", "Workspace")
         .replace("Application Provider", "Workspace")
+        .replace("Notification Provider", "Workspace")
+        .replace("Notifications Provider", "Workspace")
         .replace("Provider Registry", "Workspace")
         .replace("Capability Router", "Workspace")
 }
@@ -124,6 +126,31 @@ pub fn compose_user_reply(
                     last.message.as_deref().unwrap_or("Applications listed.")
                 )
             }
+            ("notifications", "status") => strip_jargon(
+                last.message
+                    .as_deref()
+                    .unwrap_or("I checked desktop notification support."),
+            ),
+            ("notifications", "show") => {
+                if ok {
+                    strip_jargon(
+                        last.message
+                            .as_deref()
+                            .unwrap_or("Desktop notification shown."),
+                    )
+                } else {
+                    strip_jargon(
+                        last.message
+                            .as_deref()
+                            .unwrap_or("I couldn’t show that notification."),
+                    )
+                }
+            }
+            ("notifications", "dismiss") => strip_jargon(
+                last.message
+                    .as_deref()
+                    .unwrap_or("I couldn’t dismiss that notification."),
+            ),
             _ => strip_jargon(
                 last.message
                     .as_deref()

@@ -36,6 +36,17 @@ export type IntentAction =
   | { kind: "proposal"; reply: string }
   | { kind: "clipboardRead"; reply: string }
   | { kind: "clipboardWrite"; text: string; reply: string }
+  | { kind: "notifyStatus"; reply: string }
+  | {
+      kind: "notifyShow";
+      title?: string;
+      text: string;
+      category?: string;
+      priority?: string;
+      duration?: string;
+      reply: string;
+    }
+  | { kind: "notifyDismiss"; id?: string; reply: string }
   | { kind: "appOpen"; query: string; reply: string }
   | { kind: "appLaunch"; query: string; reply: string }
   | { kind: "appFocus"; query: string; reply: string }
@@ -100,6 +111,83 @@ function windowTarget(rawQuery: string | undefined): string {
     return "this";
   }
   return q.replace(/^(the|my)\s+/i, "").trim() || "this";
+}
+
+/**
+ * Notifications intents (Conversation language → desktop notification operations).
+ * Deferred “when X finishes” watching is out of Level 1–2 scope — clarify truthfully.
+ */
+function resolveNotificationIntent(raw: string, text: string): IntentAction | null {
+  if (
+    /\b(notify me when|tell me when|let me know when)\b/.test(text) ||
+    /\bwhen\b.+\b(finishes|finished|completes|completed|is done|done)\b/.test(
+      text,
+    )
+  ) {
+    return {
+      kind: "unknown",
+      reply:
+        "I can show a desktop notification now. Watching for when something finishes isn’t available yet — and I won’t pretend it is.",
+      suggestion:
+        'Try “show me a notification: Restore finished.” or “can you send notifications?”',
+    };
+  }
+
+  if (
+    /\b(can you (send |show )?notifications|are notifications available|notification support|do (you|we) support notifications)\b/.test(
+      text,
+    ) ||
+    text === "notifications?" ||
+    text === "notifications"
+  ) {
+    return {
+      kind: "notifyStatus",
+      reply: "Checking desktop notification support.",
+    };
+  }
+
+  if (
+    /\b(dismiss|clear|hide)\b.+\bnotification\b/.test(text) ||
+    text === "dismiss notification" ||
+    text === "clear notification"
+  ) {
+    return {
+      kind: "notifyDismiss",
+      reply: "Trying to dismiss that notification.",
+    };
+  }
+
+  const withMessage = raw
+    .trim()
+    .match(
+      /^(?:show(?:\s+me)?(?:\s+a)?(?:\s+desktop)?\s+notification|send(?:\s+me)?(?:\s+a)?(?:\s+desktop)?\s+notification|notify(?:\s+me)?|desktop\s+notification)\s*[:\-~]\s*(.+)$/i,
+    );
+  if (withMessage?.[1]) {
+    const body = stripTrailingPunctuation(withMessage[1]);
+    if (body) {
+      return {
+        kind: "notifyShow",
+        title: "Workspace",
+        text: body,
+        reply: "Showing a desktop notification.",
+      };
+    }
+  }
+
+  if (
+    /^(show(?:\s+me)?(?:\s+a)?(?:\s+desktop)?\s+notification|send(?:\s+me)?(?:\s+a)?(?:\s+desktop)?\s+notification|notify(?:\s+me)?|desktop\s+notification)[.!]?$/i.test(
+      raw.trim(),
+    )
+  ) {
+    return {
+      kind: "notifyShow",
+      title: "Workspace",
+      text: "Notification from Workspace.",
+      reply: "Showing a desktop notification.",
+    };
+  }
+
+  return null;
 }
 
 /**
@@ -428,6 +516,11 @@ export function resolveIntent(raw: string): IntentAction {
     return windowIntent;
   }
 
+  const notificationIntent = resolveNotificationIntent(raw, text);
+  if (notificationIntent) {
+    return notificationIntent;
+  }
+
   if (isEvolutionRequest(raw)) {
     const proposal = createProposal(raw);
     const state = appendProposal(loadEvolutionState(), proposal);
@@ -676,7 +769,7 @@ export function resolveIntent(raw: string): IntentAction {
     reply:
       "I don’t have that yet — and I won’t invent it. Closest available: window control, open/launch apps, Save, Continue, Moments, Check-in, or Guide.",
     suggestion:
-      "Try “what windows are open?”, “maximize Cursor”, “move this window to the left”, “open notepad”, or “save this”.",
+      "Try “what windows are open?”, “show me a notification”, “open notepad”, or “save this”.",
   };
 }
 

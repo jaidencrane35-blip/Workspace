@@ -6,7 +6,7 @@ use crate::capability_runtime::{ApplicationWindowItem, MonitorItem};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct CapabilityIntent {
-    /// clipboard | application | window
+    /// clipboard | application | window | notifications
     pub domain: String,
     /// Provider op or high-level composition key (e.g. "open").
     pub operation: String,
@@ -21,6 +21,10 @@ pub struct CapabilityIntent {
     pub height: Option<i32>,
     pub monitor_index: Option<i32>,
     pub snap: Option<String>,
+    pub title: Option<String>,
+    pub category: Option<String>,
+    pub priority: Option<String>,
+    pub duration: Option<String>,
 }
 
 /// Truthful Operator turn result for Conversation.

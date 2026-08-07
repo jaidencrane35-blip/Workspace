@@ -349,6 +349,22 @@ impl Capability {
             scope: CapabilityScope::System,
         }
     }
+
+    /// Query desktop notification availability (Notifications Provider Level 1).
+    pub fn notify_read() -> Self {
+        Self {
+            id: CapabilityId::new("notify.read").expect("notify.read is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
+
+    /// Show or dismiss a desktop notification (Notifications Provider Level 2).
+    pub fn notify_show() -> Self {
+        Self {
+            id: CapabilityId::new("notify.show").expect("notify.show is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
 }
 
 impl CapabilitySet {
@@ -423,6 +439,8 @@ impl CapabilitySet {
             .with_capability(&Capability::window_focus())
             .with_capability(&Capability::window_place())
             .with_capability(&Capability::window_state())
+            .with_capability(&Capability::notify_read())
+            .with_capability(&Capability::notify_show())
     }
 
     /// Capabilities attributed to system lifecycle operations.

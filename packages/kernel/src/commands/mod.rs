@@ -3,6 +3,7 @@ mod application;
 mod application_capability;
 mod capability_intent;
 mod clipboard;
+mod notification;
 mod window_capability;
 mod automation_contract;
 mod automation_trigger;
@@ -393,6 +394,10 @@ pub use get_workspace_snapshot::GetWorkspaceSnapshot;
 pub use application_capability::{ApplicationOperationResult, ExecuteApplicationOperation};
 pub use capability_intent::execute_capability_intent;
 pub use clipboard::{ClipboardReadResult, ClipboardWriteResult, ReadClipboard, WriteClipboard};
+pub use notification::{
+    DismissNotification, NotificationOperationResult, NotificationStatus, NotificationStatusResult,
+    ShowNotification,
+};
 pub use window_capability::{ExecuteWindowOperation, WindowOperationResult};
 pub use handler::CommandHandler;
 pub use initialize::InitializeWorkspace;

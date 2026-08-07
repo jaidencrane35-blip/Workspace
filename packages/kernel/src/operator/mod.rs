@@ -41,6 +41,10 @@ impl KernelOperator {
             height: step.height,
             monitor_index: step.monitor_index,
             snap: step.snap.clone(),
+            title: step.title.clone(),
+            category: step.category.clone(),
+            priority: step.priority.clone(),
+            duration: step.duration.clone(),
         })
     }
 
@@ -98,6 +102,10 @@ impl KernelOperator {
                 height: None,
                 monitor_index: None,
                 snap: None,
+                title: None,
+                category: None,
+                priority: None,
+                duration: None,
             })?;
             results.push(next);
         } else {
@@ -120,6 +128,7 @@ pub fn parse_domain(raw: &str) -> Result<CapabilityDomainId> {
         "clipboard" => Ok(CapabilityDomainId::clipboard()),
         "application" | "app" => Ok(CapabilityDomainId::application()),
         "window" => Ok(CapabilityDomainId::window()),
+        "notifications" | "notification" | "notify" => Ok(CapabilityDomainId::notifications()),
         other => Err(KernelError::CapabilityRuntime {
             message: format!("unknown capability domain '{other}'"),
         }),

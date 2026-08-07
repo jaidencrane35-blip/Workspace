@@ -10,6 +10,7 @@ mod error;
 mod fixture_enumerator;
 mod launcher;
 mod mutator;
+mod notification;
 mod stub;
 mod stub_mutator;
 #[cfg(windows)]
@@ -27,6 +28,13 @@ pub use capture::{
 pub use clipboard::{
     platform_clipboard, ArboardClipboard, ClipboardPort, MemoryClipboard,
 };
+pub use notification::{
+    platform_notification, MemoryNotificationPort, NotificationCapabilityStatus,
+    NotificationPort, NotificationShowOutcome, NotificationShowRequest,
+    UnavailableNotificationPort,
+};
+#[cfg(windows)]
+pub use notification::WinRtNotificationPort;
 pub use enumerator::{DesktopWindowSnapshot, WindowEnumerator};
 pub use fixture_enumerator::FixtureWindowEnumerator;
 pub use error::{Result, WindowsIntegrationError};

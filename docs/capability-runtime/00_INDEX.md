@@ -2,32 +2,22 @@
 
 | Field | Value |
 | --- | --- |
-| **P10** | Foundation + Clipboard — complete |
-| **P11** | Application Provider — complete |
-| **P12** | Window Provider engineering — complete |
-| **P12.5** | Window Conversation Product Proof — complete |
-| **P12.6** | Conversational Desktop Surface — complete |
-| **P12.7** | Operator Intelligence (TS interim) — superseded by Kernel |
-| **P12 Finalization** | Kernel Operator — complete |
-| **P12 series** | **Permanently complete** |
-| **Next** | **P13 Notifications Provider** |
-| **UI law** | Frozen |
+| **P10–P12** | Complete (P12 series permanently closed) |
+| **P13** | Notifications Provider — awaiting Owner Product Proof review |
+| **Next** | P14 Browser Provider |
 | **Operator law** | Conversation → Intent → Kernel Operator → Runtime |
-| **Provider law** | Own operations; independently testable; no provider-to-provider calls |
-| **Composition law** | Independently useful + composable; Kernel owns composition |
+| **Composition law** | Kernel owns composition |
 
 ## Documents
 
 | Document | Purpose |
 | --- | --- |
-| [../operator/00_INDEX.md](../operator/00_INDEX.md) | **Kernel Operator** |
+| [NOTIFICATIONS_PROVIDER.md](./NOTIFICATIONS_PROVIDER.md) | **P13 Notifications** |
+| [research/NOTIFICATIONS_RESEARCH.md](./research/NOTIFICATIONS_RESEARCH.md) | WRAP decision |
+| [product-proof/NOTIFICATIONS_PROVIDER_PRODUCT_PROOF.md](./product-proof/NOTIFICATIONS_PROVIDER_PRODUCT_PROOF.md) | Owner checklist |
+| [../operator/00_INDEX.md](../operator/00_INDEX.md) | Kernel Operator |
 | [CAPABILITY_RUNTIME_FOUNDATION.md](./CAPABILITY_RUNTIME_FOUNDATION.md) | Pipeline freeze |
-| [PRODUCT_PROOF_RULE.md](./PRODUCT_PROOF_RULE.md) | Permanent Product Proof completion rule |
-| [WINDOW_PROVIDER.md](./WINDOW_PROVIDER.md) | P12 Window Provider |
-| [APPLICATION_PROVIDER.md](./APPLICATION_PROVIDER.md) | P11 Application Provider |
-| [CLIPBOARD_PROVIDER.md](./CLIPBOARD_PROVIDER.md) | P10 reference |
-| [PROVIDER_REGISTRY.md](./PROVIDER_REGISTRY.md) | Registry |
+| [PRODUCT_PROOF_RULE.md](./PRODUCT_PROOF_RULE.md) | Product Proof law |
 | [FIVE_PROGRAM_ROADMAP.md](./FIVE_PROGRAM_ROADMAP.md) | Rolling roadmap |
-| [CAPABILITY_CONTRACTS.md](./CAPABILITY_CONTRACTS.md) | Contracts |
 
-Verifiers: `pnpm verify:capability-runtime-foundation` · `pnpm verify:operator-intelligence` · `pnpm verify:product-proof-harness` · `pnpm verify:product-gravity`  
+Verifiers: `pnpm verify:notifications-provider` · `pnpm verify:operator-intelligence` · `pnpm verify:capability-runtime-foundation` · `pnpm verify:product-proof-harness`

@@ -22,6 +22,10 @@ impl CapabilityDomainId {
         Self::new("window")
     }
 
+    pub fn notifications() -> Self {
+        Self::new("notifications")
+    }
+
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -48,6 +52,12 @@ pub enum CapabilityOperation {
     Bounds,
     Active,
     Monitors,
+    /// Notifications Provider — Level 1 capability query.
+    Status,
+    /// Notifications Provider — Level 2 show toast.
+    Show,
+    /// Notifications Provider — Level 2 dismiss (best-effort).
+    Dismiss,
 }
 
 impl CapabilityOperation {
@@ -70,6 +80,9 @@ impl CapabilityOperation {
             Self::Bounds => "bounds",
             Self::Active => "active",
             Self::Monitors => "monitors",
+            Self::Status => "status",
+            Self::Show => "show",
+            Self::Dismiss => "dismiss",
         }
     }
 
@@ -92,6 +105,9 @@ impl CapabilityOperation {
             "bounds" | "info" => Some(Self::Bounds),
             "active" | "foreground" => Some(Self::Active),
             "monitors" | "displays" => Some(Self::Monitors),
+            "status" | "available" | "capability" => Some(Self::Status),
+            "show" | "notify" | "toast" => Some(Self::Show),
+            "dismiss" | "clear" | "hide" => Some(Self::Dismiss),
             _ => None,
         }
     }
@@ -126,6 +142,14 @@ pub struct ProviderInvokeRequest {
     pub monitor_index: Option<i32>,
     /// Snap edge: left | right | top | bottom
     pub snap: Option<String>,
+    /// Notification title (Notifications Provider).
+    pub title: Option<String>,
+    /// Notification category label.
+    pub category: Option<String>,
+    /// Notification priority: normal | high | low
+    pub priority: Option<String>,
+    /// Notification duration: short | long
+    pub duration: Option<String>,
 }
 
 impl Default for CapabilityDomainId {

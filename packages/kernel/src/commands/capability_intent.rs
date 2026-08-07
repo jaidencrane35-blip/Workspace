@@ -5,6 +5,7 @@ use crate::capability_runtime::{
 };
 use crate::commands::application_capability::ExecuteApplicationOperation;
 use crate::commands::clipboard::{ReadClipboard, WriteClipboard};
+use crate::commands::notification::{DismissNotification, NotificationStatus, ShowNotification};
 use crate::commands::pipeline::CommandPipeline;
 use crate::commands::window_capability::ExecuteWindowOperation;
 use crate::error::{KernelError, Result};
@@ -129,6 +130,73 @@ fn execute_step(
             ))?;
             Ok(window_result_as_response(step.operation, result))
         }
+        "notifications" => match step.operation {
+            CapabilityOperation::Status => {
+                let result = pipeline().execute_query(NotificationStatus)?;
+                Ok(ProviderInvokeResponse {
+                    domain: CapabilityDomainId::notifications(),
+                    operation: CapabilityOperation::Status,
+                    ok: result.available,
+                    format: Some(result.platform),
+                    bytes: None,
+                    text: Some(result.permission),
+                    preview: Some(result.message.clone()),
+                    message: Some(result.message),
+                    status: Some(if result.available {
+                        "available".into()
+                    } else {
+                        "unavailable".into()
+                    }),
+                    target: None,
+                    items: None,
+                    monitors: None,
+                })
+            }
+            CapabilityOperation::Show => {
+                let result = pipeline().execute_mutation(ShowNotification::new(
+                    step.title.clone(),
+                    step.text.clone(),
+                    step.category.clone(),
+                    step.priority.clone(),
+                    step.duration.clone(),
+                ))?;
+                Ok(ProviderInvokeResponse {
+                    domain: CapabilityDomainId::notifications(),
+                    operation: CapabilityOperation::Show,
+                    ok: result.ok,
+                    format: step.category.clone(),
+                    bytes: None,
+                    text: result.target.clone(),
+                    preview: result.preview,
+                    message: Some(result.message),
+                    status: Some(result.status),
+                    target: result.target,
+                    items: None,
+                    monitors: None,
+                })
+            }
+            CapabilityOperation::Dismiss => {
+                let result =
+                    pipeline().execute_mutation(DismissNotification::new(step.query.clone()))?;
+                Ok(ProviderInvokeResponse {
+                    domain: CapabilityDomainId::notifications(),
+                    operation: CapabilityOperation::Dismiss,
+                    ok: result.ok,
+                    format: None,
+                    bytes: None,
+                    text: result.target.clone(),
+                    preview: result.preview,
+                    message: Some(result.message),
+                    status: Some(result.status),
+                    target: result.target,
+                    items: None,
+                    monitors: None,
+                })
+            }
+            other => Err(KernelError::CapabilityRuntime {
+                message: format!("notifications does not support '{}'", other.as_str()),
+            }),
+        },
         other => Err(KernelError::CapabilityRuntime {
             message: format!("unsupported domain '{other}'"),
         }),
@@ -202,6 +270,10 @@ pub fn execute_capability_intent(
                 height: None,
                 monitor_index: None,
                 snap: None,
+                title: None,
+                category: None,
+                priority: None,
+                duration: None,
             },
         )?;
         results.push(next);

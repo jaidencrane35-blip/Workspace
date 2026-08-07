@@ -183,6 +183,7 @@ impl MutationCommand for ExecuteWindowOperation {
             height: self.height,
             monitor_index: self.monitor_index,
             snap: self.snap.clone(),
+            ..Default::default()
         })?;
         Ok(WindowOperationResult::from(response))
     }

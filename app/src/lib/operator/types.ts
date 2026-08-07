@@ -15,6 +15,10 @@ export interface CapabilityIntent {
   height?: number | null;
   monitorIndex?: number | null;
   snap?: string | null;
+  title?: string | null;
+  category?: string | null;
+  priority?: string | null;
+  duration?: string | null;
 }
 
 /** Mirrors kernel `OperatorTurnResult`. */

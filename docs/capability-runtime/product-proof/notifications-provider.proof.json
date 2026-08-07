@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "provider": "notifications",
+  "program": "P13",
+  "pipeline": [
+    "Conversation",
+    "Intent Layer",
+    "execute_capability_intent",
+    "Kernel Operator",
+    "Capability Runtime",
+    "Capability Router",
+    "Provider Registry",
+    "Notification Provider",
+    "Desktop Service",
+    "Conversation Response"
+  ],
+  "ipc": "execute_capability_intent",
+  "userLanguageRules": [
+    "Never expose Provider, Router, or Registry terminology",
+    "Never invent success",
+    "Clarify deferred watching honestly"
+  ],
+  "examples": [
+    {
+      "category": "status",
+      "utterance": "Can you send notifications?",
+      "expectedKind": "notifyStatus",
+      "expectedOperation": "status"
+    },
+    {
+      "category": "status",
+      "utterance": "Are notifications available?",
+      "expectedKind": "notifyStatus",
+      "expectedOperation": "status"
+    },
+    {
+      "category": "show",
+      "utterance": "Show me a notification.",
+      "expectedKind": "notifyShow",
+      "expectedOperation": "show"
+    },
+    {
+      "category": "show",
+      "utterance": "Send me a desktop notification.",
+      "expectedKind": "notifyShow",
+      "expectedOperation": "show"
+    },
+    {
+      "category": "show",
+      "utterance": "Show me a notification: Restore finished.",
+      "expectedKind": "notifyShow",
+      "expectedOperation": "show",
+      "expectedText": "Restore finished"
+    },
+    {
+      "category": "show",
+      "utterance": "Notify me: Workspace is ready.",
+      "expectedKind": "notifyShow",
+      "expectedOperation": "show",
+      "expectedText": "Workspace is ready"
+    },
+    {
+      "category": "dismiss",
+      "utterance": "Dismiss that notification.",
+      "expectedKind": "notifyDismiss",
+      "expectedOperation": "dismiss"
+    },
+    {
+      "category": "show",
+      "utterance": "Desktop notification",
+      "expectedKind": "notifyShow",
+      "expectedOperation": "show"
+    }
+  ],
+  "clarifications": [
+    {
+      "utterance": "Notify me when that's finished.",
+      "expectedKind": "unknown",
+      "mustMention": "watching"
+    },
+    {
+      "utterance": "Tell me when the download completes.",
+      "expectedKind": "unknown",
+      "mustMention": "watching"
+    },
+    {
+      "utterance": "Notify me when Cursor finishes.",
+      "expectedKind": "unknown",
+      "mustMention": "watching"
+    },
+    {
+      "utterance": "Notify me when Workspace has completed.",
+      "expectedKind": "unknown",
+      "mustMention": "watching"
+    }
+  ],
+  "ownerReviewChecklist": [
+    "Ask Conversation to show a notification and observe a desktop toast",
+    "Ask whether notifications are available — truthful status",
+    "Ask to notify when something finishes — clarification, no fake watch",
+    "Replies never mention providers, routers, or registries",
+    "Failures remain truthful if Windows blocks delivery"
+  ]
+}

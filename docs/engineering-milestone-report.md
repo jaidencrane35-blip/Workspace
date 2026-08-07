@@ -1,61 +1,56 @@
 # Engineering Milestone Report
-## P12 COMPLETE — Final Repository Closure
+## P13 Notifications Provider
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P12 COMPLETE (Final Repository Closure) |
+| **Execution program** | P13 Notifications Provider |
 | **Date** | 2026-08-07 |
-| **Outcome** | **A — P12 is repository-complete** |
-| **Implementation base** | P12 Finalization `daf3ae9` |
-| **Closure commit** | `030fa3f` |
-| **Handoff** | `P12_PERMANENTLY_CLOSED_P13_ELIGIBLE` |
-| **Next program** | **P13 Notifications Provider** |
+| **Commit** | pending |
+| **Handoff** | `AWAITING_PROJECT_OWNER_NOTIFICATIONS_PRODUCT_PROOF_REVIEW` |
+| **Index** | `docs/capability-runtime/NOTIFICATIONS_PROVIDER.md` |
+| **Product Proof** | `docs/capability-runtime/product-proof/NOTIFICATIONS_PROVIDER_PRODUCT_PROOF.md` |
 
 ---
 
-## Repository reassessment
+## Mission
 
-Audited P10–P12 Finalization as one integrated product against repository truth on `v2-dev`.
+Deliver Levels 1–2 Notifications as a Capability Provider on the completed Conversation → Kernel Operator architecture. No P12 redesign.
 
-| Area | Result |
+---
+
+## Decision
+
+**WRAP** `tauri-winrt-notification` behind `NotificationPort`.  
+Conversation IPC remains solely `execute_capability_intent`.
+
+---
+
+## Delivered
+
+| Surface | Artifact |
 | --- | --- |
-| Conversation → Intent → Kernel Operator → Runtime | Authoritative |
-| Single IPC `execute_capability_intent` | Enforced |
-| Presentation Purity / Kernel Authority | Satisfied |
-| Window / Application Product Proof paths | Intact |
-| Product Gravity / Desktop Operator | Intact |
-| Remaining P12 architectural work | **None** |
+| Port | `packages/windows-integration/src/notification.rs` |
+| Provider | `notification_provider.rs` |
+| Commands | `notify.read` / `notify.show` |
+| Operator | plan + compose for `notifications` |
+| Intent | `notifyStatus` / `notifyShow` / `notifyDismiss` |
+| Proof | `notifications-provider.proof.json` + Vitest |
+| Verifier | `pnpm verify:notifications-provider` |
 
 ---
 
-## Findings closed in this program
+## Explicit non-goals
 
-No new architecture. Sync + Product Proof hygiene only:
-
-1. Roadmap stamped (`daf3ae9`); P12 series marked permanently complete  
-2. Product Proof Rule + window proof harness pipeline → Kernel Operator / single IPC  
-3. Provider docs distinguish Conversation IPC vs diagnostic IPC  
-4. Intent clipboard replies scrubbed of “Capability Runtime” jargon  
-5. Verifiers tightened for jargon + proof IPC  
-6. Project health / indexes synchronized for permanent closure  
+P14 Browser · scheduled watching · actionable toast deep-links · AUMID packaging polish · redesign Kernel Operator
 
 ---
 
-## Completion audit
+## Product Complete?
 
-1. React desktop operational logic (Conversation)? **No**  
-2. Presentation provider composition? **No**  
-3. Presentation execution order? **No**  
-4. Presentation permission decisions? **No**  
-5. Conversation capabilities through Kernel Operator? **Yes**  
-6. Architecture fully authoritative? **Yes**  
-7. Remaining reason for another P12.x? **No**  
+Engineering + Product Proof harness shipped. **Product Complete under Product Proof Rule = pending Owner review** (observable toast + Conversation checklist).
 
 ---
 
-## Explicit statements
+## Next
 
-- **Is P12 now permanently complete?** **Yes.**  
-- **Is P13 the next constitutional execution program?** **Yes.**  
-
-Do not begin P13 in this program. STOP for Owner acknowledgment.
+**P14 Browser Provider** after Owner acceptance.

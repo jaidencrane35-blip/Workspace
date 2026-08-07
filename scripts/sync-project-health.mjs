@@ -53,6 +53,7 @@ const verifiers = {
   "verify:product-proof-harness": "scripts/verify-product-proof-harness.mjs",
   "verify:product-gravity": "scripts/verify-product-gravity.mjs",
   "verify:operator-intelligence": "scripts/verify-operator-intelligence.mjs",
+  "verify:notifications-provider": "scripts/verify-notifications-provider.mjs",
 };
 
 const verifierStatus = {};
@@ -301,6 +302,18 @@ const completedPrograms = [
       "pnpm verify:operator-intelligence",
     ],
   },
+  {
+    id: "notifications-provider-p13",
+    backlogRef: "P13 Notifications Provider",
+    completed: "2026-08-07",
+    artifacts: [
+      "docs/capability-runtime/NOTIFICATIONS_PROVIDER.md",
+      "docs/capability-runtime/product-proof/notifications-provider.proof.json",
+      "packages/kernel/src/capability_runtime/notification_provider.rs",
+      "pnpm verify:notifications-provider",
+      "execute_capability_intent",
+    ],
+  },
 ];
 
 const remainingBacklog = [
@@ -387,10 +400,10 @@ const health = {
     machineState: "docs/project-health.json",
   },
   currentExecutionProgram: {
-    id: "p12-complete-final-repository-closure",
-    title: "P12 COMPLETE — Final Repository Closure",
-    status: "permanently_closed",
-    note: "P12 series permanently complete. Conversation→Intent→Kernel Operator→Runtime authoritative. P13 is next eligible execution program.",
+    id: "notifications-provider-p13",
+    title: "P13 Notifications Provider",
+    status: "complete_awaiting_owner_review",
+    note: "Notifications Provider Levels 1–2 + Conversation Product Proof. Kernel Operator + single IPC. Await Owner review before P14.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -416,25 +429,22 @@ const health = {
     operatorIntelligence: "superseded_by_kernel_operator",
     kernelOperator: "complete",
     p12Series: "permanently_complete",
+    notificationsProvider: "complete_awaiting_owner_review",
     notes: [
       "UI Architecture Spec accepted/frozen (P8)",
       "Capability Runtime research accepted (P9)",
       "Capability Runtime Foundation + Clipboard accepted (P10)",
       "Application Provider accepted (P11)",
-      "Window Provider Levels 1–2 complete (P12)",
-      "Window Provider Conversation Product Proof complete (P12.5)",
-      "Conversational Desktop Surface + Product Gravity complete (P12.6)",
-      "Operator Intelligence Foundation (P12.7 TS interim)",
-      "P12 Finalization — Kernel Operator + Presentation Purity complete",
-      "P12 series permanently closed — P13 eligible",
+      "Window Provider + P12 series permanently complete",
+      "P13 Notifications Provider Levels 1–2 + Product Proof harness",
       "Operator Authority + Kernel Authority + Composition permanent",
       "Providers own operations; independently testable",
     ],
   },
   currentMilestone: {
-    id: "p12-complete-final-repository-closure",
-    title: "P12 COMPLETE — Final Repository Closure",
-    status: "permanently_closed",
+    id: "notifications-provider-p13",
+    title: "P13 Notifications Provider",
+    status: "awaiting_owner_review",
     commit: milestoneCommit,
   },
   acceptedReviews: [
@@ -510,9 +520,9 @@ const health = {
   ],
   outstandingProductDebt: [
     {
-      id: "capability-providers-p13-plus",
+      id: "capability-providers-p14-plus",
       track: "B",
-      summary: "Notifications / Browser / Screenshot / File providers — P13+ (P12 closed)",
+      summary: "Browser / Screenshot / File providers await Owner acceptance of P13 Notifications",
     },
     {
       id: "tray-integration",
@@ -544,6 +554,7 @@ const health = {
       "Operator Intelligence Foundation (P12.7 TS interim)",
       "P12 Finalization — Kernel Operator architecture",
       "P12 series permanently closed",
+      "P13 Notifications Provider engineering + Product Proof harness",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)",
     ],
@@ -611,15 +622,14 @@ const health = {
   lastMilestone: {
     date: "2026-08-07",
     document: "docs/engineering-milestone-report.md",
-    title: "P12 COMPLETE — Final Repository Closure",
-    reviewBrief: "docs/operator/product-proof/OPERATOR_PRODUCT_PROOF.md",
-  },
-  handoffStatus: "P12_PERMANENTLY_CLOSED_P13_ELIGIBLE",
-  nextRecommendedExecutionProgram: {
-    id: "notifications-provider-p13",
     title: "P13 Notifications Provider",
-    blockedUntil: null,
-    note: "P12 permanently closed. P13 is the next constitutional execution program.",
+    reviewBrief: "docs/capability-runtime/product-proof/NOTIFICATIONS_PROVIDER_PRODUCT_PROOF.md",
+  },
+  handoffStatus: "AWAITING_PROJECT_OWNER_NOTIFICATIONS_PRODUCT_PROOF_REVIEW",
+  nextRecommendedExecutionProgram: {
+    id: "browser-provider-p14",
+    title: "P14 Browser Provider",
+    blockedUntil: "Project Owner accepts P13 Notifications Product Proof",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",
