@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T09:47:15.325Z",
+  "updatedAt": "2026-08-07T09:47:31.617Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -440,7 +440,7 @@
     "id": "voice-product-completion-reopened-p16-30",
     "title": "P16.30 Product Completion Reopened — Intent Architecture, Voice UX & Production Validation",
     "status": "engineering_complete_product_proof_pending",
-    "commit": "acbf43d"
+    "commit": "3ffdb88"
   },
   "acceptedReviews": [
     {
