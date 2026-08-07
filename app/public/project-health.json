@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T01:14:39.310Z",
+  "updatedAt": "2026-08-07T01:14:59.206Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -390,7 +390,7 @@
     "id": "browser-provider-p14-5",
     "title": "P14.5 Browser Product Proof Remediation",
     "status": "permanently_closed",
-    "commit": "12584ce"
+    "commit": "0ed6711"
   },
   "acceptedReviews": [
     {

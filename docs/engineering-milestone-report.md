@@ -5,6 +5,7 @@
 | --- | --- |
 | **Execution program** | P14.5 Browser Product Proof Remediation |
 | **Date** | 2026-08-07 |
+| **Commit** | `0ed6711` |
 | **Prior** | P14 Browser engineering `1670822` |
 | **Status** | **P14 PERMANENTLY CLOSED** |
 | **Handoff** | `P14_PERMANENTLY_CLOSED_P15_ELIGIBLE` |
@@ -17,7 +18,7 @@
 | --- | --- |
 | Natural language robustness | Deterministic alias/spacing/case normalization in Intent |
 | Invalid URL handling | Plausible URL validation; refuse without launch |
-| Capability explanation | `browserExplain` â€” never opens Guide |
+| Capability explanation | `browserExplain` — never opens Guide |
 
 Architecture frozen. No Capability Runtime / Provider / Registry redesign.
 
