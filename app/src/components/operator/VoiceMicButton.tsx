@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   cancelListening,
-  getVoiceStatus,
   listenOnce,
+  openVoiceSettings,
+  warmUpVoice,
   type VoicePhase,
 } from "../../lib/voice";
 
@@ -15,6 +16,9 @@ interface VoiceMicButtonProps {
 /**
  * Microphone control beside the Conversation composer.
  * Push-to-talk via click (start) / click again (stop). Single utterance.
+ *
+ * Listening indicator is shown only after the recognizer is actually capturing —
+ * never during engine warm-up / create / compile.
  */
 export function VoiceMicButton({
   disabled,
@@ -26,15 +30,19 @@ export function VoiceMicButton({
 
   useEffect(() => {
     let active = true;
-    void getVoiceStatus().then((status) => {
-      if (active) {
-        setAvailable(status.available || status.recognitionAvailable);
+    void warmUpVoice().then((status) => {
+      if (!active) {
+        return;
+      }
+      setAvailable(status.available || status.recognitionAvailable);
+      if (status.permission === "denied") {
+        onVoiceMessage(status.message);
       }
     });
     return () => {
       active = false;
     };
-  }, []);
+  }, [onVoiceMessage]);
 
   const stop = useCallback(async () => {
     await cancelListening();
@@ -42,26 +50,25 @@ export function VoiceMicButton({
   }, []);
 
   const start = useCallback(async () => {
-    setPhase("listening");
-    const status = await getVoiceStatus();
-    if (!status.available && !status.recognitionAvailable) {
-      setPhase("error");
-      onVoiceMessage(status.message);
-      setPhase("idle");
-      return;
-    }
-    if (status.permission === "denied") {
-      setPhase("error");
-      onVoiceMessage(status.message);
-      setPhase("idle");
-      return;
-    }
+    // Preparing ≠ listening. Do not pulse until capture starts.
+    // Skip status IPC on the hot path — it previously delayed RecognizeAsync
+    // and caused the first spoken words to be lost.
+    setPhase("preparing");
 
-    setPhase("recognizing");
-    const result = await listenOnce();
+    const result = await listenOnce(() => {
+      setPhase("listening");
+    });
+
     if (!result.ok || !result.transcript?.trim()) {
       setPhase("error");
       onVoiceMessage(result.message);
+      if (
+        result.status === "permission_denied" ||
+        result.status === "microphone_unavailable"
+      ) {
+        const speechPrivacy = result.message.toLowerCase().includes("speech privacy");
+        await openVoiceSettings(speechPrivacy ? "speech" : "microphone");
+      }
       setPhase("idle");
       return;
     }
@@ -74,19 +81,22 @@ export function VoiceMicButton({
     if (disabled) {
       return;
     }
-    if (phase === "listening" || phase === "recognizing") {
+    if (phase === "preparing" || phase === "listening") {
       void stop();
       return;
     }
     void start();
   };
 
-  const listening = phase === "listening" || phase === "recognizing";
+  const listening = phase === "listening";
+  const preparing = phase === "preparing";
   const label = !available
     ? "Voice unavailable"
-    : listening
-      ? "Stop listening"
-      : "Speak to Workspace";
+    : preparing
+      ? "Getting ready…"
+      : listening
+        ? "Stop listening"
+        : "Speak to Workspace";
 
   return (
     <button
@@ -94,15 +104,17 @@ export function VoiceMicButton({
       className="op-shell__mic"
       data-phase={phase}
       data-listening={listening ? "true" : "false"}
+      data-preparing={preparing ? "true" : "false"}
       data-available={available ? "true" : "false"}
       onClick={onToggle}
       disabled={disabled}
       aria-label={label}
       title={label}
       aria-pressed={listening}
+      aria-busy={preparing}
     >
       <span className="op-shell__mic-icon" aria-hidden="true">
-        {listening ? "●" : "◉"}
+        {listening ? "●" : preparing ? "◌" : "◉"}
       </span>
       {listening && (
         <span className="op-shell__mic-pulse" aria-hidden="true" />

@@ -16,8 +16,20 @@
     "Conversation Response"
   ],
   "ipc": {
-    "voice": ["voice_status", "voice_listen_once", "voice_cancel"],
+    "voice": [
+      "voice_status",
+      "voice_warm_up",
+      "voice_listen_once",
+      "voice_cancel",
+      "voice_open_settings"
+    ],
     "desktop": "execute_capability_intent"
+  },
+  "responsiveness": {
+    "prewarm": true,
+    "listeningIndicatorOnlyWhenCapturing": true,
+    "noStatusRoundTripBeforeListen": true,
+    "firstWordCapture": "required"
   },
   "userLanguageRules": [
     "Never expose Provider, Router, Registry, Runtime, Kernel, WinRT, or SpeechRecognizer terminology",
@@ -105,7 +117,9 @@
     "op-shell__mic",
     "VoiceMicButton",
     "listening indicator",
-    "composer integration"
+    "composer integration",
+    "data-preparing",
+    "warmUpVoice"
   ],
   "independenceRule": true,
   "compositionAudit": "docs/capability-runtime/product-proof/VOICE_INPUT_COMPOSITION_AUDIT.md"

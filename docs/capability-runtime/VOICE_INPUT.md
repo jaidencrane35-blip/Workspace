@@ -1,5 +1,5 @@
 # Voice Input
-## Product Implementation Program P16 — Levels 1–2
+## Product Implementation Program P16 — Levels 1–2 (+ P16.5 naturalness)
 
 | Field | Value |
 | --- | --- |
@@ -14,7 +14,7 @@
 ## Architecture
 
 ```
-Mic button → VoicePort (OS speech) → transcript
+Mic button → VoicePort (warm WinRT speech) → transcript
     → Conversation composer → Intent → Kernel Operator → Providers → OS
 ```
 
@@ -23,14 +23,23 @@ Kernel Operator is unchanged for recognition.
 
 ---
 
+## Responsiveness (P16.5)
+
+- Speech engine is **pre-warmed** at Workspace startup and on Conversation mount.
+- Listening indicator appears only after `RecognizeAsync` has started (never during create/compile).
+- Mic click does **not** await a heavy status round-trip before listening.
+- Warm engine is reused across listen turns.
+
+---
+
 ## Windows prerequisites (Owner)
 
-Dictation recognition requires Windows speech privacy acceptance.  
-If privacy is not allowed, listening fails immediately with a truthful desktop message (never HRESULT / WinRT jargon).
+Dictation requires Windows speech privacy acceptance and microphone access for Workspace.
 
-**Settings path:** Settings → Privacy & security → Speech → Online speech recognition.
+On denial, Conversation explains the fix in ordinary language and opens the matching Settings page:
 
-Also required: a working microphone allowed for Workspace.
+- Speech: Settings → Privacy & security → Speech  
+- Microphone: Settings → Privacy & security → Microphone  
 
 ---
 
@@ -38,10 +47,11 @@ Also required: a working microphone allowed for Workspace.
 
 | Level | Surface | Effect |
 | --- | --- | --- |
-| 1 | `voice_status` | Engine probe (create/compile). Does **not** prove privacy accepted. |
-| 2 | `voice_listen_once` | Single utterance; maps OS privacy / mic / network failures to desktop language |
+| 1 | `voice_status` / `voice_warm_up` | Availability + pre-warm |
+| 2 | `voice_listen_once` | Single utterance; emits `voice-listening` when capturing |
 | 2 | `voice_cancel` | Stop listening |
-| UI | Mic beside composer | Listening indicator + pulse; insert + submit |
+| 2 | `voice_open_settings` | Open Microphone or Speech privacy Settings |
+| UI | Mic beside composer | Preparing vs Listening; insert + submit |
 
 ---
 
@@ -50,7 +60,7 @@ Also required: a working microphone allowed for Workspace.
 | Layer | Location |
 | --- | --- |
 | Port | `packages/windows-integration/src/voice.rs` |
-| IPC | `voice_status` / `voice_listen_once` / `voice_cancel` |
+| IPC | `voice_*` commands |
 | UI | `VoiceMicButton` in Conversation composer |
 | Intent help | `voiceStatus` / `voiceExplain` (reply-only) |
 

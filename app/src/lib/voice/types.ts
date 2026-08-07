@@ -1,9 +1,9 @@
-/** Voice Input states (P16) — Conversation input device only. */
+/** Voice Input states (P16 / P16.5) — Conversation input device only. */
 
 export type VoicePhase =
   | "idle"
+  | "preparing"
   | "listening"
-  | "recognizing"
   | "transcript_ready"
   | "error";
 
@@ -14,6 +14,7 @@ export interface VoiceStatus {
   permission: string;
   message: string;
   inputState: string;
+  warmed?: boolean;
 }
 
 export interface VoiceListenResult {

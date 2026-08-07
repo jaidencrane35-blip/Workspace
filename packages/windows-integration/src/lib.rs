@@ -37,9 +37,9 @@ pub use screenshot::{
     ScreenshotCaptureOutcome, ScreenshotPort, SystemScreenshotPort, UnavailableScreenshotPort,
 };
 pub use voice::{
-    classify_speech_failure, platform_voice, MemoryVoicePort, SystemVoicePort,
-    UnavailableVoicePort, VoiceCapabilityStatus, VoiceListenOutcome, VoicePort,
-    HRESULT_SPEECH_PRIVACY_DECLINED,
+    classify_speech_failure, open_windows_settings_uri, platform_voice, MemoryVoicePort,
+    SystemVoicePort, UnavailableVoicePort, VoiceCapabilityStatus, VoiceListenOutcome, VoicePort,
+    VoiceSettingsTarget, HRESULT_SPEECH_PRIVACY_DECLINED,
 };
 pub use clipboard::{
     platform_clipboard, ArboardClipboard, ClipboardPort, MemoryClipboard,

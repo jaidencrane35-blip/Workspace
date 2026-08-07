@@ -25,6 +25,7 @@ windows = { version = "0.58", features = [
   "Foundation",
   "Foundation_Collections",
   "Globalization",
+  "Media_Capture",
   "Media_SpeechRecognition",
   "Win32_Foundation",
   "Win32_Graphics_Gdi",

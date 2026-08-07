@@ -4,4 +4,6 @@ export {
   desktopVoiceMessage,
   getVoiceStatus,
   listenOnce,
+  openVoiceSettings,
+  warmUpVoice,
 } from "./bridge";

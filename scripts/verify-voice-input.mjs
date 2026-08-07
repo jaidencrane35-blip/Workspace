@@ -59,8 +59,17 @@ const libRs = fs.readFileSync(
   path.join(root, "app/src-tauri/src/lib.rs"),
   "utf8",
 );
-for (const cmd of ["voice_status", "voice_listen_once", "voice_cancel"]) {
+for (const cmd of [
+  "voice_status",
+  "voice_warm_up",
+  "voice_listen_once",
+  "voice_cancel",
+  "voice_open_settings",
+]) {
   if (!libRs.includes(cmd)) fail(`Tauri handler must register ${cmd}`);
+}
+if (!libRs.includes("warm_voice_engine_async")) {
+  fail("app setup must pre-warm the voice engine");
 }
 
 const runtime = fs.readFileSync(
@@ -99,6 +108,31 @@ const bridge = fs.readFileSync(
 );
 if (!bridge.includes("desktopVoiceMessage")) {
   fail("voice bridge must sanitize user-facing voice messages");
+}
+if (!bridge.includes("warmUpVoice") || !bridge.includes("voice-listening")) {
+  fail("voice bridge must support warm-up and listening-ready events");
+}
+
+const micUi = fs.readFileSync(
+  path.join(root, "app/src/components/operator/VoiceMicButton.tsx"),
+  "utf8",
+);
+if (!micUi.includes('data-preparing') || !micUi.includes("preparing")) {
+  fail("mic UI must distinguish preparing from listening");
+}
+if (micUi.includes("getVoiceStatus()") && micUi.includes("setPhase(\"preparing\")")) {
+  // Hot-path status before listen reintroduces first-word loss.
+  const startIdx = micUi.indexOf("const start");
+  const startChunk = micUi.slice(startIdx, startIdx + 900);
+  if (startChunk.includes("getVoiceStatus")) {
+    fail("mic start hot path must not await getVoiceStatus before listen");
+  }
+}
+if (!voiceRs.includes("warm_up") || !voiceRs.includes("listen_once_when_ready")) {
+  fail("voice port must expose warm_up and listen_once_when_ready");
+}
+if (!proof.responsiveness?.prewarm || !proof.responsiveness?.listeningIndicatorOnlyWhenCapturing) {
+  fail("proof must declare P16.5 responsiveness requirements");
 }
 
 if (!Array.isArray(proof.failureModes) || proof.failureModes.length < 1) {

@@ -65,6 +65,12 @@ Owner mic click failed immediately with WinRT `RecognizeAsync` HRESULT `0x800455
 
 ---
 
+## Product Proof remediation (P16.5 naturalness)
+
+Owner found Voice “worked” but felt late: first words lost because Listening UI + user speech began during ~280 ms cold `SpeechRecognizer::new` plus a status IPC round-trip, before `RecognizeAsync` captured audio. Fix: pre-warm and reuse the compiled recognizer; show Listening only after capture starts; skip status on the listen hot path; detect mic denial and open the correct Windows Settings URI.
+
+---
+
 ## Explicit non-goals
 
 Conversational AI · speech intelligence · dictation editor · hotword · provider execution from Voice · OCR of speech · cloud STT as default  

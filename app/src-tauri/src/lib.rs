@@ -144,7 +144,10 @@ use commands::workspace_intelligence::{
 use commands::application_capability::execute_application_operation;
 use commands::capability_intent::execute_capability_intent;
 use commands::clipboard::{read_clipboard, write_clipboard};
-use commands::voice::{voice_cancel, voice_listen_once, voice_status};
+use commands::voice::{
+    voice_cancel, voice_listen_once, voice_open_settings, voice_status, voice_warm_up,
+    warm_voice_engine_async,
+};
 use commands::window_capability::execute_window_operation;
 use commands::health::get_workspace_health;
 use commands::settings::{get_settings, update_settings};
@@ -188,8 +191,10 @@ pub fn run() {
             execute_window_operation,
             execute_capability_intent,
             voice_status,
+            voice_warm_up,
             voice_listen_once,
             voice_cancel,
+            voice_open_settings,
             exit_workspace,
             // Product shell (Canvas + Diagnostic)
             create_workspace,
@@ -412,6 +417,8 @@ pub fn run() {
             });
 
             app.manage(Arc::new(Mutex::new(kernel)));
+            // Hide Voice cold-start (~280ms WinRT create) before the user clicks the mic.
+            warm_voice_engine_async();
             log::info!("workspace application setup complete");
 
             Ok(())

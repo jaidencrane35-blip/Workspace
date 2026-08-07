@@ -1,4 +1,4 @@
-//! Voice input port — WRAP WinRT speech recognition (P16).
+//! Voice input port — WRAP WinRT speech recognition (P16 / P16.5).
 //!
 //! Voice is a Conversation **input device**, not a desktop Capability Provider.
 //! It never invokes other providers and never owns orchestration.
@@ -12,6 +12,32 @@ use crate::error::{Result, WindowsIntegrationError};
 pub const HRESULT_SPEECH_PRIVACY_DECLINED: u32 = 0x8004_5509;
 
 const SPEECH_PRIVACY_MESSAGE: &str = "Windows needs speech privacy turned on before I can listen. Open Settings → Privacy & security → Speech, turn on Online speech recognition, then try again.";
+
+const MICROPHONE_PERMISSION_MESSAGE: &str = "Workspace can’t use the microphone yet. Open Settings → Privacy & security → Microphone, allow access for Workspace, then try again.";
+
+/// Windows Settings pages Voice may open for the user.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VoiceSettingsTarget {
+    Microphone,
+    SpeechPrivacy,
+}
+
+impl VoiceSettingsTarget {
+    pub fn as_settings_uri(self) -> &'static str {
+        match self {
+            Self::Microphone => "ms-settings:privacy-microphone",
+            Self::SpeechPrivacy => "ms-settings:privacy-speech",
+        }
+    }
+
+    pub fn parse(raw: &str) -> Option<Self> {
+        match raw.trim().to_ascii_lowercase().as_str() {
+            "microphone" | "mic" => Some(Self::Microphone),
+            "speech" | "speech_privacy" | "privacy" => Some(Self::SpeechPrivacy),
+            _ => None,
+        }
+    }
+}
 
 /// Map OS / WinRT speech failures to ordinary-language listen outcomes.
 /// Never exposes HRESULT, stack traces, or provider terminology.
@@ -46,7 +72,7 @@ pub fn classify_speech_failure(code: u32, detail: &str) -> VoiceListenOutcome {
             ok: false,
             transcript: None,
             status: "microphone_unavailable".into(),
-            message: "I couldn’t reach a microphone. Check that one is connected and allowed for Workspace.".into(),
+            message: MICROPHONE_PERMISSION_MESSAGE.into(),
         };
     }
     VoiceListenOutcome {
@@ -54,6 +80,33 @@ pub fn classify_speech_failure(code: u32, detail: &str) -> VoiceListenOutcome {
         transcript: None,
         status: "recognition_failed".into(),
         message: "I couldn’t listen just now. Check that a microphone is connected and try again.".into(),
+    }
+}
+
+/// Open a Windows Settings URI (best-effort).
+pub fn open_windows_settings_uri(uri: &str) -> Result<()> {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        use std::process::Command;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        Command::new("explorer")
+            .arg(uri)
+            .creation_flags(CREATE_NO_WINDOW)
+            .spawn()
+            .map_err(|error| {
+                WindowsIntegrationError::VoiceFailed(format!(
+                    "Couldn’t open Windows Settings ({error})."
+                ))
+            })?;
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = uri;
+        Err(WindowsIntegrationError::VoiceFailed(
+            "Windows Settings aren’t available here.".into(),
+        ))
     }
 }
 
@@ -66,6 +119,9 @@ pub struct VoiceCapabilityStatus {
     pub recognition_available: bool,
     pub permission: String,
     pub message: String,
+    /// True when the speech engine is pre-warmed and ready for immediate listen.
+    #[serde(default)]
+    pub warmed: bool,
 }
 
 /// Outcome of a single listen turn.
@@ -81,8 +137,18 @@ pub struct VoiceListenOutcome {
 /// Speech → text access behind a Workspace-owned port.
 pub trait VoicePort: Send + Sync {
     fn status(&self) -> Result<VoiceCapabilityStatus>;
-    fn listen_once(&self) -> Result<VoiceListenOutcome>;
+    /// Pre-create / compile the speech engine so the next listen is immediate.
+    fn warm_up(&self) -> Result<()>;
+    /// Listen for one utterance. `on_ready` fires only when capture has truly begun.
+    fn listen_once_when_ready(
+        &self,
+        on_ready: Box<dyn FnOnce() + Send>,
+    ) -> Result<VoiceListenOutcome>;
+    fn listen_once(&self) -> Result<VoiceListenOutcome> {
+        self.listen_once_when_ready(Box::new(|| {}))
+    }
     fn cancel(&self) -> Result<()>;
+    fn open_settings(&self, target: VoiceSettingsTarget) -> Result<()>;
 }
 
 /// In-process voice port for tests / demo.
@@ -91,6 +157,7 @@ pub struct MemoryVoicePort {
     next_transcript: Mutex<Option<String>>,
     fail_permission: AtomicBool,
     cancelled: AtomicBool,
+    warmed: AtomicBool,
 }
 
 impl Default for MemoryVoicePort {
@@ -105,6 +172,7 @@ impl MemoryVoicePort {
             next_transcript: Mutex::new(Some("Open ChatGPT.".into())),
             fail_permission: AtomicBool::new(false),
             cancelled: AtomicBool::new(false),
+            warmed: AtomicBool::new(false),
         }
     }
 
@@ -127,7 +195,8 @@ impl VoicePort for MemoryVoicePort {
                 microphone_available: true,
                 recognition_available: true,
                 permission: "denied".into(),
-                message: "Microphone permission is denied.".into(),
+                message: MICROPHONE_PERMISSION_MESSAGE.into(),
+                warmed: self.warmed.load(Ordering::SeqCst),
             });
         }
         Ok(VoiceCapabilityStatus {
@@ -135,20 +204,32 @@ impl VoicePort for MemoryVoicePort {
             microphone_available: true,
             recognition_available: true,
             permission: "granted".into(),
-            message: "Voice input is available.".into(),
+            message: "Voice is ready.".into(),
+            warmed: self.warmed.load(Ordering::SeqCst),
         })
     }
 
-    fn listen_once(&self) -> Result<VoiceListenOutcome> {
+    fn warm_up(&self) -> Result<()> {
+        self.warmed.store(true, Ordering::SeqCst);
+        Ok(())
+    }
+
+    fn listen_once_when_ready(
+        &self,
+        on_ready: Box<dyn FnOnce() + Send>,
+    ) -> Result<VoiceListenOutcome> {
         self.cancelled.store(false, Ordering::SeqCst);
+        let _ = self.warm_up();
         if self.fail_permission.load(Ordering::SeqCst) {
+            let _ = self.open_settings(VoiceSettingsTarget::Microphone);
             return Ok(VoiceListenOutcome {
                 ok: false,
                 transcript: None,
                 status: "permission_denied".into(),
-                message: "Microphone permission is denied.".into(),
+                message: MICROPHONE_PERMISSION_MESSAGE.into(),
             });
         }
+        on_ready();
         if self.cancelled.load(Ordering::SeqCst) {
             return Ok(VoiceListenOutcome {
                 ok: false,
@@ -183,6 +264,10 @@ impl VoicePort for MemoryVoicePort {
         self.cancelled.store(true, Ordering::SeqCst);
         Ok(())
     }
+
+    fn open_settings(&self, target: VoiceSettingsTarget) -> Result<()> {
+        open_windows_settings_uri(target.as_settings_uri())
+    }
 }
 
 /// Unavailable stub (non-Windows / missing speech stack).
@@ -197,10 +282,18 @@ impl VoicePort for UnavailableVoicePort {
             recognition_available: false,
             permission: "unavailable".into(),
             message: "Voice input isn’t available on this system.".into(),
+            warmed: false,
         })
     }
 
-    fn listen_once(&self) -> Result<VoiceListenOutcome> {
+    fn warm_up(&self) -> Result<()> {
+        Ok(())
+    }
+
+    fn listen_once_when_ready(
+        &self,
+        _on_ready: Box<dyn FnOnce() + Send>,
+    ) -> Result<VoiceListenOutcome> {
         Ok(VoiceListenOutcome {
             ok: false,
             transcript: None,
@@ -212,18 +305,50 @@ impl VoicePort for UnavailableVoicePort {
     fn cancel(&self) -> Result<()> {
         Ok(())
     }
+
+    fn open_settings(&self, _target: VoiceSettingsTarget) -> Result<()> {
+        Ok(())
+    }
 }
 
 /// Production WRAP of WinRT `SpeechRecognizer` (dictation scenario).
-#[derive(Debug, Default)]
 pub struct SystemVoicePort {
     cancel_requested: AtomicBool,
+    warmed: AtomicBool,
+    #[cfg(windows)]
+    engine: Mutex<Option<WinrtVoiceEngine>>,
+    #[cfg(windows)]
+    mic_access: Mutex<Option<MicAccess>>,
+}
+
+impl Default for SystemVoicePort {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl std::fmt::Debug for SystemVoicePort {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SystemVoicePort")
+            .field("warmed", &self.warmed.load(Ordering::SeqCst))
+            .finish()
+    }
+}
+
+#[cfg(windows)]
+struct WinrtVoiceEngine {
+    recognizer: windows::Media::SpeechRecognition::SpeechRecognizer,
 }
 
 impl SystemVoicePort {
     pub fn new() -> Self {
         Self {
             cancel_requested: AtomicBool::new(false),
+            warmed: AtomicBool::new(false),
+            #[cfg(windows)]
+            engine: Mutex::new(None),
+            #[cfg(windows)]
+            mic_access: Mutex::new(None),
         }
     }
 }
@@ -232,20 +357,40 @@ impl VoicePort for SystemVoicePort {
     fn status(&self) -> Result<VoiceCapabilityStatus> {
         #[cfg(windows)]
         {
-            match winrt_probe() {
-                Ok(()) => Ok(VoiceCapabilityStatus {
+            let warm_result = self.warm_up();
+            let mic = cached_microphone_access(&self.mic_access);
+            match (warm_result, mic) {
+                (Ok(()), MicAccess::Allowed) => Ok(VoiceCapabilityStatus {
+                    available: true,
+                    microphone_available: true,
+                    recognition_available: true,
+                    permission: "granted".into(),
+                    message: "Voice is ready.".into(),
+                    warmed: self.warmed.load(Ordering::SeqCst),
+                }),
+                (Ok(()), MicAccess::Denied) => Ok(VoiceCapabilityStatus {
+                    available: false,
+                    microphone_available: false,
+                    recognition_available: true,
+                    permission: "denied".into(),
+                    message: MICROPHONE_PERMISSION_MESSAGE.into(),
+                    warmed: self.warmed.load(Ordering::SeqCst),
+                }),
+                (Ok(()), MicAccess::Unknown) => Ok(VoiceCapabilityStatus {
                     available: true,
                     microphone_available: true,
                     recognition_available: true,
                     permission: "prompt".into(),
-                    message: "Voice can listen after Windows speech privacy is allowed.".into(),
+                    message: "Voice is ready.".into(),
+                    warmed: self.warmed.load(Ordering::SeqCst),
                 }),
-                Err(message) => Ok(VoiceCapabilityStatus {
+                (Err(error), _) => Ok(VoiceCapabilityStatus {
                     available: false,
                     microphone_available: false,
                     recognition_available: false,
                     permission: "unavailable".into(),
-                    message,
+                    message: sanitize_setup_message(&error.to_string()),
+                    warmed: false,
                 }),
             }
         }
@@ -255,29 +400,66 @@ impl VoicePort for SystemVoicePort {
         }
     }
 
-    fn listen_once(&self) -> Result<VoiceListenOutcome> {
-        self.cancel_requested.store(false, Ordering::SeqCst);
+    fn warm_up(&self) -> Result<()> {
         #[cfg(windows)]
         {
-            if self.cancel_requested.load(Ordering::SeqCst) {
-                return Ok(VoiceListenOutcome {
-                    ok: false,
-                    transcript: None,
-                    status: "cancelled".into(),
-                    message: "Listening stopped.".into(),
-                });
-            }
-            winrt_listen_once()
+            winrt_warm_up(&self.engine, &self.warmed)
         }
         #[cfg(not(windows))]
         {
+            Ok(())
+        }
+    }
+
+    fn listen_once_when_ready(
+        &self,
+        on_ready: Box<dyn FnOnce() + Send>,
+    ) -> Result<VoiceListenOutcome> {
+        self.cancel_requested.store(false, Ordering::SeqCst);
+        #[cfg(windows)]
+        {
+            // Use cached mic state only — never run MediaCapture on the listen hot path.
+            if matches!(
+                self.mic_access.lock().ok().and_then(|g| *g),
+                Some(MicAccess::Denied)
+            ) {
+                let _ = open_windows_settings_uri(VoiceSettingsTarget::Microphone.as_settings_uri());
+                return Ok(VoiceListenOutcome {
+                    ok: false,
+                    transcript: None,
+                    status: "permission_denied".into(),
+                    message: MICROPHONE_PERMISSION_MESSAGE.into(),
+                });
+            }
+            winrt_listen_once_when_ready(
+                &self.engine,
+                &self.warmed,
+                &self.cancel_requested,
+                on_ready,
+            )
+        }
+        #[cfg(not(windows))]
+        {
+            let _ = on_ready;
             UnavailableVoicePort.listen_once()
         }
     }
 
     fn cancel(&self) -> Result<()> {
         self.cancel_requested.store(true, Ordering::SeqCst);
+        #[cfg(windows)]
+        {
+            if let Ok(guard) = self.engine.lock() {
+                if let Some(engine) = guard.as_ref() {
+                    let _ = engine.recognizer.StopRecognitionAsync();
+                }
+            }
+        }
         Ok(())
+    }
+
+    fn open_settings(&self, target: VoiceSettingsTarget) -> Result<()> {
+        open_windows_settings_uri(target.as_settings_uri())
     }
 }
 
@@ -292,6 +474,23 @@ pub fn platform_voice() -> std::sync::Arc<dyn VoicePort> {
     }
 }
 
+fn sanitize_setup_message(raw: &str) -> String {
+    let outcome = classify_speech_failure(0, raw);
+    if outcome.status == "recognition_failed" {
+        "Speech recognition isn’t available on this system.".into()
+    } else {
+        outcome.message
+    }
+}
+
+#[cfg(windows)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum MicAccess {
+    Allowed,
+    Denied,
+    Unknown,
+}
+
 #[cfg(windows)]
 fn ensure_com() {
     use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
@@ -301,81 +500,192 @@ fn ensure_com() {
 }
 
 #[cfg(windows)]
-fn winrt_probe() -> std::result::Result<(), String> {
-    use windows::core::HSTRING;
-    use windows::Media::SpeechRecognition::{
-        SpeechRecognitionTopicConstraint, SpeechRecognitionScenario, SpeechRecognizer,
+fn cached_microphone_access(cache: &Mutex<Option<MicAccess>>) -> MicAccess {
+    if let Ok(guard) = cache.lock() {
+        if let Some(value) = *guard {
+            return value;
+        }
+    }
+    let value = probe_microphone_access();
+    if let Ok(mut guard) = cache.lock() {
+        *guard = Some(value);
+    }
+    value
+}
+
+#[cfg(windows)]
+fn probe_microphone_access() -> MicAccess {
+    use windows::Media::Capture::{
+        MediaCapture, MediaCaptureInitializationSettings, StreamingCaptureMode,
     };
 
     ensure_com();
-    let unavailable = || "Speech recognition isn’t available on this system.".to_string();
-    let recognizer = SpeechRecognizer::new().map_err(|_| unavailable())?;
+    let settings = match MediaCaptureInitializationSettings::new() {
+        Ok(value) => value,
+        Err(_) => return MicAccess::Unknown,
+    };
+    if settings
+        .SetStreamingCaptureMode(StreamingCaptureMode::Audio)
+        .is_err()
+    {
+        return MicAccess::Unknown;
+    }
+    let capture = match MediaCapture::new() {
+        Ok(value) => value,
+        Err(_) => return MicAccess::Unknown,
+    };
+    match capture
+        .InitializeWithSettingsAsync(&settings)
+        .and_then(|op| op.get())
+    {
+        Ok(()) => MicAccess::Allowed,
+        Err(error) => {
+            let detail = error.to_string().to_ascii_lowercase();
+            if detail.contains("access")
+                || detail.contains("denied")
+                || detail.contains("privacy")
+                || error.code().0 as u32 == 0x8007_0005
+            {
+                MicAccess::Denied
+            } else {
+                MicAccess::Unknown
+            }
+        }
+    }
+}
+
+#[cfg(windows)]
+fn create_compiled_recognizer(
+) -> std::result::Result<windows::Media::SpeechRecognition::SpeechRecognizer, windows::core::Error>
+{
+    use windows::core::HSTRING;
+    use windows::Foundation::TimeSpan;
+    use windows::Media::SpeechRecognition::{
+        SpeechRecognitionScenario, SpeechRecognitionTopicConstraint, SpeechRecognizer,
+    };
+
+    ensure_com();
+    let recognizer = SpeechRecognizer::new()?;
     let topic = SpeechRecognitionTopicConstraint::Create(
         SpeechRecognitionScenario::Dictation,
         &HSTRING::from("workspace-dictation"),
-    )
-    .map_err(|_| unavailable())?;
-    recognizer
-        .Constraints()
-        .map_err(|_| unavailable())?
-        .Append(&topic)
-        .map_err(|_| unavailable())?;
-    let _ = recognizer
-        .CompileConstraintsAsync()
-        .map_err(|_| unavailable())?
-        .get()
-        .map_err(|_| unavailable())?;
+    )?;
+    recognizer.Constraints()?.Append(&topic)?;
+    recognizer.CompileConstraintsAsync()?.get()?;
+
+    // Give the user time to start speaking after the ready indicator appears.
+    if let Ok(timeouts) = recognizer.Timeouts() {
+        let _ = timeouts.SetInitialSilenceTimeout(TimeSpan {
+            Duration: 12_i64 * 10_000_000,
+        });
+        let _ = timeouts.SetEndSilenceTimeout(TimeSpan {
+            Duration: 2_i64 * 10_000_000,
+        });
+        let _ = timeouts.SetBabbleTimeout(TimeSpan {
+            Duration: 8_i64 * 10_000_000,
+        });
+    }
+    Ok(recognizer)
+}
+
+#[cfg(windows)]
+fn winrt_warm_up(
+    engine: &Mutex<Option<WinrtVoiceEngine>>,
+    warmed: &AtomicBool,
+) -> Result<()> {
+    if warmed.load(Ordering::SeqCst) {
+        if let Ok(guard) = engine.lock() {
+            if guard.is_some() {
+                return Ok(());
+            }
+        }
+    }
+    let recognizer = create_compiled_recognizer().map_err(|error| {
+        WindowsIntegrationError::VoiceFailed(sanitize_setup_message(&error.to_string()))
+    })?;
+    if let Ok(mut guard) = engine.lock() {
+        *guard = Some(WinrtVoiceEngine { recognizer });
+    }
+    warmed.store(true, Ordering::SeqCst);
     Ok(())
 }
 
 #[cfg(windows)]
 fn outcome_from_winrt_error(error: windows::core::Error) -> VoiceListenOutcome {
-    classify_speech_failure(error.code().0 as u32, &error.to_string())
+    let outcome = classify_speech_failure(error.code().0 as u32, &error.to_string());
+    if outcome.status == "permission_denied" {
+        let _ = open_windows_settings_uri(VoiceSettingsTarget::SpeechPrivacy.as_settings_uri());
+    } else if outcome.status == "microphone_unavailable" {
+        let _ = open_windows_settings_uri(VoiceSettingsTarget::Microphone.as_settings_uri());
+    }
+    outcome
 }
 
 #[cfg(windows)]
-fn winrt_listen_once() -> Result<VoiceListenOutcome> {
-    use windows::core::HSTRING;
-    use windows::Media::SpeechRecognition::{
-        SpeechRecognitionResultStatus, SpeechRecognitionScenario,
-        SpeechRecognitionTopicConstraint, SpeechRecognizer,
-    };
+fn winrt_listen_once_when_ready(
+    engine: &Mutex<Option<WinrtVoiceEngine>>,
+    warmed: &AtomicBool,
+    cancel_requested: &AtomicBool,
+    on_ready: Box<dyn FnOnce() + Send>,
+) -> Result<VoiceListenOutcome> {
+    use windows::Media::SpeechRecognition::SpeechRecognitionResultStatus;
 
-    ensure_com();
-    let recognizer = match SpeechRecognizer::new() {
-        Ok(value) => value,
-        Err(error) => return Ok(outcome_from_winrt_error(error)),
-    };
-    let topic = match SpeechRecognitionTopicConstraint::Create(
-        SpeechRecognitionScenario::Dictation,
-        &HSTRING::from("workspace-dictation"),
-    ) {
-        Ok(value) => value,
-        Err(error) => return Ok(outcome_from_winrt_error(error)),
-    };
-    if let Err(error) = recognizer
-        .Constraints()
-        .and_then(|constraints| constraints.Append(&topic))
-    {
-        return Ok(outcome_from_winrt_error(error));
-    }
-    let compile = match recognizer.CompileConstraintsAsync() {
-        Ok(op) => op,
-        Err(error) => return Ok(outcome_from_winrt_error(error)),
-    };
-    if let Err(error) = compile.get() {
-        return Ok(outcome_from_winrt_error(error));
+    if let Err(error) = winrt_warm_up(engine, warmed) {
+        return Ok(VoiceListenOutcome {
+            ok: false,
+            transcript: None,
+            status: "recognition_unavailable".into(),
+            message: sanitize_setup_message(&error.to_string()),
+        });
     }
 
-    // First architectural failure observed in Product Owner review:
-    // RecognizeAsync → 0x80045509 when Windows speech privacy is not accepted.
+    let recognizer = {
+        let guard = engine
+            .lock()
+            .map_err(|_| WindowsIntegrationError::VoiceFailed("voice engine lock poisoned".into()))?;
+        match guard.as_ref() {
+            Some(engine) => engine.recognizer.clone(),
+            None => {
+                return Ok(VoiceListenOutcome {
+                    ok: false,
+                    transcript: None,
+                    status: "recognition_unavailable".into(),
+                    message: "Speech recognition isn’t available on this system.".into(),
+                });
+            }
+        }
+    };
+
+    if cancel_requested.load(Ordering::SeqCst) {
+        return Ok(VoiceListenOutcome {
+            ok: false,
+            transcript: None,
+            status: "cancelled".into(),
+            message: "Listening stopped.".into(),
+        });
+    }
+
+    // With a warm engine, RecognizeAsync starts capture immediately. Notify only after
+    // the session is started — never while create/compile is still running.
     let recognize = match recognizer.RecognizeAsync() {
         Ok(op) => op,
         Err(error) => return Ok(outcome_from_winrt_error(error)),
     };
+    on_ready();
+
     let result = match recognize.get() {
         Ok(value) => value,
-        Err(error) => return Ok(outcome_from_winrt_error(error)),
+        Err(error) => {
+            if cancel_requested.load(Ordering::SeqCst) {
+                return Ok(VoiceListenOutcome {
+                    ok: false,
+                    transcript: None,
+                    status: "cancelled".into(),
+                    message: "Listening stopped.".into(),
+                });
+            }
+            return Ok(outcome_from_winrt_error(error));
+        }
     };
 
     let status = match result.Status() {
@@ -417,12 +727,15 @@ fn winrt_listen_once() -> Result<VoiceListenOutcome> {
             status: "microphone_unavailable".into(),
             message: "I couldn’t hear the microphone clearly.".into(),
         }),
-        SpeechRecognitionResultStatus::MicrophoneUnavailable => Ok(VoiceListenOutcome {
-            ok: false,
-            transcript: None,
-            status: "microphone_unavailable".into(),
-            message: "I couldn’t reach a microphone. Check that one is connected and allowed.".into(),
-        }),
+        SpeechRecognitionResultStatus::MicrophoneUnavailable => {
+            let _ = open_windows_settings_uri(VoiceSettingsTarget::Microphone.as_settings_uri());
+            Ok(VoiceListenOutcome {
+                ok: false,
+                transcript: None,
+                status: "microphone_unavailable".into(),
+                message: MICROPHONE_PERMISSION_MESSAGE.into(),
+            })
+        }
         SpeechRecognitionResultStatus::NetworkFailure => Ok(VoiceListenOutcome {
             ok: false,
             transcript: None,
@@ -463,6 +776,23 @@ mod tests {
     }
 
     #[test]
+    fn memory_warm_up_marks_ready_and_notifies() {
+        let port = MemoryVoicePort::new();
+        assert!(!port.status().unwrap().warmed);
+        port.warm_up().unwrap();
+        assert!(port.status().unwrap().warmed);
+        let notified = std::sync::Arc::new(AtomicBool::new(false));
+        let notified_ready = std::sync::Arc::clone(&notified);
+        let outcome = port
+            .listen_once_when_ready(Box::new(move || {
+                notified_ready.store(true, Ordering::SeqCst);
+            }))
+            .unwrap();
+        assert!(outcome.ok);
+        assert!(notified.load(Ordering::SeqCst));
+    }
+
+    #[test]
     fn speech_privacy_hresult_maps_to_desktop_language() {
         let outcome = classify_speech_failure(
             HRESULT_SPEECH_PRIVACY_DECLINED,
@@ -474,7 +804,10 @@ mod tests {
         assert!(outcome.message.contains("Settings"));
         assert!(!outcome.message.contains("0x"));
         assert!(!outcome.message.to_ascii_lowercase().contains("winrt"));
-        assert!(!outcome.message.to_ascii_lowercase().contains("speechrecognizer"));
+        assert!(!outcome
+            .message
+            .to_ascii_lowercase()
+            .contains("speechrecognizer"));
     }
 
     #[test]
@@ -484,5 +817,17 @@ mod tests {
         assert!(!outcome.message.contains("0x"));
         assert!(!outcome.message.contains("HRESULT"));
         assert!(!outcome.message.contains("recognize:"));
+    }
+
+    #[test]
+    fn settings_targets_map_to_ms_settings_uris() {
+        assert_eq!(
+            VoiceSettingsTarget::Microphone.as_settings_uri(),
+            "ms-settings:privacy-microphone"
+        );
+        assert_eq!(
+            VoiceSettingsTarget::SpeechPrivacy.as_settings_uri(),
+            "ms-settings:privacy-speech"
+        );
     }
 }

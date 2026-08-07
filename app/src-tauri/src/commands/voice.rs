@@ -1,4 +1,4 @@
-//! Voice Input IPC — Conversation input device (P16).
+//! Voice Input IPC — Conversation input device (P16 / P16.5).
 //!
 //! Does not route through Kernel Operator / Capability Runtime.
 //! Transcripts are inserted into Conversation and submitted as typed text.
@@ -6,8 +6,9 @@
 use std::sync::{Arc, Mutex, OnceLock};
 
 use serde::Serialize;
+use tauri::{AppHandle, Emitter};
 use workspace_windows_integration::{
-    platform_voice, VoiceCapabilityStatus, VoiceListenOutcome, VoicePort,
+    platform_voice, VoiceCapabilityStatus, VoiceListenOutcome, VoicePort, VoiceSettingsTarget,
 };
 
 use super::error::CommandError;
@@ -21,6 +22,9 @@ fn sanitize_voice_user_message(raw: impl std::fmt::Display) -> String {
         || lower.contains("0x80045509")
     {
         return "Windows needs speech privacy turned on before I can listen. Open Settings → Privacy & security → Speech, turn on Online speech recognition, then try again.".into();
+    }
+    if lower.contains("microphone") && lower.contains("settings") {
+        return text;
     }
     if lower.contains("0x")
         || lower.contains("recognize:")
@@ -38,6 +42,14 @@ fn voice_port() -> &'static Arc<dyn VoicePort> {
     PORT.get_or_init(platform_voice)
 }
 
+/// Warm the speech engine in the background (app startup / UI mount).
+pub fn warm_voice_engine_async() {
+    std::thread::spawn(|| {
+        let _ = voice_port().warm_up();
+        let _ = voice_port().status();
+    });
+}
+
 /// Optional test override (unit / harness).
 #[allow(dead_code)]
 pub fn install_voice_port_for_tests(port: Arc<dyn VoicePort>) {
@@ -53,6 +65,7 @@ pub struct VoiceStatusDto {
     pub permission: String,
     pub message: String,
     pub input_state: String,
+    pub warmed: bool,
 }
 
 static INPUT_STATE: OnceLock<Mutex<String>> = OnceLock::new();
@@ -84,6 +97,7 @@ pub fn voice_status() -> IpcResponse<VoiceStatusDto> {
             permission: status.permission,
             message: status.message,
             input_state: current_input_state(),
+            warmed: status.warmed,
         }),
         Err(error) => IpcResponse::failure(CommandError::new(
             "voice_failed",
@@ -93,9 +107,19 @@ pub fn voice_status() -> IpcResponse<VoiceStatusDto> {
 }
 
 #[tauri::command]
-pub fn voice_listen_once() -> IpcResponse<VoiceListenOutcome> {
-    set_input_state("listening");
-    let outcome = voice_port().listen_once();
+pub fn voice_warm_up() -> IpcResponse<VoiceStatusDto> {
+    let _ = voice_port().warm_up();
+    voice_status()
+}
+
+#[tauri::command]
+pub fn voice_listen_once(app: AppHandle) -> IpcResponse<VoiceListenOutcome> {
+    set_input_state("preparing");
+    let app_for_ready = app.clone();
+    let outcome = voice_port().listen_once_when_ready(Box::new(move || {
+        set_input_state("listening");
+        let _ = app_for_ready.emit("voice-listening", ());
+    }));
     set_input_state("idle");
     match outcome {
         Ok(mut result) => {
@@ -123,6 +147,18 @@ pub fn voice_cancel() -> IpcResponse<()> {
     }
 }
 
+#[tauri::command]
+pub fn voice_open_settings(target: String) -> IpcResponse<()> {
+    let parsed = VoiceSettingsTarget::parse(&target).unwrap_or(VoiceSettingsTarget::Microphone);
+    match voice_port().open_settings(parsed) {
+        Ok(()) => IpcResponse::success(()),
+        Err(error) => IpcResponse::failure(CommandError::new(
+            "voice_failed",
+            sanitize_voice_user_message(error),
+        )),
+    }
+}
+
 #[allow(dead_code)]
 fn _status_shape(status: VoiceCapabilityStatus) -> VoiceStatusDto {
     VoiceStatusDto {
@@ -132,5 +168,6 @@ fn _status_shape(status: VoiceCapabilityStatus) -> VoiceStatusDto {
         permission: status.permission,
         message: status.message,
         input_state: current_input_state(),
+        warmed: status.warmed,
     }
 }

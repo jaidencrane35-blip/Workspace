@@ -3547,6 +3547,10 @@ html[data-shell-form="conversation"] #root {
   color: rgba(95, 208, 216, 0.95);
 }
 
+.op-shell__mic[data-preparing="true"] {
+  color: rgba(232, 238, 242, 0.72);
+}
+
 .op-shell__mic[data-available="false"] {
   opacity: 0.35;
 }

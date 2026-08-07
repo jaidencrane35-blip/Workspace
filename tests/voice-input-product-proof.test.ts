@@ -72,6 +72,10 @@ describe("Voice Input Product Proof harness (P16)", () => {
       "utf8",
     );
     const css = readFileSync(path.join(root, "app/src/App.css"), "utf8");
+    const bridge = readFileSync(
+      path.join(root, "app/src/lib/voice/bridge.ts"),
+      "utf8",
+    );
     expect(ui).toContain("op-shell__mic");
     expect(rootTsx).toContain("VoiceMicButton");
     expect(css).toContain("op-mic-pulse");
@@ -80,10 +84,17 @@ describe("Voice Input Product Proof harness (P16)", () => {
         expect(css).toContain("op-shell__mic-pulse");
       } else if (token === "composer integration") {
         expect(rootTsx).toContain("op-shell__composer-actions");
+      } else if (token === "warmUpVoice") {
+        expect(bridge).toContain("warmUpVoice");
+        expect(ui).toContain("warmUpVoice");
       } else {
         expect(`${ui}\n${rootTsx}`).toContain(token);
       }
     }
+    // Listening pulse must not be tied to preparing.
+    expect(ui).toMatch(/const listening = phase === "listening"/);
+    const startIdx = ui.indexOf("const start");
+    expect(ui.slice(startIdx, startIdx + 900)).not.toContain("getVoiceStatus");
   });
 
   it("maps Windows speech privacy failure to desktop language", () => {
