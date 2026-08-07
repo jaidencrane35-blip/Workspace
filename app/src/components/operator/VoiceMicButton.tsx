@@ -71,6 +71,8 @@ export function VoiceMicButton({
   const [, setWarmed] = useState(false);
   const [soundActive, setSoundActive] = useState(false);
   const [deniedUi, setDeniedUi] = useState(false);
+  /** Consecutive soft mic failures — Settings only after retry (P16.21 Owner experience). */
+  const softMicDenyCountRef = useRef(0);
   const onVoiceMessageRef = useRef(onVoiceMessage);
   onVoiceMessageRef.current = onVoiceMessage;
 
@@ -182,13 +184,11 @@ export function VoiceMicButton({
     // Mount/startup already warms; listen warms cheaply if the engine is ready.
     // A stale frontend `warmed` flag after engine_reset previously skipped warm
     // and caused “couldn’t listen” after earlier successes.
+    // P16.21: single SoundStarted hook — dual listening events raced Ready/Listening UI.
     const result = await listenOnce({
       onReady: () => {
         setWarmed(true);
         setPhase("ready");
-      },
-      onListening: () => {
-        setPhase("listening");
       },
       onSoundStarted: () => {
         setSoundActive(true);
@@ -223,10 +223,12 @@ export function VoiceMicButton({
       ) {
         setWarmed(false);
       }
-      // P16.18: only true permission_denied drives Settings guidance.
-      // Transient microphone_unavailable must not clear grant or open Settings.
+      // Speech privacy → Settings once. Soft mic → retry first; Settings only after 2 fails.
       if (result.status === "permission_denied") {
-        const speechPrivacy = result.message.toLowerCase().includes("speech privacy");
+        softMicDenyCountRef.current = 0;
+        const speechPrivacy = result.message
+          .toLowerCase()
+          .includes("speech privacy");
         const { announce, message } = notePermissionDenied(
           speechPrivacy ? "speech" : "microphone",
         );
@@ -236,13 +238,26 @@ export function VoiceMicButton({
         } else {
           onVoiceMessage(result.message);
         }
+      } else if (result.status === "microphone_unavailable") {
+        softMicDenyCountRef.current += 1;
+        if (softMicDenyCountRef.current >= 2) {
+          const { announce, message } = notePermissionDenied("microphone");
+          setDeniedUi(true);
+          onVoiceMessage(announce ? message : result.message);
+        } else {
+          setDeniedUi(false);
+          onVoiceMessage(result.message);
+        }
       } else {
         onVoiceMessage(result.message);
       }
+      // Paint error affordance briefly (React would otherwise batch away the phase).
+      await new Promise((r) => setTimeout(r, 280));
       setPhase("idle");
       return;
     }
 
+    softMicDenyCountRef.current = 0;
     notePermissionGranted();
     setDeniedUi(false);
     setPhase("recognizing");
@@ -316,7 +331,7 @@ export function VoiceMicButton({
                   ? "✓"
                   : phase === "error" || deniedUi || !available
                     ? "!"
-                    : "◉"}
+                    : "○"}
       </span>
       {activeCapture && (
         <>

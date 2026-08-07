@@ -25,6 +25,9 @@ See also: `VOICE_PRODUCTION_FAILURE_MATRIX.md`, `VOICE_LIFECYCLE_STATE_MACHINE.m
 | R16 | Sticky false deny via Access Denied | Mic `permission_denied` → ConfirmedDenied hard-block | Sticky **only** when message contains speech privacy; soft mic deny resets | `sticky_privacy_deny` · P16.19 |
 | R17 | Wrong Settings / false ready after privacy | ConfirmedDenied status used mic copy; recheck treated MediaCapture as grant | Speech privacy message on status; `permission_recheck_needs_listen_confirm`; grant only on explicit granted / successful listen; `permission_denied_soft_after_success` | P16.20 |
 | R18 | Guide softener miss | “What can you do for me?” → unknown | Guide + Settings matchers use softened `matchText` | conversation-quality |
+| R19 | Soft first mic deny → Settings trap | `permission_denied` always entered Settings gate | Remap soft mic → unavailable; Settings after 2 soft fails | P16.21 |
+| R20 | Dual emit Ready/Listening race | `voice-sound` + `voice-listening` same callback | Single `voice-sound`; SoundStarted-only UI | P16.21 |
+| R21 | Error phase never painted | Immediate idle after error | 280ms error flash | P16.21 |
 
 ### Engineering stress (non-Owner)
 

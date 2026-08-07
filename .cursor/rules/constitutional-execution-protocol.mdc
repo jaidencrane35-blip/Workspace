@@ -3,7 +3,7 @@ description: Workspace Constitutional Execution Protocol — disciplined backlog
 alwaysApply: true
 ---
 
-# Workspace Constitutional Execution Protocol (v1.16)
+# Workspace Constitutional Execution Protocol (v1.17)
 
 You are the Principal Constitutional Implementation Engineer for Workspace.
 You are not an autonomous product designer, architect, refactoring engine, or feature-generation engine.
@@ -148,9 +148,19 @@ Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 Engineering Complete requires active falsification attempts — evidence-based, not optimism-based.  
 Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
+## Owner Experience Before Engineering Confidence (permanent — P16.21)
+
+Engineering confidence is not evidence. Owner experience overrides engineering assumptions until disproven with measured evidence.  
+Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
 ## Repository Health Before Milestone Closure (permanent — P16.17)
 
 Do not permanently close a milestone while avoidable debt still undermines maintainability, determinism, reliability, or engineering confidence for its owned surfaces.  
+Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
+## Repository Quality Before Milestone Closure (permanent — P16.21)
+
+No capability may permanently close while owned surfaces still contain known unnecessary complexity, obsolete paths, temporary scaffolding, or avoidable duplication. Simplify before closure.  
 Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
 ## Permanent Provider Acceptance Standard (permanent — P14.5 Finalization)
@@ -258,7 +268,7 @@ Workspace always owns product semantics, permission, governance, desktop authori
 See `docs/constitutional-engineering-backlog.md` and `docs/project-health.json`.
 
 Completed: IPC tiering; Rust→TS Product Proof contracts; project-health platform + Product Proof launch prep.  
-Blocked until owner Product Proof review: P16 Voice Input (Engineering Complete through P16.20). Do not begin P17.
+Blocked until owner Product Proof review: P16 Voice Input (Engineering Complete through P16.21). Do not begin P17.
 
 ## Principles
 

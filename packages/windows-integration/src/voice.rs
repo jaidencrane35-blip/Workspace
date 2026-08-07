@@ -89,14 +89,14 @@ pub fn classify_speech_failure(code: u32, detail: &str) -> VoiceListenOutcome {
             ok: false,
             transcript: None,
             status: "microphone_unavailable".into(),
-            message: "I couldn’t reach the microphone just now. Try again — if it keeps failing, click the mic for Settings help.".into(),
+            message: "I couldn’t reach the microphone just now. Try again.".into(),
         };
     }
     VoiceListenOutcome {
         ok: false,
         transcript: None,
         status: "recognition_failed".into(),
-        message: "I couldn’t listen just now. Try the microphone again — if it keeps failing, click once for Settings help.".into(),
+        message: "I couldn’t listen just now. Try the microphone again.".into(),
     }
 }
 
@@ -445,6 +445,7 @@ impl VoicePort for SystemVoicePort {
                     message: SPEECH_PRIVACY_MESSAGE.into(),
                     warmed: true,
                 },
+                // MediaCapture Denied is never sticky-cached — treat as Unknown.
                 MicAccess::Denied | MicAccess::Unknown => VoiceCapabilityStatus {
                     available: true,
                     microphone_available: true,
@@ -552,17 +553,13 @@ impl VoicePort for SystemVoicePort {
                 }
                 reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
             } else if outcome.status == "permission_denied" {
-                // P16.19/P16.20: only speech privacy is sticky ConfirmedDenied.
-                // After a prior Allowed listen, mic Access Denied is remapped to
-                // microphone_unavailable so UI does not enter a Settings cycle (F1 residual).
+                // P16.19–P16.21: only speech privacy is sticky ConfirmedDenied.
+                // All mic Access Denied paths remap to microphone_unavailable so the UI
+                // never Settings-traps on the first soft failure (Owner experience).
                 let sticky_privacy = outcome
                     .message
                     .to_ascii_lowercase()
                     .contains("speech privacy");
-                let previously_allowed = matches!(
-                    peek_microphone_access(&self.mic_access),
-                    MicAccess::Allowed
-                );
                 if sticky_privacy {
                     log::warn!(
                         "voice.lifecycle: sticky_privacy_deny — ConfirmedDenied until Settings recheck"
@@ -571,9 +568,9 @@ impl VoicePort for SystemVoicePort {
                         *guard = Some(MicAccess::ConfirmedDenied);
                     }
                     reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
-                } else if previously_allowed {
+                } else {
                     log::warn!(
-                        "voice.lifecycle: permission_denied_soft_after_success — remap unavailable"
+                        "voice.lifecycle: permission_denied_soft_mic — remap unavailable, not Settings"
                     );
                     reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
                     return Ok(VoiceListenOutcome {
@@ -582,11 +579,6 @@ impl VoicePort for SystemVoicePort {
                         status: "microphone_unavailable".into(),
                         message: "I couldn’t reach the microphone just now. Try again.".into(),
                     });
-                } else {
-                    log::warn!(
-                        "voice.lifecycle: permission_denied_soft_mic — reset engine, not sticky"
-                    );
-                    reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
                 }
             } else if matches!(
                 outcome.status.as_str(),
@@ -735,8 +727,9 @@ fn probe_microphone_access_soft(cache: &Mutex<Option<MicAccess>>) -> MicAccess {
         if let Some(MicAccess::Allowed) = *guard {
             return MicAccess::Allowed;
         }
+        // Cleared only by recheck (cache reset) or successful listen — never MediaCapture-overwrite.
         if let Some(MicAccess::ConfirmedDenied) = *guard {
-            // Cleared only by recheck (cache reset) or successful listen.
+            return MicAccess::ConfirmedDenied;
         }
     }
     let t0 = std::time::Instant::now();
@@ -921,19 +914,22 @@ fn winrt_listen_continuous_when_ready(
 
     const MAX_WALL: Duration = Duration::from_secs(5 * 60);
     let t0 = Instant::now();
-    // Warm is performed under warm_lock by SystemVoicePort before this call.
-    // Cheap no-op when already compiled; safe if caller already warmed.
-    log::info!("voice.lifecycle: stage=click_to_warm_begin");
-    if let Err(error) = winrt_warm_up(engine, warmed) {
-        log::warn!("voice.lifecycle: stage=warm_failed +{:?}", t0.elapsed());
-        return Ok(VoiceListenOutcome {
-            ok: false,
-            transcript: None,
-            status: "recognition_unavailable".into(),
-            message: sanitize_setup_message(&error.to_string()),
-        });
+    // Warm is performed under warm_lock by SystemVoicePort before this call (P16.21: no second warm).
+    if !warmed.load(Ordering::SeqCst) {
+        log::info!("voice.lifecycle: stage=click_to_warm_begin");
+        if let Err(error) = winrt_warm_up(engine, warmed) {
+            log::warn!("voice.lifecycle: stage=warm_failed +{:?}", t0.elapsed());
+            return Ok(VoiceListenOutcome {
+                ok: false,
+                transcript: None,
+                status: "recognition_unavailable".into(),
+                message: sanitize_setup_message(&error.to_string()),
+            });
+        }
+        log::info!("voice.lifecycle: stage=warm_done +{:?}", t0.elapsed());
+    } else {
+        log::info!("voice.lifecycle: stage=warm_already +{:?}", t0.elapsed());
     }
-    log::info!("voice.lifecycle: stage=warm_done +{:?}", t0.elapsed());
 
     let recognizer = {
         let guard = engine
@@ -1257,7 +1253,7 @@ fn winrt_listen_continuous_when_ready(
                         ok: false,
                         transcript: None,
                         status: "microphone_unavailable".into(),
-                        message: "I couldn’t reach the microphone just now. Try again — if it keeps failing, click the mic for Settings help.".into(),
+                        message: "I couldn’t reach the microphone just now. Try again.".into(),
                     });
                     break;
                 }
@@ -1490,5 +1486,12 @@ mod tests {
         let access = classify_speech_failure(0x8007_0005, "Access is denied.");
         assert_eq!(access.status, "permission_denied");
         assert!(!access.message.to_ascii_lowercase().contains("speech privacy"));
+    }
+
+    #[test]
+    fn soft_unavailable_copy_does_not_promise_settings() {
+        let outcome = classify_speech_failure(0, "The microphone is unavailable");
+        assert_eq!(outcome.status, "microphone_unavailable");
+        assert!(!outcome.message.to_ascii_lowercase().contains("settings"));
     }
 }

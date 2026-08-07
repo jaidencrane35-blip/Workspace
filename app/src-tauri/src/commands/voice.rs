@@ -155,9 +155,9 @@ pub async fn voice_listen_once(app: AppHandle) -> IpcResponse<VoiceListenOutcome
                 let _ = app_for_ready.emit("voice-ready", ());
             }),
             Some(std::sync::Arc::new(move || {
+                // P16.21: single emit — dual voice-sound + voice-listening raced UI phases.
                 set_input_state("listening");
                 let _ = app_for_sound.emit("voice-sound", ());
-                let _ = app_for_sound.emit("voice-listening", ());
             })),
         );
         log::info!(

@@ -1,9 +1,9 @@
 # Engineering Milestone Report
-## P16.20 Final Product Proof Validation & Closure Recommendation
+## P16.21 Final Owner-Experience Validation & Production Closure Gate
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.20 Final Product Proof Validation & Closure Recommendation |
+| **Execution program** | P16.21 Final Owner-Experience Validation & Production Closure Gate |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
@@ -11,24 +11,17 @@
 
 ---
 
-## Hostile validation summary
+## Owner-experience falsification
 
-P16.19’s “no remaining Voice-owned defects” was falsified. Three Voice permission/status holes and one NL softener gap were proven and fixed.
+P16.20 “no remaining defects” was challenged against Owner experience. Proven holes fixed: soft Settings trap, invisible error phase, dual-event race, redundant warm, ConfirmedDenied soft-probe fallthrough, Idle/Ready glyph, reduced-motion mic.
 
-| Finding | Disposition |
-| --- | --- |
-| ConfirmedDenied status wrong Settings copy | FIX |
-| Settings recheck false ? ready | FIX |
-| Soft Access Denied after success ? Settings | FIX |
-| Guide “for me” / Please Settings unknown | FIX |
-| Mic idle contrast | FIX (production readability) |
-| WinRT foundation | WRAP revalidated — keep |
+Artifact: `docs/capability-runtime/product-proof/VOICE_OWNER_EXPERIENCE_CLOSURE_GATE.md`.
 
-Artifact: `docs/capability-runtime/product-proof/VOICE_FINAL_PRODUCT_PROOF_VALIDATION.md`.
+Principles adopted: **Owner Experience Before Engineering Confidence**, **Repository Quality Before Milestone Closure**.
 
 ## Explicit
 
-- **Recommend Owner acceptance:** Yes — no remaining proven Voice-owned engineering blockers  
+- **Recommend Owner acceptance:** Yes  
 - **P16 permanently closed:** **No**  
 - **Workspace launched:** **No**  
 - **P17:** Not begun  

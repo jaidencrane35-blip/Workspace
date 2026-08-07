@@ -1326,6 +1326,8 @@ body {
   .ws-dock__item,
   .exp-btn,
   .ws-content { transition: none !important; animation: none !important; }
+  .op-shell__mic-pulse,
+  .op-shell__mic-wave i { animation: none !important; }
 }
 
 /* —— Menubar (minimal) —— */

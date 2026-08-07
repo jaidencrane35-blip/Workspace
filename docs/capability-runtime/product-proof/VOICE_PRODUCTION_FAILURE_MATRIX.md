@@ -49,4 +49,13 @@ Engineering falsification of “no remaining defects.” Does **not** equal Owne
 | D3 | Soft Access Denied after success → Settings cycle | **FIX** — remap unavailable |
 | NL | Guide ignored softeners | **FIX** — matchText |
 
-See also: `VOICE_LIFECYCLE_STATE_MACHINE.md`, `VOICE_PRODUCTION_CLOSURE_INVESTIGATION.md`, `VOICE_FINAL_PRODUCT_PROOF_VALIDATION.md`.
+### P16.21 Owner-experience challenge of P16.20
+
+| ID | Hole | Disposition |
+| --- | --- | --- |
+| P1 | Soft first mic deny → Settings before retry | **FIX** |
+| U1 | Error phase never paints | **FIX** |
+| U2 | Dual listening event race | **FIX** |
+| C2 | Redundant second warm | **FIX** |
+
+See also: `VOICE_OWNER_EXPERIENCE_CLOSURE_GATE.md`, `VOICE_FINAL_PRODUCT_PROOF_VALIDATION.md`.

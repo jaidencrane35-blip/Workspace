@@ -161,9 +161,20 @@ Production quality is measured by **both** runtime behaviour **and** repository 
 Engineering Complete may only be declared after engineering has actively attempted to falsify its own implementation.  
 Completion is evidence-based, not optimism-based. Engineering must attempt to prove itself wrong before declaring success.
 
+## Owner Experience Before Engineering Confidence (permanent — P16.21)
+
+Engineering confidence is not evidence.  
+Product Owner experience overrides engineering assumptions until those assumptions are disproven with measured evidence.  
+Repeated “no remaining defects” declarations that fail Owner Product Proof are an engineering process failure — not an Owner misunderstanding.
+
 ## Repository Health Before Milestone Closure (permanent — P16.17)
 
 A milestone may not permanently close while avoidable technical debt remains that materially affects maintainability, determinism, reliability, or future engineering confidence for that milestone’s owned surfaces.
+
+## Repository Quality Before Milestone Closure (permanent — P16.21)
+
+No capability may be permanently closed while its owned implementation still contains known unnecessary complexity, obsolete code paths, temporary engineering scaffolding, or avoidable duplication.  
+Simplify before closure. Companion to Production Quality Includes Repository Quality.
 
 ## Commodity Before Reinvention — survey obligation (mandatory)
 

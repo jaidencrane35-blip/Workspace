@@ -419,6 +419,19 @@ Hostile challenge of P16.19 “no remaining defects”:
 
 Final validation: `VOICE_FINAL_PRODUCT_PROOF_VALIDATION.md`. **WinRT remains WRAP.** No P17.
 
+### P16.21 Owner-Experience Closure Gate
+
+Engineering confidence ≠ evidence. Owner experience overrides assumptions until disproven.
+
+| Hole | Fix |
+| --- | --- |
+| Soft first mic deny Settings trap | Remap all soft mic deny → unavailable; Settings after 2 fails |
+| Dual event UI race | Single `voice-sound` emit |
+| Invisible error phase | Brief error paint |
+| Redundant listen warm | Skip when already warmed |
+
+Gate report: `VOICE_OWNER_EXPERIENCE_CLOSURE_GATE.md`. Principles: Owner Experience Before Engineering Confidence; Repository Quality Before Milestone Closure. **WinRT remains WRAP.**
+
 ---
 
 ## Explicit non-goals

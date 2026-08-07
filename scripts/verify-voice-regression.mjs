@@ -54,8 +54,11 @@ if (!voiceRs.includes("mic_unavailable_soft")) {
 if (!voiceRs.includes("sticky_privacy_deny") || !voiceRs.includes("permission_denied_soft_mic")) {
   fail("ConfirmedDenied sticky only for speech privacy (P16.19)");
 }
-if (!voiceRs.includes("permission_denied_soft_after_success")) {
-  fail("Access Denied after prior success must remap to soft unavailable (P16.20)");
+if (!voiceRs.includes("permission_denied_soft_mic — remap unavailable")) {
+  fail("mic Access Denied must remap to soft unavailable, not Settings trap (P16.21)");
+}
+if (!voiceRs.includes("warm_already")) {
+  fail("listen path must skip redundant warm when already compiled (P16.21)");
 }
 if (!voiceRs.includes("permission_recheck_needs_listen_confirm")) {
   fail("Settings recheck must not claim grant without listen confirm (P16.20)");
@@ -230,11 +233,12 @@ if (
 ) {
   fail("SystemVoicePort listen must take warm_lock before warm (P16.18)");
 }
-// Settings guidance must not trigger on transient microphone_unavailable.
+// First soft microphone_unavailable must not Settings-trap; only after retry count (P16.21).
 if (
-  /microphone_unavailable[\s\S]{0,120}notePermissionDenied/.test(micUi)
+  /microphone_unavailable[\s\S]{0,80}notePermissionDenied/.test(micUi) &&
+  !micUi.includes("softMicDenyCountRef")
 ) {
-  fail("mic UI must not treat microphone_unavailable as Settings deny (P16.18)");
+  fail("mic UI must not treat first microphone_unavailable as Settings deny (P16.18/21)");
 }
 const failureMatrix = path.join(
   root,
@@ -251,6 +255,9 @@ if (!matrix.includes("R16") || !matrix.includes("sticky_privacy_deny")) {
 }
 if (!matrix.includes("R17") || !matrix.includes("permission_recheck_needs_listen_confirm")) {
   fail("regression matrix must cover P16.20 recheck/status privacy fixes (R17)");
+}
+if (!matrix.includes("R19") || !matrix.includes("R20") || !matrix.includes("R21")) {
+  fail("regression matrix must cover P16.21 Owner-experience fixes (R19–R21)");
 }
 const lifecycle = path.join(
   root,
@@ -273,11 +280,35 @@ const finalValidation = path.join(
 if (!fs.existsSync(finalValidation)) {
   fail("missing VOICE_FINAL_PRODUCT_PROOF_VALIDATION.md (P16.20 artifact)");
 }
+const ownerGate = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_OWNER_EXPERIENCE_CLOSURE_GATE.md",
+);
+if (!fs.existsSync(ownerGate)) {
+  fail("missing VOICE_OWNER_EXPERIENCE_CLOSURE_GATE.md (P16.21 artifact)");
+}
 if (!guide.includes("noteSettingsReturnNeedsListenConfirm")) {
   fail("permissionGuidance must require listen confirm after Settings return (P16.20)");
 }
 if (!micUi.includes("noteSettingsReturnNeedsListenConfirm")) {
   fail("mic UI must not stamp grant from MediaCapture recheck alone (P16.20)");
+}
+if (!micUi.includes("softMicDenyCountRef")) {
+  fail("mic UI must retry soft mic fails before Settings (P16.21)");
+}
+if (!micUi.includes("await new Promise") || !micUi.includes('setPhase("error")')) {
+  fail("mic UI must paint error phase before idle (P16.21)");
+}
+if (
+  /emit\("voice-sound"[\s\S]{0,80}emit\("voice-listening"/.test(voiceCmd)
+) {
+  fail("IPC must not dual-emit voice-sound + voice-listening (P16.21)");
+}
+if (!protocol.includes("Owner Experience Before Engineering Confidence")) {
+  fail("protocol must adopt Owner Experience Before Engineering Confidence (P16.21)");
+}
+if (!protocol.includes("Repository Quality Before Milestone Closure")) {
+  fail("protocol must adopt Repository Quality Before Milestone Closure (P16.21)");
 }
 
 console.log("verify-voice-regression: ok");

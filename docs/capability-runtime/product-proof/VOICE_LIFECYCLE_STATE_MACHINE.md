@@ -56,7 +56,9 @@ Idle → Preparing(IPC) → Warm(locked) → ContinuousStart → Capturing
 | --- | --- |
 | UI Ready before Capturing | Forbidden (R11) |
 | Listen gated on stale `warmed` | Removed (R10) |
-| Soft mic fail → Settings | Removed (R13/F7) |
+| Soft mic fail → Settings | Removed (R13/F7); Settings only after 2 soft fails (P16.21) |
+| Dual listening events | Single `voice-sound` (P16.21) |
+| Error phase flash | 280ms before Idle (P16.21) |
 | Dual warm callers | Serialized under `warm_lock` |
 
 ---
