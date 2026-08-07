@@ -10,7 +10,7 @@
 | **Latest program** | Constitutional Governance framework complete — P16 Product Proof still pending |
 | **Rule** | Spec v2 = sole architectural authority. Execution Standard v1 = how all programs run. Classify work, max layer, lowest-layer invariant, compliance checklist. Do not reopen Spec without a Review Trigger. |
 
-**Milestone:** Workspace has completed its Constitutional Governance phase. The product now operates under the Workspace Constitutional Specification v2 and the Engineering Execution Standard v1. Future engineering is expected to occur within this framework. Constitutional work is closed unless a named constitutional review trigger is satisfied.
+**Milestone:** Workspace has completed its Constitutional Governance phase and now operates in **Constitutional Operations**. The product runs under the Workspace Constitutional Specification v2 and the Engineering Execution Standard v1. Future engineering is expected to occur within this framework. Architecture is no longer negotiated; capabilities are negotiated within the Constitution. Constitutional work is closed unless a named constitutional review trigger is satisfied.
 
 **Start here before any execution program.**
 
