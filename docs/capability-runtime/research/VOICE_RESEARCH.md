@@ -246,6 +246,52 @@ Settings opens **once per deny cycle** on explicit mic click. Return triggers `v
 
 **Foundation verdict (revalidated):** WRAP WinRT ContinuousRecognitionSession remains correct. Local ASR stays STUDY. No migration in P16.13.
 
+### P16.14 Technology Validation — foundation audit + mic race
+
+#### Is WinRT still the correct production foundation?
+
+| Criterion | WinRT Continuous | whisper.cpp / Sherpa / Vosk | Azure / Web Speech |
+| --- | --- | --- | --- |
+| Local-first / CSP | Yes | Yes | No / weak |
+| OS mic + speech privacy | Native | Custom | Mixed |
+| Continuous natural pauses | Yes (session + stitch) | DIY | Mixed |
+| Bundle / model cost | None | High | Cloud |
+| Conversation input-device fit | Excellent | Heavy | Poor |
+| Migration cost now | — | Very high | Wrong default |
+
+**Verdict: YES — WRAP WinRT ContinuousRecognitionSession remains the correct production foundation.**  
+Migration is **not** objectively required. Local engines remain **STUDY**. Evidence: OS permission story, zero model packaging, continuous session already Product-Proofed, remaining defects were lifecycle races — not engine incapacity.
+
+#### P16.14 microphone failure root cause
+
+Owner message: “I couldn’t listen just now. Check that a microphone is connected.”
+
+Two stacked defects after P16.13:
+
+1. **MediaCapture warm race** — `warm_up` still ran MediaCapture soft-probe after compile. Initialize briefly exclusive-locks the mic; immediate `ContinuousRecognitionSession` start then fails with a generic HRESULT → sanitized to “couldn’t listen…”.
+2. **Over-aggressive engine reset** — every `!ok` outcome (including `no_speech` / `cancelled`) called `engine_reset`, forcing cold `CompileConstraints` on the next click (multi-second / ~30s) and more start failures.
+
+**Permanent prevention:**
+
+- `warm_up` compiles only — **no MediaCapture**
+- MediaCapture only on explicit `voice_recheck_permission`
+- Keep engine on `no_speech` / `cancelled`
+- Reset only on poison statuses (`recognition_failed` / `recognition_unavailable` / `microphone_unavailable`)
+- `AudioQualityFailure` is `audio_quality` — never `ConfirmedDenied`
+- Verifier: `verify-voice-regression.mjs` (P16.14 clauses)
+
+#### End-to-end timing (healthy path)
+
+| Stage | Expected |
+| --- | --- |
+| UI click → IPC | &lt; 50ms |
+| spawn_blocking enter | immediate |
+| warm (already compiled) | &lt; 20ms (lock + check) |
+| Continuous start → Capturing | typically &lt; 500ms; timeout 2.5s |
+| Ready settle | 45ms |
+| SoundStarted → Listening UI | event-driven |
+| User Stop / silence stitch | continuous; AutoStop 10s stitches |
+
 ---
 
 ## Explicit non-goals

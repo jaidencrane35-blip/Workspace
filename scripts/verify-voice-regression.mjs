@@ -34,7 +34,7 @@ const protocol = fs.readFileSync(
 );
 
 if (!voiceRs.includes("probe_microphone_access_soft")) {
-  fail("voice port must soft-probe mic (never sticky MediaCapture Denied)");
+  fail("voice port must soft-probe mic on recheck (never sticky MediaCapture Denied)");
 }
 if (!voiceRs.includes("ConfirmedDenied")) {
   fail("voice port must distinguish ConfirmedDenied from MediaCapture Denied");
@@ -43,10 +43,21 @@ if (!voiceRs.includes("mic_probe_denied_soft")) {
   fail("voice port must log soft deny without caching");
 }
 if (!voiceRs.includes("listen_fail_recover") || !voiceRs.includes("engine_reset")) {
-  fail("voice port must reset engine after listen failure (idle recovery)");
+  fail("voice port must reset engine after poison listen failures");
+}
+if (!voiceRs.includes("listen_idle_keep_engine")) {
+  fail("voice port must keep engine on no_speech/cancelled (P16.14)");
 }
 if (!voiceRs.includes("warm_lock")) {
   fail("voice port must serialize warm_up (startup + UI contention)");
+}
+// warm_up must not MediaCapture-probe (races SpeechRecognizer for the mic).
+const warmFn = voiceRs.match(/fn warm_up\(&self\)[\s\S]*?\n    fn listen_once_when_ready/);
+if (!warmFn) {
+  fail("could not locate warm_up implementation bounds");
+}
+if (warmFn[0].includes("probe_microphone_access")) {
+  fail("warm_up must not MediaCapture-probe (P16.14 mic race)");
 }
 // Hard-block on plain MediaCapture Denied must stay gone.
 if (/Some\(MicAccess::Denied\)\s*\n\s*\)\s*\{[\s\S]{0,200}permission_denied/.test(voiceRs)) {
@@ -54,6 +65,9 @@ if (/Some\(MicAccess::Denied\)\s*\n\s*\)\s*\{[\s\S]{0,200}permission_denied/.tes
 }
 if (!research.includes("P16.13") || !research.includes("false-deny")) {
   fail("VOICE_RESEARCH must document P16.13 false-deny regression root cause");
+}
+if (!research.includes("P16.14") || !research.includes("MediaCapture warm race")) {
+  fail("VOICE_RESEARCH must document P16.14 MediaCapture warm race root cause");
 }
 if (!proof.responsiveness?.noStickyMediaCaptureDeny) {
   fail("proof must declare noStickyMediaCaptureDeny");

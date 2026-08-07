@@ -141,6 +141,11 @@ describe("intent bridge", () => {
       url: "https://chatgpt.com",
       beside: "Cursor",
     });
+    expect(resolveIntent("Open a browser beside Cursor.")).toMatchObject({
+      kind: "browserOpenBeside",
+      url: "https://www.google.com",
+      beside: "Cursor",
+    });
     expect(resolveIntent("Open this website.").kind).toBe("unknown");
     expect(resolveIntent("Open Notepad.").kind).not.toBe("browserOpen");
   });

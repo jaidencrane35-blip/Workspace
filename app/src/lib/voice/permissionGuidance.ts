@@ -9,6 +9,8 @@
  */
 
 const GRANTED_KEY = "workspace.voice.permissionGranted";
+const DENIED_KEY = "workspace.voice.permissionDenied";
+const DENIED_GUIDANCE_KEY = "workspace.voice.deniedGuidanceOffered";
 
 export type VoicePermissionGate =
   | "idle"
@@ -16,7 +18,7 @@ export type VoicePermissionGate =
   | "awaiting_return"
   | "still_denied";
 
-/** Session-only gate — never persisted (Settings open is per deny cycle). */
+/** Session-only gate — Settings open is per deny cycle. */
 let gate: VoicePermissionGate = "idle";
 let explainAnnounced = false;
 let settingsKind: "microphone" | "speech" = "microphone";
@@ -31,6 +33,8 @@ function storage(): Storage | null {
 
 export function rememberVoicePermissionGranted(): void {
   storage()?.setItem(GRANTED_KEY, "1");
+  storage()?.removeItem(DENIED_KEY);
+  storage()?.removeItem(DENIED_GUIDANCE_KEY);
   gate = "idle";
   explainAnnounced = false;
 }
@@ -41,6 +45,15 @@ export function hasRememberedVoicePermissionGranted(): boolean {
 
 export function clearRememberedVoicePermissionGranted(): void {
   storage()?.removeItem(GRANTED_KEY);
+}
+
+export function rememberVoicePermissionDenied(): void {
+  storage()?.setItem(DENIED_KEY, "1");
+  clearRememberedVoicePermissionGranted();
+}
+
+export function hasRememberedVoicePermissionDenied(): boolean {
+  return storage()?.getItem(DENIED_KEY) === "1";
 }
 
 export function voicePermissionGate(): VoicePermissionGate {
@@ -57,17 +70,19 @@ export function notePermissionDenied(kind: "microphone" | "speech"): {
   message: string;
 } {
   settingsKind = kind;
-  clearRememberedVoicePermissionGranted();
+  rememberVoicePermissionDenied();
   if (gate === "awaiting_return") {
     // User returned from Settings but still denied — one fresh explain, then one more open.
     gate = "still_denied";
     explainAnnounced = false;
-  } else if (gate === "idle" || gate === "explain") {
+  } else if (gate !== "still_denied") {
     gate = "explain";
   }
-  const announce = !explainAnnounced;
+  const alreadyGuided = storage()?.getItem(DENIED_GUIDANCE_KEY) === "1";
+  const announce = !explainAnnounced && !alreadyGuided;
+  explainAnnounced = true;
   if (announce) {
-    explainAnnounced = true;
+    storage()?.setItem(DENIED_GUIDANCE_KEY, "1");
   }
   return { announce, message: permissionGuidanceMessage(kind) };
 }

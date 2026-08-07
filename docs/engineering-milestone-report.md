@@ -1,9 +1,9 @@
 # Engineering Milestone Report
-## P16.13 Voice Production Hardening & Product Proof Stabilization
+## P16.14 Technology Validation, Voice Foundation Audit & Product Proof Completion
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.13 Voice Production Hardening & Product Proof Stabilization |
+| **Execution program** | P16.14 Technology Validation, Voice Foundation Audit & Product Proof Completion |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
@@ -14,25 +14,29 @@
 ## Repository reassessment
 
 - P10–P15 permanently closed.
-- P16 Engineering Complete (through P16.13 hardening).
-- P16 Product Proof **OPEN** — Owner launches Workspace when ready.
+- P16 Engineering Complete (through P16.14 foundation audit).
+- P16 Product Proof **OPEN**.
 - P17 blocked.
-- **Engineering Completion Gate (permanent):** engineering does not relaunch for Product Proof.
 
-## Root cause (microphone regression)
+## Foundation audit
 
-Warm-time `MediaCapture` probe cached `Denied` permanently; listen hard-blocked on that cache while Windows mic still worked. Concurrent warm contended WinRT compile (~30s). Failed sessions left a poisoned recognizer with `warmed=true`.
+**WinRT ContinuousRecognitionSession remains the correct production WRAP.**  
+Local ASR (whisper / Sherpa / Vosk) STUDY. Azure / Web Speech REJECT as defaults. No migration this program.
+
+## Microphone failure root cause
+
+1. MediaCapture during `warm_up` raced SpeechRecognizer for the mic.  
+2. Engine reset on `no_speech` / `cancelled` forced cold recompile every quiet click.
 
 ## Fix
 
-- Soft mic probe — never sticky-cache MediaCapture Denied  
-- Listen hard-blocks only on `ConfirmedDenied` (SpeechRecognizer MicrophoneUnavailable)  
-- `warm_lock` serializes warm  
-- Engine reset after listen failure  
-- Verifier: `pnpm verify:voice-regression`
+- Warm = compile only  
+- Keep engine on idle outcomes  
+- Reset only on poison failures  
+- Remember denied/granted permission state without Settings spam  
+- `verify-voice-regression` enforces P16.14 clauses  
 
 ## Explicit
 
 - **P16 Product Complete:** **No — Owner only**  
 - **P17:** Not begun  
-- **Workspace left closed** for Owner-directed review  

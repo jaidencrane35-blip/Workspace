@@ -69,7 +69,12 @@ pub fn classify_speech_failure(code: u32, detail: &str) -> VoiceListenOutcome {
     }
     if code == 0x8007_0005
         || lower.contains("access is denied")
-        || lower.contains("microphone")
+        || lower.contains("privacy-microphone")
+        || (lower.contains("microphone")
+            && (lower.contains("denied")
+                || lower.contains("not allowed")
+                || lower.contains("unavailable")
+                || lower.contains("access")))
     {
         return VoiceListenOutcome {
             ok: false,
@@ -82,7 +87,7 @@ pub fn classify_speech_failure(code: u32, detail: &str) -> VoiceListenOutcome {
         ok: false,
         transcript: None,
         status: "recognition_failed".into(),
-        message: "I couldn’t listen just now. Check that a microphone is connected and try again.".into(),
+        message: "I couldn’t listen just now. Try the microphone again — if it keeps failing, click once for Settings help.".into(),
     }
 }
 
@@ -455,14 +460,11 @@ impl VoicePort for SystemVoicePort {
                 .map_err(|_| WindowsIntegrationError::VoiceFailed("voice warm lock poisoned".into()))?;
             let t0 = std::time::Instant::now();
             log::info!("voice.lifecycle: warm_up_begin");
+            // P16.14: warm compiles the recognizer only.
+            // MediaCapture probes race SpeechRecognizer for exclusive mic access and
+            // produced “I couldn’t listen just now” after previously successful runs.
             winrt_warm_up(&self.engine, &self.warmed)?;
-            // Soft MediaCapture probe: only persist Allowed. Never cache Denied —
-            // warm-time MediaCapture races caused false “mic unavailable” (P16.13).
-            let mic = probe_microphone_access_soft(&self.mic_access);
-            log::info!(
-                "voice.lifecycle: warm_up_done mic={mic:?} +{:?}",
-                t0.elapsed()
-            );
+            log::info!("voice.lifecycle: warm_up_done +{:?}", t0.elapsed());
             Ok(())
         }
         #[cfg(not(windows))]
@@ -479,9 +481,8 @@ impl VoicePort for SystemVoicePort {
         self.cancel_requested.store(false, Ordering::SeqCst);
         #[cfg(windows)]
         {
-            // P16.13 root-cause fix: never hard-block listen on MediaCapture cache.
-            // Only SpeechRecognizer MicrophoneUnavailable confirms a real deny.
-            // ConfirmedDenied still blocks until Settings recheck clears it.
+            // Never hard-block listen on MediaCapture cache.
+            // ConfirmedDenied only after SpeechRecognizer MicrophoneUnavailable.
             if matches!(
                 self.mic_access.lock().ok().and_then(|g| *g),
                 Some(MicAccess::ConfirmedDenied)
@@ -501,23 +502,41 @@ impl VoicePort for SystemVoicePort {
                 on_ready,
                 on_sound_started,
             )?;
-            if !outcome.ok {
+            // P16.14: never reset the engine on idle outcomes (no_speech / cancelled).
+            // P16.13 reset-on-any-failure forced cold recompile every quiet click →
+            // latency + “I couldn’t listen just now” after previously working runs.
+            if outcome.ok {
+                if let Ok(mut guard) = self.mic_access.lock() {
+                    *guard = Some(MicAccess::Allowed);
+                }
+            } else if matches!(
+                outcome.status.as_str(),
+                "no_speech" | "cancelled"
+            ) {
+                log::info!(
+                    "voice.lifecycle: listen_idle_keep_engine status={}",
+                    outcome.status
+                );
+            } else if outcome.status == "microphone_unavailable" {
+                log::warn!("voice.lifecycle: listen_fail_recover status=microphone_unavailable");
+                if let Ok(mut guard) = self.mic_access.lock() {
+                    *guard = Some(MicAccess::ConfirmedDenied);
+                }
+                reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
+            } else if matches!(
+                outcome.status.as_str(),
+                "recognition_failed" | "recognition_unavailable"
+            ) {
                 log::warn!(
                     "voice.lifecycle: listen_fail_recover status={} — resetting engine",
                     outcome.status
                 );
-                // Only SpeechRecognizer MicrophoneUnavailable confirms a real OS deny.
-                if outcome.status == "microphone_unavailable" {
-                    if let Ok(mut guard) = self.mic_access.lock() {
-                        *guard = Some(MicAccess::ConfirmedDenied);
-                    }
-                }
-                // Idle recovery — drop a poisoned engine so the next click recompiles.
                 reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
-            } else if outcome.ok {
-                if let Ok(mut guard) = self.mic_access.lock() {
-                    *guard = Some(MicAccess::Allowed);
-                }
+            } else {
+                log::info!(
+                    "voice.lifecycle: listen_fail_keep_engine status={}",
+                    outcome.status
+                );
             }
             Ok(outcome)
         }
@@ -1145,11 +1164,12 @@ fn winrt_listen_continuous_when_ready(
                     break;
                 }
                 SpeechRecognitionResultStatus::AudioQualityFailure => {
+                    // Not a permission deny — must not become ConfirmedDenied.
                     hard_fail = Some(VoiceListenOutcome {
                         ok: false,
                         transcript: None,
-                        status: "microphone_unavailable".into(),
-                        message: "I couldn’t hear the microphone clearly.".into(),
+                        status: "audio_quality".into(),
+                        message: "I couldn’t hear the microphone clearly. Try again.".into(),
                     });
                     break;
                 }

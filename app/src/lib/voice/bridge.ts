@@ -24,6 +24,9 @@ const SPEECH_PRIVACY_MESSAGE =
 const MICROPHONE_PERMISSION_MESSAGE =
   "Workspace can’t use the microphone yet. Click the microphone once and I’ll open Windows Settings so you can allow access — then come back here.";
 
+const LISTEN_RETRY_MESSAGE =
+  "I couldn’t listen just now. Try the microphone again — if it keeps failing, click once for Settings help.";
+
 /** Strip technical IPC / OS detail before Conversation shows a voice error. */
 export function desktopVoiceMessage(raw: string): string {
   const lower = raw.toLowerCase();
@@ -45,7 +48,10 @@ export function desktopVoiceMessage(raw: string): string {
     /0x[0-9a-f]{8}/i.test(raw) ||
     /recognize\s*:|winrt|speechrecognizer|hresult|provider/i.test(raw)
   ) {
-    return "I couldn’t listen just now. Check that a microphone is connected and try again.";
+    return LISTEN_RETRY_MESSAGE;
+  }
+  if (lower.includes("couldn’t listen") || lower.includes("couldn't listen")) {
+    return LISTEN_RETRY_MESSAGE;
   }
   return raw;
 }

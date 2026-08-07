@@ -886,6 +886,20 @@ function resolveBrowserIntent(raw: string, text: string): IntentAction | null {
     };
   }
 
+  // “Open a browser beside Cursor” — browser chrome beside an app, not an executable name.
+  const browserBeside = utterance.match(
+    /^open\s+(?:a\s+|my\s+|the\s+)?browsers?\s+beside\s+(.+)$/i,
+  );
+  if (browserBeside?.[1]) {
+    const besideLabel = windowMatchLabel(stripTrailingPunctuation(browserBeside[1]));
+    return {
+      kind: "browserOpenBeside",
+      url: "https://www.google.com",
+      beside: besideLabel,
+      reply: `Opening a browser beside “${besideLabel}”.`,
+    };
+  }
+
   const beside = utterance.match(/^open\s+(.+?)\s+beside\s+(.+)$/i);
   if (beside?.[1] && beside[2]) {
     const left = stripTrailingPunctuation(beside[1]);

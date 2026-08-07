@@ -52,7 +52,9 @@
     "noStickyMediaCaptureDeny": true,
     "engineResetOnListenFailure": true,
     "serializedWarmLock": true,
-    "activityIndicatorIsSoundStartedNotLevelMeter": true
+    "activityIndicatorIsSoundStartedNotLevelMeter": true,
+    "noMediaCaptureDuringWarm": true,
+    "keepEngineOnNoSpeechOrCancel": true
   },
   "uiPhases": [
     "idle",

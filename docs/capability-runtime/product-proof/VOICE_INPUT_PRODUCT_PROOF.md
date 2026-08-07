@@ -1,37 +1,41 @@
 # Voice Input — Product Proof
-## P16 / P16.13 — Owner checklist
+## P16 / P16.14 — Owner checklist
 
 | Field | Value |
 | --- | --- |
-| **Program** | P16 Voice Input (+ P16.13 production hardening) |
+| **Program** | P16 Voice Input (+ P16.14 technology validation) |
 | **Status** | **Pending live Product Owner acceptance** (**not** Product Complete) |
-| **Launch** | **Owner launches Workspace** (Engineering Completion Gate — engineering will not relaunch) |
+| **Launch** | Engineering leaves Workspace running once for this review |
 
 ---
 
-## Owner launches Workspace, then tests
+## Please test (Workspace is already open — leave it running)
 
-### Voice
-1. Click mic → wait for bright **Ready** → speak immediately  
-2. Long turn with pauses; Stop via mic  
-3. Repeat after a prior success (idle recovery)  
-4. Confirm no freeze / crash / multi-second hang on every click  
+### Voice reliability
+1. Click mic → bright Ready → speak immediately (first words kept)  
+2. Long turn with natural pauses; Stop via mic  
+3. Click mic, say nothing / cancel — next listen must still start quickly  
+4. Repeat several successful sessions — no “couldn’t listen” after prior success  
+5. No freeze / multi-second hang on every click  
 
 ### Permission
-1. If denied: one explanation; mic click opens Settings **once**  
-2. Allow; return → automatic re-check → **✓ Voice ready**  
-3. Later launches must not reopen Settings after grant  
+1. If denied: one explanation; Settings only on mic click  
+2. Allow → return → **✓ Voice ready**  
+3. Later sessions must not spam Settings after grant  
 
 ### Conversation
-- Please open GPT · Launch GPT · Start YT · Open Git · VSCode · Cursor · Edge · Chrome · Settings  
-- Open ChatGPT beside Cursor · screenshot phrases  
+- Open GPT / Please open YouTube / Launch GPT in another window  
+- Open a browser beside Cursor / Open ChatGPT beside Cursor  
+- Open Chrome / Open my browser / Bring Cursor forward  
+- Close Settings / Take a screenshot / Capture this window  
+- Can you hear me? / What can you do?  
 
 ### Visual
-- Opaque readable Conversation glass  
-- Mic Ready / Listening / Processing / Error states obvious  
-- Speaking indicator reacts to speech (SoundStarted — not a calibrated level meter)
+- Opaque readable glass; obvious Ready / Listening / Processing / Error  
+- Speaking indicator on speech energy (SoundStarted)
 
-When finished, close Workspace and tell engineering testing is complete.
+When finished, **close Workspace normally** and tell engineering testing is complete.  
+Engineering will **not** relaunch automatically.
 
 ---
 

@@ -7,7 +7,7 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.13 Voice Production Hardening & Product Proof Stabilization (awaiting Owner launch) |
+| **Latest program** | P16.14 Technology Validation, Voice Foundation Audit & Product Proof Completion (awaiting Owner) |
 | **Rule** | Ignore prior chat history. Reassess repository truth before any implementation. |
 
 **Start here before any execution program.**
@@ -102,7 +102,7 @@ One execution program
 
 Authoritative rolling list: `docs/capability-runtime/FIVE_PROGRAM_ROADMAP.md`.
 
-| Now | P16 Voice Input — Engineering Complete (through **P16.13** hardening); Product Proof pending Owner launch |
+| Now | P16 Voice Input — Engineering Complete (through **P16.14** foundation audit); Product Proof pending Owner |
 | Next (after P16 acceptance) | **P17 File Provider** |
 | Then | P18 Terminal · P19 Memory · P20 Automation · P21 Workspace Intelligence |
 
@@ -138,7 +138,7 @@ Do not reopen except bugfixes:
 | Notifications | Closed (P13) | |
 | Browser | Closed (P14) | |
 | Screenshots | Closed (P15) | |
-| **Voice Input** | **Engineering Complete** (P16.13) | Conversation input device — **not** a Runtime desktop provider; **Product Proof pending Owner launch** |
+| **Voice Input** | **Engineering Complete** (P16.14) | Conversation input device — **not** a Runtime desktop provider; **Product Proof pending Owner** |
 | File | Not started | **P17** (blocked) |
 | Terminal / Memory / Automation | Roadmap | P18+ |
 
@@ -202,8 +202,8 @@ Do not redesign without a new constitutional program:
 | Harness / verifiers for Voice + conversation quality | Green (engineering) — do not treat as Owner acceptance |
 | P10–P15 Product Proof | Accepted / closed |
 
-Voice remediations through P16.13 (false-deny regression fix, production hardening) do **not** equal permanent closure.  
-**Engineering Completion Gate:** do not relaunch Workspace for Product Proof — Owner launches.
+Voice remediations through P16.14 (foundation audit, MediaCapture warm-race fix) do **not** equal permanent closure.  
+After Owner closes Workspace: cleanup only — **never relaunch**.
 
 ---
 
@@ -215,9 +215,9 @@ Voice remediations through P16.13 (false-deny regression fix, production hardeni
 
 ## 15. Latest commit
 
-| Tip | Use `git log -1 --oneline` on `v2-dev` after P16.13 push |
+| Tip | Use `git log -1 --oneline` on `v2-dev` after P16.14 push |
 | --- | --- |
-| Prior Voice engineering | `0bd7f34` (P16.12) · `b90529c` (P16.11) |
+| Prior Voice engineering | `bb8ab78` (P16.13) · `0bd7f34` (P16.12) |
 
 ---
 
