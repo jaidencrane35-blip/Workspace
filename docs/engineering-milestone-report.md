@@ -1,17 +1,27 @@
 # Engineering Milestone Report
-## P16.O1 — Product Proof Readiness Audit
+## P16.O2 — Owner Product Proof Execution Authority
 
 | Field | Value |
 | --- | --- |
-| **Artifact** | `docs/capability-runtime/product-proof/P16_O1_PRODUCT_PROOF_READINESS_REPORT.md` |
+| **Artifacts** | `P16_O2_OWNER_PRODUCT_PROOF_EXECUTION_AUTHORITY.md`, `P16_O2_PRODUCT_PROOF_SESSION_WORKBOOK.md` |
 | **Date** | 2026-08-07 |
-| **Status** | Ready for Owner live Product Proof — not Product Complete; P17 blocked |
+| **Status** | Execution authority ready — Owner live session pending; not Product Complete; P17 blocked |
 | **Spec / runtime / architecture** | Unchanged |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
+| **Artifact note** | Documentation/governance only — no new verifier (process authority; machine check not applicable beyond health sync) |
 
 ### Summary
 
-Product Architect audit under Constitutional Operations. Greatest next value: Owner live PP. No constitutional trigger. No justified runtime work before PP. Roadmap: PP ? Track A ? P17.
+Transfers product-quality evidence authority to the Product Owner. Session = scientific experiment; defect taxonomy; lowest-layer fix pipeline; exit = Owner prefer Workspace for supported workflows. No Constitutional Review Trigger. Next: Owner fills workbook against live package.
+
+---
+
+## Prior: P16.O1 — Product Proof Readiness Audit
+
+| Field | Value |
+| --- | --- |
+| **Artifact** | `P16_O1_PRODUCT_PROOF_READINESS_REPORT.md` |
+| **Status** | Ready for Owner live PP — assessment closed |
 
 ---
 

@@ -10,6 +10,7 @@
 | **Launch** | **Do not launch until Product Owner requests** |
 | **Live timings** | Set `WORKSPACE_VOICE_PRODUCT_PROOF=1` for the review session only |
 | **Companion evidence** | Traceability → `VOICE_OWNER_FINDINGS_TRACEABILITY.md` · Regressions → `VOICE_REGRESSION_MATRIX.md` · Instrumentation → `VOICE_LIVE_INSTRUMENTATION.md` |
+| **Execution authority** | `P16_O2_OWNER_PRODUCT_PROOF_EXECUTION_AUTHORITY.md` · Session workbook → `P16_O2_PRODUCT_PROOF_SESSION_WORKBOOK.md` |
 
 Engineering Complete ≠ Product Complete. Only the Product Owner determines Product Completion.
 

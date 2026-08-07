@@ -7,8 +7,10 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.O1 Product Proof Readiness — ready for Owner live PP; P16 not Product Complete; P17 blocked |
+| **Latest program** | P16.O2 Owner Product Proof Execution Authority — Owner is primary product-quality evidence; session pending |
 | **Product Proof readiness** | `docs/capability-runtime/product-proof/P16_O1_PRODUCT_PROOF_READINESS_REPORT.md` |
+| **Product Proof execution** | `docs/capability-runtime/product-proof/P16_O2_OWNER_PRODUCT_PROOF_EXECUTION_AUTHORITY.md` |
+| **Product Proof workbook** | `docs/capability-runtime/product-proof/P16_O2_PRODUCT_PROOF_SESSION_WORKBOOK.md` |
 | **Rule** | Spec v2 = sole architectural authority. Execution Standard v1 = how all programs run. Classify work, max layer, lowest-layer invariant, compliance checklist. Do not reopen Spec without a Review Trigger. |
 
 **Milestone:** Workspace has completed its Constitutional Governance phase and now operates in **Constitutional Operations**. The product runs under the Workspace Constitutional Specification v2 and the Engineering Execution Standard v1. Future engineering is expected to occur within this framework. Architecture is stable by default; capabilities evolve within it. Architectural change requires a named Constitutional Review Trigger supported by objective evidence. Constitutional work is otherwise closed.
@@ -221,14 +223,14 @@ Do not redesign constitutional concepts unless a named review trigger is satisfi
 
 | Item | Status |
 | --- | --- |
-| **P16 Voice Input — live Owner Product Proof** | **PENDING FINAL ACCEPTANCE** |
+| **P16 Voice Input — live Owner Product Proof** | **PENDING FINAL ACCEPTANCE** — execute under P16.O2; record in session workbook |
 | Harness / verifiers for Voice + conversation quality | Green (engineering) — do not treat as Owner acceptance |
 | P10–P15 Product Proof | Accepted / closed |
 
 P16.28 engineering exit: **no further Voice engineering is justified by current evidence.**  
 Product Proof remains open until Owner acceptance.  
 **Do not launch Workspace until the Product Owner requests it.**  
-For live Product Proof: follow `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md` with `WORKSPACE_VOICE_PRODUCT_PROOF=1`.  
+For live Product Proof: follow `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md` with `WORKSPACE_VOICE_PRODUCT_PROOF=1`, under `P16_O2_OWNER_PRODUCT_PROOF_EXECUTION_AUTHORITY.md`, recording evidence in `P16_O2_PRODUCT_PROOF_SESSION_WORKBOOK.md`.  
 After Owner closes Workspace: cleanup only — **never relaunch**.
 
 ---

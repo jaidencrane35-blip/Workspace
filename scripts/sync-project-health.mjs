@@ -484,7 +484,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16.O1: Product Proof Readiness — engineering ready for Owner live PP (VOICE_LIVE_PRODUCT_PROOF_PACKAGE + P16_O1 report). Not Product Complete. No runtime work justified before PP. P17 blocked. Meta-engineering closed. Spec + EES authoritative.",
+    note: "P16.O2: Owner Product Proof Execution Authority — Owner is primary product-quality evidence. Live package + session workbook. Not Product Complete until Owner Accept. No runtime before first Owner session. P17 blocked. Spec + EES authoritative.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,

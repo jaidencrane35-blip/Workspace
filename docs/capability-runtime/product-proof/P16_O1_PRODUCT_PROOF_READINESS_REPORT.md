@@ -239,4 +239,6 @@ P17 will be the strongest test that constitutional work succeeded **if** File in
 
 Workspace is **ready for Owner Product Proof execution**, not for claiming Product Complete. Constitutional Operations continues: improve product quality inside existing Information Owners; expand capabilities only after gates; do not reopen architecture without a Review Trigger.
 
+**Update (P16.O2):** Execution authority and session workbook supersede “how to run” readiness — see `P16_O2_OWNER_PRODUCT_PROOF_EXECUTION_AUTHORITY.md`. O1 readiness verdict unchanged: ready for live PP; not Product Complete.
+
 **STOP.** Await Product Owner review.

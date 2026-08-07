@@ -28,6 +28,7 @@ This is an **index of settled decisions**, not a redesign surface. Individual ra
 | P10–P15 providers closed | Active | Capability Standards | Handoff inventory; Provider Acceptance | Reopening closed providers except bugfixes |
 | P16 Product Proof pending Owner | Active (gate) | Governance | `project-health.json`; handoff; `P16_O1_PRODUCT_PROOF_READINESS_REPORT.md` | Treating engineering green as Owner acceptance |
 | P16.O1 Product Proof Readiness | Active (assessment) | Governance | `P16_O1_PRODUCT_PROOF_READINESS_REPORT.md` | Meta-architecture as substitute for live Owner feel |
+| P16.O2 Owner PP Execution Authority | Active (gate) | Governance | `P16_O2_OWNER_PRODUCT_PROOF_EXECUTION_AUTHORITY.md`; session workbook | Treating eng green as Owner acceptance; inventing Owner observations |
 | P17 File Provider deferred | Active (sequencing) | Governance | Handoff; roadmap | Starting P17 before P16 Owner close |
 
 ---
