@@ -7,7 +7,7 @@
 | **Subordinate to** | Workspace Constitutional Specification v2 · Engineering Execution Standard v1 · Capability Integration Standard · Workspace Interaction Language |
 | **Peers** | `PRODUCT_GRAVITY_RULE.md` · `WORKSPACE_INTERACTION_LANGUAGE.md` · Product Proof Rule |
 | **Date** | 2026-08-07 |
-| **Commit** | _(stamped on ship)_ |
+| **Commit** | `e0603c0` |
 | **Branch** | `v2-dev` |
 
 This document defines what **excellent** means for Workspace as a premium conversational desktop product.  
