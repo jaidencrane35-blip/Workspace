@@ -7,7 +7,8 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.PX2 — Premium Conversation Experience (calm listening motion); await Owner |
+| **Latest program** | P16.PX3 — Workspace Interaction Language (soft Send after voice); await Owner |
+| **Interaction language** | `docs/ui/WORKSPACE_INTERACTION_LANGUAGE.md` — product feel heuristics (not Spec) |
 | **PX2 report** | `docs/capability-runtime/product-proof/P16_PX2_PREMIUM_CONVERSATION_EXPERIENCE.md` |
 | **PX1 audit** | `docs/capability-runtime/product-proof/P16_PX1_CONVERSATION_EXPERIENCE_AUDIT.md` |
 | **Production note** | Prior PI4 Gate Spec unchanged; await Owner before A1; **do not begin P17** |
@@ -84,6 +85,7 @@ Conversation
 | Execution protocol | `.cursor/rules/constitutional-execution-protocol.mdc` — governance under Spec |
 | Machine state | `docs/project-health.json` (synced to `app/public/project-health.json`) |
 | Product Gravity | `docs/ui/PRODUCT_GRAVITY_RULE.md` — principle under Spec |
+| Interaction Language | `docs/ui/WORKSPACE_INTERACTION_LANGUAGE.md` — product feel heuristics (not Spec) |
 | Product Proof | `docs/capability-runtime/PRODUCT_PROOF_RULE.md` — governance under Spec |
 | User Adaptation Prohibition | Permanent (P16.6) — same Product Proof authority |
 | Production Before Expansion | Permanent (P16.15) — same Product Proof authority |

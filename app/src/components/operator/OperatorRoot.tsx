@@ -66,6 +66,8 @@ export function OperatorRoot({
   const modeRef = useRef(mode);
   modeRef.current = mode;
   const [draft, setDraft] = useState("");
+  /** PX3: after voice insert, softly mark Send as the one obvious next action (F10). */
+  const [voiceReviewPending, setVoiceReviewPending] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [busy, setBusy] = useState(false);
   /** Tool dock inside Conversation — never a third shell form. */
@@ -298,6 +300,7 @@ export function OperatorRoot({
         return;
       }
       setDraft("");
+      setVoiceReviewPending(false);
       setMessages((prev) => [
         ...prev,
         { id: `u-${Date.now()}`, role: "user", text },
@@ -317,6 +320,7 @@ export function OperatorRoot({
       // F10 dictation: Voice inserts like typing — Owner reviews, then Send or clear.
       // Never auto-submit; Send / Enter = send; Escape / clear = cancel.
       setDraft(transcript);
+      setVoiceReviewPending(true);
       void pushWorkspace(
         "Review your words, then Send — or clear the box to cancel.",
       );
@@ -489,11 +493,18 @@ export function OperatorRoot({
                 ref={inputRef}
                 className="op-shell__input"
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setDraft(next);
+                  if (!next.trim()) {
+                    setVoiceReviewPending(false);
+                  }
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Escape") {
                     e.preventDefault();
                     setDraft("");
+                    setVoiceReviewPending(false);
                     return;
                   }
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -515,12 +526,23 @@ export function OperatorRoot({
                 <button
                   type="submit"
                   className="op-shell__send"
+                  data-voice-ready={
+                    voiceReviewPending && draft.trim() ? "true" : "false"
+                  }
                   disabled={busy || !draft.trim()}
-                  aria-label={draft.trim() ? "Send" : "Send (enter text or speak first)"}
+                  aria-label={
+                    voiceReviewPending && draft.trim()
+                      ? "Send reviewed words"
+                      : draft.trim()
+                        ? "Send"
+                        : "Send (enter text or speak first)"
+                  }
                   title={
-                    draft.trim()
+                    voiceReviewPending && draft.trim()
                       ? "Send — Enter"
-                      : "Send after speaking or typing"
+                      : draft.trim()
+                        ? "Send — Enter"
+                        : "Send after speaking or typing"
                   }
                 >
                   ↵

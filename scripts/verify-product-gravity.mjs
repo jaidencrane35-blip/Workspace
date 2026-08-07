@@ -16,6 +16,7 @@ function fail(msg) {
 
 const required = [
   "docs/ui/PRODUCT_GRAVITY_RULE.md",
+  "docs/ui/WORKSPACE_INTERACTION_LANGUAGE.md",
   "docs/ui/UI_ARCHITECTURE_SPECIFICATION.md",
   "docs/ui/PRODUCT_PRESENTATION_SPECIFICATION.md",
   "docs/ui/WINDOW_LIFECYCLE_SPECIFICATION.md",
@@ -103,10 +104,33 @@ if (!rootUi.includes('data-gravity="conversation"')) {
 if (!rootUi.includes("loadShellMode(1)")) {
   fail("OperatorRoot must default loadShellMode to Conversation");
 }
+// P16.PX3: after voice review, Send is the one obvious next action.
+if (!rootUi.includes("voiceReviewPending") || !rootUi.includes("data-voice-ready")) {
+  fail("OperatorRoot must soft-emphasize Send after voice transcript (P16.PX3)");
+}
 
 const css = fs.readFileSync(path.join(root, "app/src/App.css"), "utf8");
 if (!css.includes("backdrop-filter")) {
   fail("conversation surface must use translucent host treatment");
+}
+if (!css.includes('.op-shell__send[data-voice-ready="true"]')) {
+  fail("App.css must style voice-ready Send cue (P16.PX3)");
+}
+
+const interaction = fs.readFileSync(
+  path.join(root, "docs/ui/WORKSPACE_INTERACTION_LANGUAGE.md"),
+  "utf8",
+);
+for (const token of [
+  "One obvious action",
+  "Calm over clever",
+  "Trust over spectacle",
+  "Conversation",
+  "prefers-reduced-motion",
+]) {
+  if (!interaction.includes(token)) {
+    fail(`WORKSPACE_INTERACTION_LANGUAGE.md missing: ${token}`);
+  }
 }
 
 const lifecycle = fs.readFileSync(
