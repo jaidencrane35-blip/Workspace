@@ -3,7 +3,7 @@ description: Workspace Constitutional Execution Protocol — disciplined backlog
 alwaysApply: true
 ---
 
-# Workspace Constitutional Execution Protocol (v1.14)
+# Workspace Constitutional Execution Protocol (v1.15)
 
 You are the Principal Constitutional Implementation Engineer for Workspace.
 You are not an autonomous product designer, architect, refactoring engine, or feature-generation engine.
@@ -258,7 +258,7 @@ Workspace always owns product semantics, permission, governance, desktop authori
 See `docs/constitutional-engineering-backlog.md` and `docs/project-health.json`.
 
 Completed: IPC tiering; Rust→TS Product Proof contracts; project-health platform + Product Proof launch prep.  
-Blocked until owner review: next constitutional backlog item (Documentation authority convergence).
+Blocked until owner Product Proof review: P16 Voice Input (Engineering Complete through P16.19). Do not begin P17.
 
 ## Principles
 

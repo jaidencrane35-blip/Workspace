@@ -51,6 +51,15 @@ if (!voiceRs.includes("listen_idle_keep_engine")) {
 if (!voiceRs.includes("mic_unavailable_soft")) {
   fail("voice port must soft-recover microphone_unavailable without sticky deny (P16.18)");
 }
+if (!voiceRs.includes("sticky_privacy_deny") || !voiceRs.includes("permission_denied_soft_mic")) {
+  fail("ConfirmedDenied sticky only for speech privacy (P16.19)");
+}
+if (!voiceRs.includes("cleared_stale_confirmed_denied")) {
+  fail("soft mic_unavailable must clear stale ConfirmedDenied (P16.19)");
+}
+if (!voiceRs.includes("memory_voice_survives_1000_consecutive_listen_sessions")) {
+  fail("memory voice stress must cover 1000 consecutive listens (P16.19)");
+}
 // Must not sticky-cache ConfirmedDenied on microphone_unavailable path.
 if (
   /microphone_unavailable[\s\S]{0,240}ConfirmedDenied/.test(voiceRs) &&
@@ -223,6 +232,23 @@ if (!fs.existsSync(failureMatrix)) {
 }
 if (!matrix.includes("R13") || !matrix.includes("mic_unavailable_soft")) {
   fail("regression matrix must cover P16.18 sticky-deny fix (R13)");
+}
+if (!matrix.includes("R16") || !matrix.includes("sticky_privacy_deny")) {
+  fail("regression matrix must cover P16.19 speech-privacy-only sticky deny (R16)");
+}
+const lifecycle = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_LIFECYCLE_STATE_MACHINE.md",
+);
+if (!fs.existsSync(lifecycle)) {
+  fail("missing VOICE_LIFECYCLE_STATE_MACHINE.md (P16.19 artifact)");
+}
+const closure = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_PRODUCTION_CLOSURE_INVESTIGATION.md",
+);
+if (!fs.existsSync(closure)) {
+  fail("missing VOICE_PRODUCTION_CLOSURE_INVESTIGATION.md (P16.19 artifact)");
 }
 
 console.log("verify-voice-regression: ok");

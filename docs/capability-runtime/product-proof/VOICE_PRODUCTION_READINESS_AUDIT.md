@@ -73,6 +73,8 @@ Engineering falsification pass. Does **not** equal Owner Product Complete.
 | Dead test hook / deprecated helpers? | Removed (P16.17) |
 | RecognizeAsync residue in product docs? | Fixed (P16.17) |
 | Kernel dead_code as Voice blocker? | Documented — Track A, not Voice-owned |
+| Sticky ConfirmedDenied on mic Access Denied? | Fixed (P16.19 — privacy sticky only) |
+| Soft mic fail leaving stale ConfirmedDenied? | Fixed (clear on mic_unavailable_soft) |
 
 ---
 
@@ -81,6 +83,7 @@ Engineering falsification pass. Does **not** equal Owner Product Complete.
 1. Kernel unused-code warnings remain repository-wide debt (not Voice).  
 2. Permission / voice user strings still triplicated (sanitization layers).  
 3. Dual warm entry points remain (safe, slightly more ceremony than ideal).  
-4. Live first-word / sleep-resume still require Owner Product Proof (cannot be fully automated without mic hardware).
+4. Live first-word / sleep-resume still require Owner Product Proof (cannot be fully automated without mic hardware).  
+5. Polished first-launch permission tour is Track A UX — not a lifecycle defect.
 
-**Engineering conclusion:** No remaining **reproducible Voice-owned** engineering defect found after this falsification pass. P16 stays OPEN for Owner acceptance.
+**Engineering conclusion (P16.19):** No remaining **reproducible Voice-owned** engineering defect found after active falsification. P16 stays OPEN for Owner acceptance. See `VOICE_PRODUCTION_CLOSURE_INVESTIGATION.md`.

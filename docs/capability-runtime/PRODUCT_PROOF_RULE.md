@@ -165,9 +165,11 @@ Completion is evidence-based, not optimism-based. Engineering must attempt to pr
 
 A milestone may not permanently close while avoidable technical debt remains that materially affects maintainability, determinism, reliability, or future engineering confidence for that milestone’s owned surfaces.
 
-## Commodity Before Reinvention — survey obligation
+## Commodity Before Reinvention — survey obligation (mandatory)
 
-Before major capability work, perform a Commodity Survey (ADOPT / WRAP / ADAPT / STUDY / REJECT) and record it under capability research. Workspace owns identity, contracts, Operator, permissions, conversation, and runtime; commodity stays an implementation detail.
+Before implementing **any** future capability (P17+), engineering must perform a mandatory Commodity Survey of mature production implementations and classify ADOPT / WRAP / ADAPT / STUDY / REJECT under capability research.  
+Compare lifecycle, permissions, recovery, error handling, readiness, startup, shutdown, and state management — not feature checklists.  
+Workspace owns identity, contracts, Operator, permissions, conversation, and runtime; commodity stays an implementation detail.
 
 ---
 

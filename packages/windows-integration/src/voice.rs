@@ -67,7 +67,7 @@ pub fn classify_speech_failure(code: u32, detail: &str) -> VoiceListenOutcome {
             message: "Speech recognition isn’t set up for this language. Check Windows speech settings and try again.".into(),
         };
     }
-    // True OS deny / privacy → permission_denied (may become sticky ConfirmedDenied).
+    // Mic OS deny → permission_denied (soft recover on listen path — not sticky ConfirmedDenied).
     if code == 0x8007_0005
         || lower.contains("access is denied")
         || lower.contains("privacy-microphone")
@@ -486,8 +486,7 @@ impl VoicePort for SystemVoicePort {
         self.cancel_requested.store(false, Ordering::SeqCst);
         #[cfg(windows)]
         {
-            // ConfirmedDenied only after true permission_denied (privacy / access denied).
-            // Transient MicrophoneUnavailable must never sticky-block later listens (P16.18).
+            // ConfirmedDenied only for speech privacy (P16.19). Soft mic fails never sticky-block.
             if matches!(
                 self.mic_access.lock().ok().and_then(|g| *g),
                 Some(MicAccess::ConfirmedDenied)
@@ -496,7 +495,7 @@ impl VoicePort for SystemVoicePort {
                     ok: false,
                     transcript: None,
                     status: "permission_denied".into(),
-                    message: MICROPHONE_PERMISSION_MESSAGE.into(),
+                    message: SPEECH_PRIVACY_MESSAGE.into(),
                 });
             }
             // Serialize warm with startup/UI warm — listen previously raced CompileConstraints.
@@ -536,14 +535,36 @@ impl VoicePort for SystemVoicePort {
                 );
             } else if outcome.status == "microphone_unavailable" {
                 // Soft recover — reset poisoned engine, never ConfirmedDenied.
+                // Also clear a stale sticky deny so a later soft fail cannot hard-block forever.
                 log::warn!(
                     "voice.lifecycle: mic_unavailable_soft — reset engine, not sticky-deny"
                 );
+                if let Ok(mut guard) = self.mic_access.lock() {
+                    if matches!(*guard, Some(MicAccess::ConfirmedDenied)) {
+                        *guard = None;
+                        log::info!("voice.lifecycle: cleared_stale_confirmed_denied");
+                    }
+                }
                 reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
             } else if outcome.status == "permission_denied" {
-                log::warn!("voice.lifecycle: listen_fail_recover status=permission_denied");
-                if let Ok(mut guard) = self.mic_access.lock() {
-                    *guard = Some(MicAccess::ConfirmedDenied);
+                // P16.19 F1 challenge: only speech privacy is sticky ConfirmedDenied.
+                // Mic "Access is denied" can be transient COM contention after success —
+                // sticky hard-block reproduced Owner “unavailable after success”.
+                let sticky_privacy = outcome
+                    .message
+                    .to_ascii_lowercase()
+                    .contains("speech privacy");
+                if sticky_privacy {
+                    log::warn!(
+                        "voice.lifecycle: sticky_privacy_deny — ConfirmedDenied until Settings recheck"
+                    );
+                    if let Ok(mut guard) = self.mic_access.lock() {
+                        *guard = Some(MicAccess::ConfirmedDenied);
+                    }
+                } else {
+                    log::warn!(
+                        "voice.lifecycle: permission_denied_soft_mic — reset engine, not sticky"
+                    );
                 }
                 reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
             } else if matches!(
@@ -1399,13 +1420,13 @@ mod tests {
         );
     }
 
-    /// P16.15 engineering stress — 100 consecutive warm listens stay ready (MemoryVoicePort).
+    /// P16.19 engineering stress — 1000 consecutive warm listens stay ready (MemoryVoicePort).
     #[test]
-    fn memory_voice_survives_100_consecutive_listen_sessions() {
+    fn memory_voice_survives_1000_consecutive_listen_sessions() {
         let port = MemoryVoicePort::new();
         port.warm_up().unwrap();
         assert!(port.status().unwrap().warmed);
-        for i in 0..100 {
+        for i in 0..1000 {
             port.set_next_transcript(format!("session {i}"));
             let ready = std::sync::Arc::new(AtomicBool::new(false));
             let ready_cb = std::sync::Arc::clone(&ready);
@@ -1424,5 +1445,19 @@ mod tests {
                 "session {i} must keep engine warm"
             );
         }
+    }
+
+    #[test]
+    fn only_speech_privacy_message_is_sticky_permission_shape() {
+        let privacy = classify_speech_failure(
+            HRESULT_SPEECH_PRIVACY_DECLINED,
+            "speech privacy policy was not accepted",
+        );
+        assert_eq!(privacy.status, "permission_denied");
+        assert!(privacy.message.to_ascii_lowercase().contains("speech privacy"));
+
+        let access = classify_speech_failure(0x8007_0005, "Access is denied.");
+        assert_eq!(access.status, "permission_denied");
+        assert!(!access.message.to_ascii_lowercase().contains("speech privacy"));
     }
 }

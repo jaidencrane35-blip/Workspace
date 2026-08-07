@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T07:33:17.212Z",
+  "updatedAt": "2026-08-07T07:42:44.562Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -8,14 +8,14 @@
   "engineeringMode": "constitutional-execution",
   "protocol": {
     "document": ".cursor/rules/constitutional-execution-protocol.mdc",
-    "version": "1.14",
+    "version": "1.15",
     "machineState": "docs/project-health.json"
   },
   "currentExecutionProgram": {
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "note": "P16 Engineering Complete (incl. P16.18 Production Acceptance Investigation — sticky-deny + warm race fixes). Product Complete is Owner-only. After Owner closes Workspace: cleanup only, never relaunch. Do not mark permanently closed. Do not begin P17."
+    "note": "P16 Engineering Complete (incl. P16.19 Production Closure Investigation — F1 residual sticky Access Denied removed; lifecycle audited). Product Complete is Owner-only. Do not launch until Owner requests. After Owner closes Workspace: cleanup only, never relaunch. Do not mark permanently closed. Do not begin P17."
   },
   "completedExecutionPrograms": [
     {
@@ -415,7 +415,7 @@
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16 Voice Input Engineering Complete (incl. P16.18 Production Acceptance Investigation) — Product Proof pending Owner acceptance (NOT permanently closed)",
+      "P16 Voice Input Engineering Complete (incl. P16.19 Production Closure Investigation) — Product Proof pending Owner acceptance (NOT permanently closed)",
       "User Adaptation Prohibition permanent (P16.6)",
       "Commodity Before Reinvention permanent (P16.7)",
       "Conversation Continuity + Semantic Alias Rule permanent (P16.8)",
@@ -435,8 +435,8 @@
     ]
   },
   "currentMilestone": {
-    "id": "voice-acceptance-investigation-p16-18",
-    "title": "P16.18 Production Acceptance Investigation & Architectural Falsification",
+    "id": "voice-production-closure-p16-19",
+    "title": "P16.19 Production Closure Investigation & Final Engineering Challenge",
     "status": "engineering_complete_product_proof_pending",
     "commit": "pending"
   },
@@ -537,7 +537,7 @@
     {
       "id": "p16-voice-product-proof",
       "track": "B",
-      "summary": "P16 Voice Input — live Product Owner Product Proof pending final acceptance (Engineering Complete incl. P16.18 Acceptance Investigation; not permanently closed)"
+      "summary": "P16 Voice Input — live Product Owner Product Proof pending final acceptance (Engineering Complete incl. P16.19 Closure Investigation; not permanently closed)"
     },
     {
       "id": "capability-providers-p17-plus",
@@ -577,7 +577,7 @@
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16 Voice Input Engineering Complete (P16.18 Production Acceptance Investigation) — Product Proof pending Owner acceptance",
+      "P16 Voice Input Engineering Complete (P16.19 Production Closure Investigation) — Product Proof pending Owner acceptance",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -736,7 +736,7 @@
     ],
     "productIpcCommandCount": 20,
     "launchStatus": "pending",
-    "readyForOwnerReview": true,
+    "readyForOwnerReview": false,
     "reviewDocument": "docs/product-proof-review.md"
   },
   "architecturalRisks": [
@@ -781,7 +781,7 @@
   "lastMilestone": {
     "date": "2026-08-07",
     "document": "docs/engineering-milestone-report.md",
-    "title": "P16.18 Voice Acceptance Investigation — awaiting Owner acceptance",
+    "title": "P16.19 Voice Production Closure Investigation — awaiting Owner acceptance",
     "reviewBrief": "docs/capability-runtime/product-proof/VOICE_INPUT_PRODUCT_PROOF.md"
   },
   "handoffStatus": "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",

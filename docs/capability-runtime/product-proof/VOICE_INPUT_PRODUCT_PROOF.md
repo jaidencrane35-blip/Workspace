@@ -1,11 +1,11 @@
 # Voice Input — Product Proof
-## P16 / P16.18 — Owner checklist (Acceptance Investigation)
+## P16 / P16.19 — Owner checklist (Final Engineering Challenge)
 
 | Field | Value |
 | --- | --- |
-| **Program** | P16 Voice Input (+ P16.18 Production Acceptance Investigation) |
+| **Program** | P16 Voice Input (+ P16.19 Production Closure Investigation) |
 | **Status** | **Pending live Product Owner acceptance** (**not** Product Complete) |
-| **Launch** | Engineering leaves Workspace running **exactly once** for this review |
+| **Launch** | **Do not launch until Owner requests** — engineering left Workspace unlaunched |
 
 ---
 
@@ -16,6 +16,7 @@
 3. Speak immediately on Ready — first words kept  
 4. “Open Chrome browser” / “Launch browser” / “Open GPT” — browser/desktop, never inventing `.exe`  
 5. Permission denied only when Windows truly denies — not after a flaky listen  
+6. After a soft “couldn’t reach the microphone” — next click must work without Settings detour  
 
 Also re-check: long pause dictation, cancel, screenshot, Can you hear me?
 

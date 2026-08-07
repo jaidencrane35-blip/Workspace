@@ -392,6 +392,20 @@ Owner findings treated as repository truth. Engineering vs Owner disagreement au
 
 Matrix: `VOICE_PRODUCTION_FAILURE_MATRIX.md`. **WinRT remains WRAP.**
 
+### P16.19 Production Closure Investigation
+
+Final falsification before Owner acceptance:
+
+| Challenge | Result |
+| --- | --- |
+| F1 residual — Access Denied sticky ConfirmedDenied | **FIX** — sticky only when message contains speech privacy; soft mic deny resets |
+| Soft mic_unavailable after stale ConfirmedDenied | Clears stale sticky |
+| Lifecycle / state machine | Documented `VOICE_LIFECYCLE_STATE_MACHINE.md` |
+| Commodity (WinRT / Sherpa / whisper / Vosk / PowerToys / VS Code / Kiro / Terminal) | Revalidated — WRAP WinRT; no missing production behaviour that blocks P16 |
+| 1000 consecutive MemoryVoicePort listens | Pass |
+
+Closure report: `VOICE_PRODUCTION_CLOSURE_INVESTIGATION.md`. **WinRT remains WRAP.** No P17.
+
 ---
 
 ## Explicit non-goals

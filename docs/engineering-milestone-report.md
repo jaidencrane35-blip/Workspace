@@ -1,35 +1,34 @@
 # Engineering Milestone Report
-## P16.18 Production Acceptance Investigation & Architectural Falsification
+## P16.19 Production Closure Investigation & Final Engineering Challenge
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.18 Production Acceptance Investigation & Architectural Falsification |
+| **Execution program** | P16.19 Production Closure Investigation & Final Engineering Challenge |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Not** | P17 / Product Complete / permanently closed |
+| **Not** | P17 / Product Complete / permanently closed / Workspace launched |
 
 ---
 
-## Disagreement audit (summary)
+## Falsification summary
 
-Engineering’s “no defects” claim was falsified against Owner observations.
+Attempted to prove Voice is **not** production-ready. One remaining F1 path was proven:
 
-| Owner finding | Reproduced | Disposition |
-| --- | --- | --- |
-| Mic unavailable after success | YES | FIX sticky deny |
-| Long Ready | YES | FIX warm_lock on listen |
-| Crashes | PARTIAL | DOCUMENT WinRT residual |
-| First-word inconsistency | YES (via late Ready) | FIX via warm race |
-| NL inconsistency | PARTIAL | FIX browser phrasing |
-| Browser ? executable | YES | FIX canonicalize |
-| Permission confusion | YES | FIX UI Settings gate |
-| Premature completion claims | YES | DOCUMENT blind spot |
+| Finding | Disposition |
+| --- | --- |
+| Mic Access Denied ? sticky ConfirmedDenied after prior success | **FIX** — ConfirmedDenied only for speech privacy |
+| Soft mic_unavailable with stale ConfirmedDenied | **FIX** — clear stale sticky |
+| Lifecycle / state machine races | Documented; no additional proven poison paths |
+| Permission onboarding tour | DOCUMENT Track A — does not block |
+| Commodity missing behaviour | None that blocks P16 |
+| 1000 listen stress (MemoryVoicePort) | Pass |
 
-Artifact: `docs/capability-runtime/product-proof/VOICE_PRODUCTION_FAILURE_MATRIX.md`.
+Artifacts: `VOICE_PRODUCTION_CLOSURE_INVESTIGATION.md`, `VOICE_LIFECYCLE_STATE_MACHINE.md`, updated Failure / Regression matrices.
 
 ## Explicit
 
-- **Recommend Owner acceptance review:** Yes — engineering blockers for F1/F2/F6/F7 addressed  
+- **Recommend Owner acceptance review:** Yes — no remaining proven Voice-owned engineering blockers  
 - **P16 permanently closed:** **No**  
+- **Workspace launched this program:** **No**  
 - **P17:** Not begun  

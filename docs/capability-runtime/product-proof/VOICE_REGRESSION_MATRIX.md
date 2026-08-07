@@ -1,9 +1,9 @@
 # Voice Input — Regression Matrix
-## P16.18 Production Acceptance Investigation
+## P16.18 / P16.19 Production Closure
 
 Engineering verification only. Does **not** equal Owner Product Complete.
 
-See also: `VOICE_PRODUCTION_FAILURE_MATRIX.md`.
+See also: `VOICE_PRODUCTION_FAILURE_MATRIX.md`, `VOICE_LIFECYCLE_STATE_MACHINE.md`.
 
 | ID | Failure (Owner / measured) | Root cause | Permanent guard | Verifier / test |
 | --- | --- | --- | --- | --- |
@@ -19,15 +19,16 @@ See also: `VOICE_PRODUCTION_FAILURE_MATRIX.md`.
 | R10 | Repeated warm IPC on click | Extra `warmUpVoice` before listen | Mount warm only; listen warms cheaply | `noListenPathWarmGate` |
 | R11 | Ready UI without capture (first-word) | `capturing_wait_timeout` still emitted Ready | Fail listen if Capturing never confirmed; log `capturing_contract_failed` | `verify-voice-regression` P16.16 |
 | R12 | Declared complete with Voice dead code | Noop test install + deprecated permission helpers | REMOVE dead Voice helpers; repository-quality principles | `VOICE_PRODUCTION_READINESS_AUDIT.md` |
-| R13 | Mic unavailable after success | Sticky `ConfirmedDenied` on transient `MicrophoneUnavailable` | Soft recover; sticky only on `permission_denied` | `mic_unavailable_soft` |
+| R13 | Mic unavailable after success | Sticky `ConfirmedDenied` on transient `MicrophoneUnavailable` | Soft recover; sticky only on speech privacy | `mic_unavailable_soft` |
 | R14 | Long Ready / warm race | Listen warm without `warm_lock` | Serialize listen warm under `warm_lock` | listen path + `warm_lock` |
 | R15 | Browser phrasing → exe | “Chrome browser” / “launch browser” fallthrough | Canonicalize + bare browser → `browserOpen` | conversation-quality tests |
+| R16 | Sticky false deny via Access Denied | Mic `permission_denied` → ConfirmedDenied hard-block | Sticky **only** when message contains speech privacy; soft mic deny resets | `sticky_privacy_deny` · P16.19 |
 
 ### Engineering stress (non-Owner)
 
 | Scenario | Method | Gate |
 | --- | --- | --- |
-| 100 consecutive listens | `memory_voice_survives_100_consecutive_listen_sessions` | Pass |
+| 1000 consecutive listens | `memory_voice_survives_1000_consecutive_listen_sessions` | Pass |
 | Cancel / no_speech recovery | Keep engine; next Ready must be hot | Manual Owner + R7 |
 | Permission once-per-cycle | Settings open only on mic click while denied | Manual Owner + R4 |
 | Capturing timeout honesty | No Ready without Capturing | R11 |
