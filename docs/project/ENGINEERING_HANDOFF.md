@@ -210,8 +210,9 @@ Voice engineering remediations already shipped (privacy messaging, warm engine, 
 
 ## 15. Latest commit
 
-Recorded at handoff push time in git (`git log -1` on `v2-dev`).  
-Prior Voice engineering tips: `1434aa3` (P16.5 naturalness), `798a884` (privacy), `5eb10de` (P16 deliver).
+| Tip | Use `git log -1 --oneline` on `v2-dev` (handoff series: `f2835a0` → health stamps) |
+| --- | --- |
+| Voice engineering | `1434aa3` (P16.5 naturalness) · `798a884` (privacy) · `5eb10de` (P16 deliver) |
 
 ---
 
