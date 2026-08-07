@@ -5,6 +5,7 @@
 | **Program** | P16.PX2 — Premium Conversation Experience |
 | **Kind** | Product experience polish (not production gate; not constitutional; not P17) |
 | **Date** | 2026-08-07 |
+| **Commit** | `318affb` |
 | **Prior** | P16.PX1 (`d4ffb90`) — capture keyboard Stop/Cancel |
 | **Constraint** | Spec v2 · Engineering Execution Standard · Production Gate Spec (unchanged) |
 | **Rule** | One isolated UX improvement → Product Owner review |
