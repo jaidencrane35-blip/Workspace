@@ -124,6 +124,16 @@ Do not commit the product surface to a stack on partial evidence.
 Before Workspace permanently adopts any foundational technology (speech, OCR, automation, memory, terminal, permissions, etc.), engineering must: research mature implementations; understand the complete lifecycle; evaluate licensing, architecture, and operational behaviour; document why Workspace chooses its implementation; then classify ADOPT / WRAP / ADAPT / STUDY / REJECT.  
 Permission UX must match modern desktop software: request once, remember success, never spam Settings on later launches.
 
+## Capability Regression Prevention (permanent — P16.13)
+
+A previously working Product Proof path must not regress without a measured root cause and a verifier that prevents recurrence. Symptom-only patches are forbidden.
+
+## Engineering Completion Gate (permanent — P16.13)
+
+Engineering Complete means engineering validation is finished. It does **not** authorize repeated Product Proof launches.  
+After engineering validation: engineering stops; Workspace remains closed; the Product Owner alone decides when to launch Workspace.  
+Engineering must never repeatedly launch, relaunch, terminate, or restart Workspace during Product Proof.
+
 ## Commodity Before Reinvention — survey obligation
 
 Before major capability work, perform a Commodity Survey (ADOPT / WRAP / ADAPT / STUDY / REJECT) and record it under capability research. Workspace owns identity, contracts, Operator, permissions, conversation, and runtime; commodity stays an implementation detail.

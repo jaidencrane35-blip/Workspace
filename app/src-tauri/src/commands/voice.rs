@@ -24,7 +24,7 @@ fn sanitize_voice_user_message(raw: impl std::fmt::Display) -> String {
         || lower.contains("privacy statement")
         || lower.contains("0x80045509")
     {
-        return "Windows needs speech privacy turned on before I can listen. Click the microphone again and I’ll open the right Settings page for you.".into();
+        return "Windows needs speech privacy turned on before I can listen. Click the microphone once and I’ll open the right Settings page — then come back here.".into();
     }
     if lower.contains("microphone") && lower.contains("settings") {
         return text;
@@ -35,7 +35,7 @@ fn sanitize_voice_user_message(raw: impl std::fmt::Display) -> String {
         || lower.contains("speechrecognizer")
         || lower.contains("hresult")
     {
-        return "I couldn’t listen just now. Check that a microphone is connected and try again.".into();
+        return "I couldn’t listen just now. Try the microphone again — if it keeps failing, click once for Settings help.".into();
     }
     text
 }

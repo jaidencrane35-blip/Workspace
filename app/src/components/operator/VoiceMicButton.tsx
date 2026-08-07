@@ -163,10 +163,12 @@ export function VoiceMicButton({
     setPhase("preparing");
     setSoundActive(false);
 
+    // Always ensure engine is warm, but never treat soft/peek deny as fatal —
+    // listen confirms real MicrophoneUnavailable (P16.13 regression fix).
     if (!warmed) {
       const status = await warmUpVoice();
       applyStatus(status, false);
-      if (status.permission === "denied" || (!status.available && !status.recognitionAvailable)) {
+      if (status.permission === "denied" && !status.available) {
         setPhase("idle");
         return;
       }

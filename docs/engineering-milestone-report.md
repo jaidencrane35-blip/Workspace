@@ -1,9 +1,9 @@
 # Engineering Milestone Report
-## P16.12 Technology Foundation Validation & Product Completion
+## P16.13 Voice Production Hardening & Product Proof Stabilization
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.12 Technology Foundation Validation & Product Completion |
+| **Execution program** | P16.13 Voice Production Hardening & Product Proof Stabilization |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
@@ -14,26 +14,25 @@
 ## Repository reassessment
 
 - P10–P15 permanently closed.
-- P16 Engineering Complete (through P16.12 foundation validation).
-- P16 Product Proof **OPEN** — awaiting Owner acceptance.
-- P17 blocked until Owner acceptance.
+- P16 Engineering Complete (through P16.13 hardening).
+- P16 Product Proof **OPEN** — Owner launches Workspace when ready.
+- P17 blocked.
+- **Engineering Completion Gate (permanent):** engineering does not relaunch for Product Proof.
 
-## Technology Foundation Validation (permanent)
+## Root cause (microphone regression)
 
-Commodity + desktop permission survey in `docs/capability-runtime/research/VOICE_RESEARCH.md`.
+Warm-time `MediaCapture` probe cached `Denied` permanently; listen hard-blocked on that cache while Windows mic still worked. Concurrent warm contended WinRT compile (~30s). Failed sessions left a poisoned recognizer with `warmed=true`.
 
-**Voice foundation:** WRAP WinRT ContinuousRecognitionSession — **confirmed** (no migration this program).
+## Fix
 
-**Permission architecture:** session gate `explain ? Settings once ? awaiting_return ? recheck ? remember grant`. Never spam Settings on launch or repeated mic clicks while awaiting return.
-
-## Product Proof delivery
-
-- Permission state machine (stop repeated Settings / confusing guidance)
-- Browser intent: launch/start site aliases; polite wrappers; no tab.exe fallbacks
-- Near-opaque glass + stronger mic Ready/Listening signalling
-- Capturing?Ready settle 45ms
+- Soft mic probe — never sticky-cache MediaCapture Denied  
+- Listen hard-blocks only on `ConfirmedDenied` (SpeechRecognizer MicrophoneUnavailable)  
+- `warm_lock` serializes warm  
+- Engine reset after listen failure  
+- Verifier: `pnpm verify:voice-regression`
 
 ## Explicit
 
 - **P16 Product Complete:** **No — Owner only**  
 - **P17:** Not begun  
+- **Workspace left closed** for Owner-directed review  

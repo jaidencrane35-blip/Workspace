@@ -148,6 +148,16 @@ Before Workspace permanently adopts any foundational technology (speech, OCR, au
 Permission UX must request once, remember success, and never spam Settings on later launches.  
 Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
+### P20 — Capability Regression Prevention (permanent — P16.13)
+
+A previously working Product Proof path must not regress without a measured root cause and a verifier that prevents recurrence.  
+Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
+### P21 — Engineering Completion Gate (permanent — P16.13)
+
+Engineering Complete does not authorize repeated Product Proof launches. After engineering validation, Workspace remains closed until the Product Owner launches it.  
+Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
 ---
 
 ## 3. Presentation modes (binding intent)

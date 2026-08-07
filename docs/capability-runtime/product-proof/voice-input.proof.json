@@ -48,7 +48,11 @@
     "settleBeforeReadyMs": 45,
     "permissionStateMachineOncePerDenyCycle": true,
     "spawnBlockingListenAndWarm": true,
-    "statusPeekOnly": true
+    "statusPeekOnly": true,
+    "noStickyMediaCaptureDeny": true,
+    "engineResetOnListenFailure": true,
+    "serializedWarmLock": true,
+    "activityIndicatorIsSoundStartedNotLevelMeter": true
   },
   "uiPhases": [
     "idle",

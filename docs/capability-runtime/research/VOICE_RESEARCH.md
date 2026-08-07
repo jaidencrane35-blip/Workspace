@@ -213,6 +213,39 @@ Do **not** migrate in this program.
 Session gate: `idle → explain → awaiting_return → (granted | still_denied)`.  
 Settings opens **once per deny cycle** on explicit mic click. Return triggers `voice_recheck_permission`. Grant remembered in localStorage. Future launches never auto-open Settings.
 
+### P16.13 Voice regression — root cause (false-deny cache)
+
+**Owner findings:** mic “unavailable” while Windows mic worked; “I couldn’t listen just now”; 5–30s startup; failures after earlier successes.
+
+**Exact failure (repository truth):**
+
+1. `warm_up` ran `MediaCapture::Initialize` and **cached `MicAccess::Denied` permanently** on any access-shaped error (including transient device busy / COM race / concurrent warm).
+2. `listen_once_when_ready` **hard-blocked** when cache was `Denied` — never reached `ContinuousRecognitionSession`.
+3. Concurrent `startup_warm` + UI `voice_warm_up` contended on WinRT compile → multi-second / ~30s latency.
+4. Failed sessions left a poisoned `SpeechRecognizer` while `warmed=true` → next clicks reused a dead engine.
+
+**Timing path (intended after fix):**
+
+| Stage | Work | Thread |
+| --- | --- | --- |
+| Mic click | UI → IPC | UI |
+| `voice_listen_once` | `spawn_blocking` | blocking pool |
+| `warm_lock` + compile (if cold) | WinRT CompileConstraints | blocking |
+| Soft mic probe | MediaCapture; **Allowed sticky only** | blocking |
+| Continuous start | Capturing wait ≤2.5s + 45ms settle | blocking |
+| Ready / SoundStarted | events → UI | UI |
+| Transcript → Conversation → Intent → Kernel | product path | UI / IPC |
+
+**Architectural prevention:**
+
+- Soft probe: never sticky-cache MediaCapture Denied (`mic_probe_denied_soft`)
+- Listen hard-blocks only on `ConfirmedDenied` (SpeechRecognizer `MicrophoneUnavailable`)
+- `warm_lock` serializes warm
+- `engine_reset` after listen failure (idle recovery)
+- Activity visualization remains SoundStarted-driven — WinRT continuous path exposes **no calibrated audio level API**
+
+**Foundation verdict (revalidated):** WRAP WinRT ContinuousRecognitionSession remains correct. Local ASR stays STUDY. No migration in P16.13.
+
 ---
 
 ## Explicit non-goals

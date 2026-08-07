@@ -209,6 +209,9 @@ if (bridge.includes("void openVoiceSettings")) {
 if (!voiceRs.includes("peek_microphone_access") || !voiceRs.includes("mic_probe_begin")) {
   fail("mic probe must be warm-only with peek for status (P16.10)");
 }
+if (!voiceRs.includes("probe_microphone_access_soft") || !voiceRs.includes("ConfirmedDenied")) {
+  fail("mic probe must be soft (P16.13) — no sticky MediaCapture Denied");
+}
 if (!voiceRs.includes("stitch_start_failed_soft") || !voiceRs.includes("280")) {
   fail("stitch path must soft-fail and gap between sessions (crash prevention)");
 }

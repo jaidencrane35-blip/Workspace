@@ -345,6 +345,9 @@ pub struct SystemVoicePort {
     active_session: Mutex<Option<windows::Media::SpeechRecognition::SpeechContinuousRecognitionSession>>,
     #[cfg(windows)]
     mic_access: Mutex<Option<MicAccess>>,
+    /// Serializes warm / recover so startup + UI warm never contend on WinRT.
+    #[cfg(windows)]
+    warm_lock: Mutex<()>,
 }
 
 impl Default for SystemVoicePort {
@@ -377,6 +380,8 @@ impl SystemVoicePort {
             active_session: Mutex::new(None),
             #[cfg(windows)]
             mic_access: Mutex::new(None),
+            #[cfg(windows)]
+            warm_lock: Mutex::new(()),
         }
     }
 }
@@ -388,15 +393,21 @@ impl VoicePort for SystemVoicePort {
         {
             let warmed = self.warmed.load(Ordering::SeqCst);
             let mic = peek_microphone_access(&self.mic_access);
+            let denied = matches!(
+                mic,
+                MicAccess::ConfirmedDenied | MicAccess::Denied
+            );
             if !warmed {
                 return Ok(VoiceCapabilityStatus {
-                    available: true,
-                    microphone_available: !matches!(mic, MicAccess::Denied),
+                    available: !denied,
+                    microphone_available: !denied,
                     recognition_available: true,
-                    permission: match mic {
-                        MicAccess::Denied => "denied".into(),
-                        MicAccess::Allowed => "granted".into(),
-                        MicAccess::Unknown => "prompt".into(),
+                    permission: if denied {
+                        "denied".into()
+                    } else if matches!(mic, MicAccess::Allowed) {
+                        "granted".into()
+                    } else {
+                        "prompt".into()
                     },
                     message: "Voice is preparing…".into(),
                     warmed: false,
@@ -411,7 +422,7 @@ impl VoicePort for SystemVoicePort {
                     message: "Voice is ready.".into(),
                     warmed: true,
                 },
-                MicAccess::Denied => VoiceCapabilityStatus {
+                MicAccess::ConfirmedDenied | MicAccess::Denied => VoiceCapabilityStatus {
                     available: false,
                     microphone_available: false,
                     recognition_available: true,
@@ -438,11 +449,16 @@ impl VoicePort for SystemVoicePort {
     fn warm_up(&self) -> Result<()> {
         #[cfg(windows)]
         {
+            let _warm = self
+                .warm_lock
+                .lock()
+                .map_err(|_| WindowsIntegrationError::VoiceFailed("voice warm lock poisoned".into()))?;
             let t0 = std::time::Instant::now();
             log::info!("voice.lifecycle: warm_up_begin");
             winrt_warm_up(&self.engine, &self.warmed)?;
-            // One-time MediaCapture probe — never on status/focus/listen hot path.
-            let mic = cached_microphone_access(&self.mic_access);
+            // Soft MediaCapture probe: only persist Allowed. Never cache Denied —
+            // warm-time MediaCapture races caused false “mic unavailable” (P16.13).
+            let mic = probe_microphone_access_soft(&self.mic_access);
             log::info!(
                 "voice.lifecycle: warm_up_done mic={mic:?} +{:?}",
                 t0.elapsed()
@@ -463,12 +479,13 @@ impl VoicePort for SystemVoicePort {
         self.cancel_requested.store(false, Ordering::SeqCst);
         #[cfg(windows)]
         {
-            // Use cached mic state only — never run MediaCapture on the listen hot path.
+            // P16.13 root-cause fix: never hard-block listen on MediaCapture cache.
+            // Only SpeechRecognizer MicrophoneUnavailable confirms a real deny.
+            // ConfirmedDenied still blocks until Settings recheck clears it.
             if matches!(
                 self.mic_access.lock().ok().and_then(|g| *g),
-                Some(MicAccess::Denied)
+                Some(MicAccess::ConfirmedDenied)
             ) {
-                // Permission Guidance: detect + explain only; Settings open is user-driven.
                 return Ok(VoiceListenOutcome {
                     ok: false,
                     transcript: None,
@@ -476,14 +493,33 @@ impl VoicePort for SystemVoicePort {
                     message: MICROPHONE_PERMISSION_MESSAGE.into(),
                 });
             }
-            winrt_listen_continuous_when_ready(
+            let outcome = winrt_listen_continuous_when_ready(
                 &self.engine,
                 &self.warmed,
                 &self.active_session,
                 &self.cancel_requested,
                 on_ready,
                 on_sound_started,
-            )
+            )?;
+            if !outcome.ok {
+                log::warn!(
+                    "voice.lifecycle: listen_fail_recover status={} — resetting engine",
+                    outcome.status
+                );
+                // Only SpeechRecognizer MicrophoneUnavailable confirms a real OS deny.
+                if outcome.status == "microphone_unavailable" {
+                    if let Ok(mut guard) = self.mic_access.lock() {
+                        *guard = Some(MicAccess::ConfirmedDenied);
+                    }
+                }
+                // Idle recovery — drop a poisoned engine so the next click recompiles.
+                reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
+            } else if outcome.ok {
+                if let Ok(mut guard) = self.mic_access.lock() {
+                    *guard = Some(MicAccess::Allowed);
+                }
+            }
+            Ok(outcome)
         }
         #[cfg(not(windows))]
         {
@@ -510,15 +546,24 @@ impl VoicePort for SystemVoicePort {
     fn recheck_microphone(&self) -> Result<VoiceCapabilityStatus> {
         #[cfg(windows)]
         {
+            let _warm = self
+                .warm_lock
+                .lock()
+                .map_err(|_| WindowsIntegrationError::VoiceFailed("voice warm lock poisoned".into()))?;
             let t0 = std::time::Instant::now();
             log::info!("voice.lifecycle: permission_recheck_begin");
             if let Ok(mut guard) = self.mic_access.lock() {
                 *guard = None;
             }
-            let _ = cached_microphone_access(&self.mic_access);
+            // Recheck may confirm Allowed; MediaCapture Denied stays non-sticky.
+            let mic = probe_microphone_access_soft(&self.mic_access);
+            if matches!(mic, MicAccess::Allowed) {
+                // Successful Settings return — ensure engine is ready.
+                let _ = winrt_warm_up(&self.engine, &self.warmed);
+            }
             let status = self.status()?;
             log::info!(
-                "voice.lifecycle: permission_recheck_done permission={} +{:?}",
+                "voice.lifecycle: permission_recheck_done permission={} mic={mic:?} +{:?}",
                 status.permission,
                 t0.elapsed()
             );
@@ -564,6 +609,8 @@ fn sanitize_setup_message(raw: &str) -> String {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum MicAccess {
     Allowed,
+    /// Only set after SpeechRecognizer reports MicrophoneUnavailable (not MediaCapture).
+    ConfirmedDenied,
     Denied,
     Unknown,
 }
@@ -585,24 +632,66 @@ fn peek_microphone_access(cache: &Mutex<Option<MicAccess>>) -> MicAccess {
         .unwrap_or(MicAccess::Unknown)
 }
 
+/// Soft probe used at warm / Settings return.
+/// **Never persists MediaCapture Denied** — that was the P16.13 regression
+/// (false “mic unavailable” while Windows mic still worked for other apps).
 #[cfg(windows)]
-fn cached_microphone_access(cache: &Mutex<Option<MicAccess>>) -> MicAccess {
+fn probe_microphone_access_soft(cache: &Mutex<Option<MicAccess>>) -> MicAccess {
     if let Ok(guard) = cache.lock() {
-        if let Some(value) = *guard {
-            return value;
+        if let Some(MicAccess::Allowed) = *guard {
+            return MicAccess::Allowed;
+        }
+        if let Some(MicAccess::ConfirmedDenied) = *guard {
+            // Cleared only by recheck (cache reset) or successful listen.
         }
     }
     let t0 = std::time::Instant::now();
     log::info!("voice.lifecycle: mic_probe_begin");
     let value = probe_microphone_access();
     log::info!(
-        "voice.lifecycle: mic_probe_done result={value:?} +{:?}",
+        "voice.lifecycle: mic_probe_done result={value:?} sticky={} +{:?}",
+        matches!(value, MicAccess::Allowed),
         t0.elapsed()
     );
     if let Ok(mut guard) = cache.lock() {
-        *guard = Some(value);
+        match value {
+            MicAccess::Allowed => *guard = Some(MicAccess::Allowed),
+            MicAccess::Denied => {
+                // Soft deny for logging only — leave Unknown so listen can still try.
+                if !matches!(*guard, Some(MicAccess::Allowed) | Some(MicAccess::ConfirmedDenied))
+                {
+                    *guard = None;
+                }
+                log::warn!(
+                    "voice.lifecycle: mic_probe_denied_soft — not caching (prevents false block)"
+                );
+            }
+            MicAccess::Unknown | MicAccess::ConfirmedDenied => {}
+        }
     }
-    value
+    if matches!(value, MicAccess::Denied) {
+        MicAccess::Unknown
+    } else {
+        value
+    }
+}
+
+#[cfg(windows)]
+fn reset_voice_engine(
+    engine: &Mutex<Option<WinrtVoiceEngine>>,
+    warmed: &AtomicBool,
+    active_session: &Mutex<
+        Option<windows::Media::SpeechRecognition::SpeechContinuousRecognitionSession>,
+    >,
+) {
+    if let Ok(mut guard) = active_session.lock() {
+        *guard = None;
+    }
+    if let Ok(mut guard) = engine.lock() {
+        *guard = None;
+    }
+    warmed.store(false, Ordering::SeqCst);
+    log::info!("voice.lifecycle: engine_reset");
 }
 
 #[cfg(windows)]
