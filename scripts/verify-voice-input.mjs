@@ -145,6 +145,21 @@ if (!micUi.includes("ready")) {
 if (!micUi.includes("op-shell__mic-wave")) {
   fail("mic UI must show a listening activity waveform while capturing");
 }
+// P16.24: waveform is Listening/speech only — Ready must not look like Listening.
+if (!micUi.includes("{listening && (") || !micUi.includes("op-shell__mic-wave")) {
+  fail("mic UI must gate waveform on listening (not Ready alone)");
+}
+if (
+  !micUi.includes('prev === "speechDetected" || prev === "listening" ? prev : "ready"')
+) {
+  fail("onReady must not clobber Listening with Ready (P16.24)");
+}
+if (!micUi.includes("data-soft-fail") || !micUi.includes("softFailUi")) {
+  fail("mic UI must distinguish soft mic fail from Settings deny chrome (P16.24)");
+}
+if (!micUi.includes("720") || !micUi.includes("480")) {
+  fail("mic UI must hold error (~720ms) and finished (~480ms) long enough to notice (P16.24)");
+}
 if (!micUi.includes("data-sound") || !micUi.includes("onSoundStarted")) {
   fail("mic UI must react to SoundStarted for live speech activity");
 }

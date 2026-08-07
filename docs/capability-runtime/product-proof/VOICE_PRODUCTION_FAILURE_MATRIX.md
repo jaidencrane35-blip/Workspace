@@ -67,6 +67,17 @@ Engineering falsification of “no remaining defects.” Does **not** equal Owne
 | S3 | Settings-help copy without Settings gate | **FIX** |
 | S4 | Warm-fail permission misclassify | **FIX** |
 
+### P16.24 Owner-feel lifecycle chrome
+
+| Failure | Guard |
+| --- | --- |
+| Ready looks like Listening | Waveform only on speechDetected/listening |
+| Preparing invisible | Distinct preparing fill + pulse |
+| Error/Done blink | Longer holds + finished success chrome |
+| “✓ Voice ready” at Idle | `voicePermissionSetMessage` |
+| Soft fail = Settings deny look | `data-soft-fail` |
+| Late Ready clobbers Listening | Preserve speech phases in onReady |
+
 ### P16.23 live instrumentation
 
 Env-gated timing evidence for Owner Product Proof (`WORKSPACE_VOICE_PRODUCT_PROOF=1`).  

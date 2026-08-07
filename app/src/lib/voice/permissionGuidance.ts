@@ -128,6 +128,15 @@ export function awaitingReturnMessage(): string {
   return "Finish the permission in Windows Settings, then return here — I’ll check again. I won’t keep reopening Settings.";
 }
 
+/**
+ * After permission is remembered — mic is still Idle until Capturing Ready.
+ * Never claim "Voice ready" while the control is not in Ready phase (P16.24).
+ */
+export function voicePermissionSetMessage(): string {
+  return "Permission set — click the microphone to speak.";
+}
+
+/** @deprecated Prefer voicePermissionSetMessage — kept name alias for verifiers during rename. */
 export function voiceReadyMessage(): string {
-  return "✓ Voice ready";
+  return voicePermissionSetMessage();
 }

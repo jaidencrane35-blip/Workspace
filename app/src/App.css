@@ -1327,7 +1327,8 @@ body {
   .exp-btn,
   .ws-content { transition: none !important; animation: none !important; }
   .op-shell__mic-pulse,
-  .op-shell__mic-wave i { animation: none !important; }
+  .op-shell__mic-wave i,
+  .op-shell__mic[data-preparing="true"] { animation: none !important; }
 }
 
 /* —— Menubar (minimal) —— */
@@ -3579,7 +3580,9 @@ html[data-shell-form="conversation"] #root {
     0 0 0 4px rgba(40, 230, 240, 0.24);
 }
 
+/* Hard deny / Settings gate — warm orange, stronger ring */
 .op-shell__mic[data-phase="error"],
+.op-shell__mic[data-denied="true"],
 .op-shell__mic[data-available="false"] {
   color: rgba(255, 170, 120, 1);
   background: rgba(255, 140, 90, 0.22);
@@ -3588,16 +3591,28 @@ html[data-shell-form="conversation"] #root {
     0 0 0 3px rgba(255, 140, 90, 0.2);
 }
 
+/* Soft mic fail — retry chrome, distinct from Settings deny (P16.24) */
+.op-shell__mic[data-soft-fail="true"] {
+  color: rgba(255, 210, 120, 1);
+  background: rgba(255, 190, 80, 0.18);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 210, 120, 0.55),
+    0 0 0 2px rgba(255, 190, 80, 0.16);
+}
+
 .op-shell__mic[data-sound="true"] .op-shell__mic-wave i {
   background: rgba(160, 255, 210, 1);
   animation-duration: 0.4s;
 }
 
+/* Preparing — visible fill so Owner never wonders if the click registered */
 .op-shell__mic[data-preparing="true"] {
-  color: rgba(245, 248, 250, 0.9);
+  color: rgba(245, 248, 250, 0.95);
+  background: rgba(255, 255, 255, 0.2);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
-    0 0 0 2px rgba(255, 255, 255, 0.06);
+    inset 0 0 0 2px rgba(255, 255, 255, 0.38),
+    0 0 0 3px rgba(255, 255, 255, 0.1);
+  animation: op-mic-preparing 0.9s ease-in-out infinite;
 }
 
 .op-shell__mic[data-phase="recognizing"],
@@ -3610,7 +3625,21 @@ html[data-shell-form="conversation"] #root {
 }
 
 .op-shell__mic[data-phase="finished"] {
-  color: rgba(140, 210, 170, 0.95);
+  color: rgba(140, 240, 180, 1);
+  background: rgba(80, 220, 140, 0.28);
+  box-shadow:
+    inset 0 0 0 2px rgba(140, 240, 180, 0.7),
+    0 0 0 3px rgba(80, 220, 140, 0.22);
+}
+
+@keyframes op-mic-preparing {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .op-shell__mic-pulse {

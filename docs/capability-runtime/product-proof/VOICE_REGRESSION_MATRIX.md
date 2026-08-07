@@ -32,6 +32,12 @@ See also: `VOICE_PRODUCTION_FAILURE_MATRIX.md`, `VOICE_LIFECYCLE_STATE_MACHINE.m
 | R23 | Soft×2 Settings message desync | Arm gate but say “Try again.” | Always Settings guidance when arming | P16.22 |
 | R24 | Warm fail loses permission_denied | Double sanitize → recognition_unavailable | `listen_outcome_from_engine_error` · `listen_warm_failed_classified` | P16.22 |
 | R25 | Engineering confidence without live evidence | Owner repeatedly found post-“complete” defects | Env-gated `voice_proof` timing reports; removable after P16 | P16.23 |
+| R26 | Ready looks like Listening | Waveform on Ready (`activeCapture`) | Wave only on speechDetected/listening; Ready = green ring/pulse | P16.24 |
+| R27 | Preparing nearly invisible | Idle-like preparing chrome | Distinct preparing fill + pulse; reduced-motion safe | P16.24 |
+| R28 | Error / Done blinks away | 280ms error / 180ms finished | Hold error ~720ms, finished ~480ms + success chrome | P16.24 |
+| R29 | “✓ Voice ready” at Idle | Permission grant announced as Ready | `voicePermissionSetMessage` — click mic to speak | P16.24 |
+| R30 | Soft fail looks like Settings deny | Shared `!` / orange / Settings aria | `data-soft-fail` + distinct labels | P16.24 |
+| R31 | Late Ready clobbers Listening | Unconditional `setPhase("ready")` | Preserve speechDetected/listening in onReady | P16.24 |
 
 ### Engineering stress (non-Owner)
 

@@ -1,11 +1,12 @@
 # Voice Input — Product Proof
-## P16 / P16.23 — Owner checklist (Live instrumentation)
+## P16 / P16.24 — Owner checklist (Final live Product Proof)
 
 | Field | Value |
 | --- | --- |
-| **Program** | P16 Voice Input (+ P16.23 Live Product Proof Instrumentation) |
+| **Program** | P16 Voice Input (+ P16.24 Final Live Product Proof Execution) |
 | **Status** | **Pending live Product Owner acceptance** (**not** Product Complete) |
 | **Launch** | **Do not launch until Owner requests** |
+| **Engineering brief** | `VOICE_FINAL_LIVE_PRODUCT_PROOF.md` |
 
 ---
 
@@ -23,14 +24,15 @@ Ordinary Conversation UI stays free of instrumentation jargon.
 
 ---
 
-## Please stress these paths
+## Please stress these paths (feel first)
 
-1. Cold first listen — note Ready feel; engineering will read Click→Ready from the report  
-2. Immediate second listen — should feel warm (reuse)  
-3. Soft mic fail once → retry; twice → Settings guidance  
-4. “Can you hear me?” before first success — must not falsely claim ready  
-5. Ordinary desktop phrasing — never inventing `.exe`  
-6. Cancel mid-listen; long pause dictation  
+1. Click mic — **Preparing** should be obvious, then **Ready** (green) before you speak  
+2. Speak — **Listening** (cyan + bars) must feel different from Ready  
+3. Finish — brief **Done** (✓) before idle  
+4. Soft mic fail once → amber retry chrome; twice → Settings guidance  
+5. Permission message must say click mic to speak — never claim ready while idle  
+6. Ordinary desktop phrasing — never inventing `.exe`  
+7. Cancel mid-listen; immediate second listen (warm)  
 
 When finished, **close Workspace normally**. Engineering will **not** relaunch.
 

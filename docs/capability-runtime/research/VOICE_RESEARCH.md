@@ -452,6 +452,11 @@ Reports under `%TEMP%/workspace-voice-proof/`. Not shown to ordinary users. Remo
 Harness timings measured on MemoryVoicePort; live WinRT timings await Owner session.  
 Doc: `VOICE_LIVE_INSTRUMENTATION.md`. **WinRT remains WRAP.**
 
+### P16.24 Final Live Product Proof Execution
+
+Owner-feel chrome: Ready≠Listening; Preparing visibility; Error/Finished holds; permission copy never claims Ready at Idle; soft-fail vs Settings deny; onReady must not clobber Listening.  
+Doc: `VOICE_FINAL_LIVE_PRODUCT_PROOF.md`. **WinRT remains WRAP.** Engineering Complete ≠ Product Complete.
+
 ---
 
 ## Explicit non-goals

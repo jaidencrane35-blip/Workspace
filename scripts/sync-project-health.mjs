@@ -458,7 +458,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16 Engineering Complete (incl. P16.23 Live Product Proof Instrumentation — WORKSPACE_VOICE_PRODUCT_PROOF=1 timing reports). Product Complete is Owner-only. Do not launch until Owner requests. After Owner closes Workspace: cleanup only, never relaunch. Do not mark permanently closed. Do not begin P17.",
+    note: "P16 Engineering Complete (incl. P16.24 Final Live Product Proof Execution — Owner-feel chrome R26–R31; WORKSPACE_VOICE_PRODUCT_PROOF=1 for live timings). Product Complete is Owner-only. Do not launch until Owner requests. After Owner closes Workspace: cleanup only, never relaunch. Do not mark permanently closed. Do not begin P17.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -503,7 +503,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16 Voice Input Engineering Complete (incl. P16.23 Live Product Proof Instrumentation) — Product Proof pending Owner acceptance (NOT permanently closed)",
+      "P16 Voice Input Engineering Complete (incl. P16.24 Final Live Product Proof Execution) — Product Proof pending Owner acceptance (NOT permanently closed)",
       "Owner Experience Before Engineering Confidence permanent (P16.21)",
       "Repository Quality Before Milestone Closure permanent (P16.21)",
       "User Adaptation Prohibition permanent (P16.6)",
@@ -525,8 +525,8 @@ const health = {
     ],
   },
   currentMilestone: {
-    id: "voice-live-instrumentation-p16-23",
-    title: "P16.23 Live Product Proof Instrumentation & Final Closure Preparation",
+    id: "voice-final-live-product-proof-p16-24",
+    title: "P16.24 Final Live Product Proof Execution",
     status: "engineering_complete_product_proof_pending",
     commit: milestoneCommit,
   },
@@ -628,7 +628,7 @@ const health = {
       id: "p16-voice-product-proof",
       track: "B",
       summary:
-        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (Engineering Complete incl. P16.23 Live Instrumentation; not permanently closed)",
+        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (Engineering Complete incl. P16.24 Final Live Product Proof Execution; not permanently closed)",
     },
     {
       id: "capability-providers-p17-plus",
@@ -669,7 +669,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16 Voice Input Engineering Complete (P16.23 Live Product Proof Instrumentation) — Product Proof pending Owner acceptance",
+      "P16 Voice Input Engineering Complete (P16.24 Final Live Product Proof Execution) — Product Proof pending Owner acceptance",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -751,8 +751,9 @@ const health = {
     date: "2026-08-07",
     document: "docs/engineering-milestone-report.md",
     title:
-      "P16.23 Voice Live Product Proof Instrumentation — awaiting Owner acceptance",
-    reviewBrief: "docs/capability-runtime/product-proof/VOICE_INPUT_PRODUCT_PROOF.md",
+      "P16.24 Final Live Product Proof Execution — awaiting Owner acceptance",
+    reviewBrief:
+      "docs/capability-runtime/product-proof/VOICE_FINAL_LIVE_PRODUCT_PROOF.md",
   },
   handoffStatus: "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   nextRecommendedExecutionProgram: {

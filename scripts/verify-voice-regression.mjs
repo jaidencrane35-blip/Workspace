@@ -269,6 +269,27 @@ if (!matrix.includes("R22") || !matrix.includes("R24") || !matrix.includes("list
 if (!matrix.includes("R25") || !matrix.includes("voice_proof")) {
   fail("regression matrix must cover P16.23 live instrumentation (R25)");
 }
+if (
+  !matrix.includes("R26") ||
+  !matrix.includes("R27") ||
+  !matrix.includes("R28") ||
+  !matrix.includes("R31")
+) {
+  fail("regression matrix must cover P16.24 Owner-feel lifecycle chrome (R26–R31)");
+}
+const finalLive = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_FINAL_LIVE_PRODUCT_PROOF.md",
+);
+if (!fs.existsSync(finalLive)) {
+  fail("missing VOICE_FINAL_LIVE_PRODUCT_PROOF.md (P16.24 artifact)");
+}
+if (!guide.includes("voicePermissionSetMessage")) {
+  fail("permissionGuidance must not claim Voice ready at Idle (P16.24)");
+}
+if (guide.includes('"✓ Voice ready"')) {
+  fail("permissionGuidance must not announce ✓ Voice ready (P16.24)");
+}
 const lifecycle = path.join(
   root,
   "docs/capability-runtime/product-proof/VOICE_LIFECYCLE_STATE_MACHINE.md",
