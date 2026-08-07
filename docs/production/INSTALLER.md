@@ -69,12 +69,44 @@ Silent uninstall does **not** auto-delete user data (no prompt). Manual deletion
 
 ---
 
-## Remaining work (not Slice 1)
+## Artifact checksums (Gate A1 — P16.PF1)
 
-- Authenticode code signing (SmartScreen)
+After building the installer, publish a SHA-256 sidecar beside each setup.exe so downloads can be verified.
+
+```powershell
+pnpm installer:build
+pnpm checksums:generate
+```
+
+Typical outputs:
+
+```
+target/release/bundle/nsis/Workspace_*_x64-setup.exe
+target/release/bundle/nsis/Workspace_*_x64-setup.exe.sha256
+```
+
+Sidecar format (GNU-style):
+
+```
+<64-hex-sha256>  Workspace_0.1.0_x64-setup.exe
+```
+
+Verify tooling / existing sidecars:
+
+```powershell
+pnpm verify:artifact-checksums
+```
+
+A user (or release engineer) compares the published `.sha256` digest to a local hash of the downloaded setup.exe.
+
+---
+
+## Remaining work (not Slice 1 / A1)
+
+- Authenticode code signing (SmartScreen) — Gate A2 (external cert)
 - MSI parallel target (optional)
-- Auto-updater (Slice 2)
-- CI release job that publishes the setup.exe (Slice 8)
+- Auto-updater — Gate B2 (blocked by A2)
+- CI release job that publishes the setup.exe + checksums (Gate F1)
 
 ---
 
@@ -82,5 +114,6 @@ Silent uninstall does **not** auto-delete user data (no prompt). Manual deletion
 
 ```powershell
 pnpm verify:installer-foundation
+pnpm verify:artifact-checksums
 pnpm verify:production-readiness
 ```

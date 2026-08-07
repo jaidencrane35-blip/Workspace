@@ -5,7 +5,7 @@
 | **Generated from** | `production-gates-dependency.json` |
 | **Schema** | `PRODUCTION_GATE_SPECIFICATION.md` |
 | **Sequencing** | `PRODUCTION_DEPENDENCY_AUTHORITY.md` |
-| **nextReadyNow** | `A1-artifact-checksums` |
+| **nextReadyNow** | `D1-ipc-quarantine` |
 | **Do not edit by hand** | Run `node scripts/sync-production-gate-catalog.mjs` |
 
 Every unit below uses the **same field set**. Operational Acceptance is human-trust criteria (not Product Proof, not CI).
@@ -95,7 +95,7 @@ Every unit below uses the **same field set**. Operational Acceptance is human-tr
 | Field | Value |
 | --- | --- |
 | **Gate family** | A |
-| **Production classification** | ReadyNow |
+| **Production classification** | Complete |
 | **Purpose** | Publish integrity hashes for installer artifacts so downloads can be verified. |
 | **User value** | A user (or CI) can confirm the setup.exe was not tampered with in transit. |
 | **Engineering value** | SHA-256 sidecars + verify:artifact-checksums feeding release automation. |
@@ -105,8 +105,8 @@ Every unit below uses the **same field set**. Operational Acceptance is human-tr
 | **Blocking conditions** | — |
 | **Entry criteria** | `Gate Spec schema satisfied`; `A0 Complete`; `Owner authorizes next unit` |
 | **Exit criteria** | `SHA-256 file beside setup.exe`; `documented verify command`; `verifier green` |
-| **Verification** | `pnpm verify:artifact-checksums (to be added at implementation)` |
-| **Production readiness delta** | Toward Release Ready integrity; not Release Ready alone. |
+| **Verification** | `pnpm verify:artifact-checksums`; `pnpm checksums:generate` |
+| **Production readiness delta** | Engineering Complete for install integrity hashes; not Release Ready (unsigned). |
 | **Regression risks** | Stale checksums after rebuild; Path mismatch in CI |
 | **Rollback strategy** | Stop publishing sidecars; remove verify from CI. |
 | **Success metrics** | Checksum matches rebuilt artifact; CI can fail on mismatch |

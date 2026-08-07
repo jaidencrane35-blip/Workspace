@@ -71,7 +71,7 @@ Full schema (including Operational Acceptance checklists): catalog.
 | A0 | Complete | NSIS installer foundation |
 | C0 | Complete | Single-instance process integrity |
 | B1 | Complete | Diagnostics + support bundle |
-| A1 | ReadyNow | Artifact checksums |
+| A1 | Complete | Artifact checksums |
 | D1 | ReadyNow | IPC quarantine |
 | E1 | ReadyNow | Tray lifecycle |
 | C1 | ReadyNow | Config/DB validation UX |
@@ -94,8 +94,8 @@ A0-installer ✓
 C0-single-instance ✓
 B1-diagnostics ✓
         │
-        ├─► A1-artifact-checksums   [ReadyNow]  ← next
-        ├─► D1-ipc-quarantine       [ReadyNow]
+        ├─► A1-artifact-checksums   [Complete]
+        ├─► D1-ipc-quarantine       [ReadyNow]  ← next
         ├─► E1-tray                 [ReadyNow]
         ├─► C1-config-db-ux         [ReadyNow]
         └─► F1-ci-automation        [ReleaseOnly]
@@ -115,7 +115,7 @@ B1 ► B3-crash-local (optional)
 | Order | Unit | Class |
 | --- | --- | --- |
 | 1 | B1 — Diagnostics & support bundle | Complete |
-| 2 | A1 — Artifact checksums | ReadyNow |
+| 2 | A1 — Artifact checksums | Complete |
 | 3 | D1 — IPC quarantine | ReadyNow |
 | 4 | E1 — Tray lifecycle | ReadyNow |
 | 5 | C1 — Config/DB validation UX | ReadyNow |
@@ -147,7 +147,8 @@ B1 ► B3-crash-local (optional)
 | --- | --- |
 | PI3 | Authority + B1 implemented |
 | PI4 | Gate Specification + full schema normalize; **no gate implemented** |
-| Next implementation | A1 only after Owner review of PI4 |
+| PF1 | Premium Finish decision: production trust > UX polish; **A1 implemented** |
+| Next implementation | D1 — IPC quarantine (await Owner) |
 
 ---
 

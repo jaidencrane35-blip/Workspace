@@ -119,13 +119,21 @@ if (!catalog.includes("### Operational Acceptance")) {
 }
 
 const a1 = dep.units.find((u) => u.id === "A1-artifact-checksums");
-if (!a1 || a1.productionClassification !== "ReadyNow") {
-  fail("A1 must remain ReadyNow (not implemented in PI4)");
+if (!a1) {
+  fail("A1-artifact-checksums unit missing");
 }
-if ((dep.completed ?? []).includes("A1-artifact-checksums")) {
-  fail("A1 must not be marked completed in PI4 normalize-only");
+// PI4 left A1 ReadyNow; PF1 implements A1 — Complete + verifier required.
+if (a1.productionClassification === "Complete") {
+  if (!(dep.completed ?? []).includes("A1-artifact-checksums")) {
+    fail("A1 Complete classification requires completed[] membership");
+  }
+  if (!fs.existsSync(path.join(root, "scripts/verify-artifact-checksums.mjs"))) {
+    fail("A1 Complete requires scripts/verify-artifact-checksums.mjs");
+  }
+} else if (a1.productionClassification !== "ReadyNow") {
+  fail("A1 must be ReadyNow or Complete");
 }
 
 console.log(
-  `verify-production-gate-specification: ok (${dep.units.length} units schema-complete; A1 not implemented)`,
+  `verify-production-gate-specification: ok (${dep.units.length} units schema-complete; A1=${a1.productionClassification})`,
 );

@@ -4,7 +4,7 @@
   "authority": "docs/production/PRODUCTION_DEPENDENCY_AUTHORITY.md",
   "gateSpecification": "docs/production/PRODUCTION_GATE_SPECIFICATION.md",
   "catalog": "docs/production/PRODUCTION_GATE_CATALOG.md",
-  "updated": "2026-08-07",
+  "updated": "2026-08-08",
   "schemaVersion": 2,
   "requiredFields": [
     "id",
@@ -39,7 +39,8 @@
   "completed": [
     "A0-installer-foundation",
     "C0-single-instance",
-    "B1-diagnostics-support-bundle"
+    "B1-diagnostics-support-bundle",
+    "A1-artifact-checksums"
   ],
   "canonicalOrder": [
     "B1-diagnostics-support-bundle",
@@ -56,7 +57,7 @@
     "E2-polish",
     "A3-install-rollback"
   ],
-  "nextReadyNow": "A1-artifact-checksums",
+  "nextReadyNow": "D1-ipc-quarantine",
   "units": [
     {
       "id": "A0-installer-foundation",
@@ -189,7 +190,7 @@
     {
       "id": "A1-artifact-checksums",
       "gate": "A",
-      "productionClassification": "ReadyNow",
+      "productionClassification": "Complete",
       "purpose": "Publish integrity hashes for installer artifacts so downloads can be verified.",
       "userValue": "A user (or CI) can confirm the setup.exe was not tampered with in transit.",
       "engineeringValue": "SHA-256 sidecars + verify:artifact-checksums feeding release automation.",
@@ -212,9 +213,10 @@
         "verifier green"
       ],
       "verification": [
-        "pnpm verify:artifact-checksums (to be added at implementation)"
+        "pnpm verify:artifact-checksums",
+        "pnpm checksums:generate"
       ],
-      "productionReadinessDelta": "Toward Release Ready integrity; not Release Ready alone.",
+      "productionReadinessDelta": "Engineering Complete for install integrity hashes; not Release Ready (unsigned).",
       "regressionRisks": [
         "Stale checksums after rebuild",
         "Path mismatch in CI"

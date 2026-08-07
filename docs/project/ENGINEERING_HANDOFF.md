@@ -7,7 +7,9 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.PQ1 — Product Quality Standard + calm post-dictation cue; await Owner |
+| **Latest program** | P16.PF1 — Premium Finish (A1 artifact checksums); await Owner |
+| **PF1 audit** | `docs/production/P16_PF1_PREMIUM_FINISH_AUDIT.md` |
+| **nextReadyNow** | `D1-ipc-quarantine` |
 | **Product quality** | `docs/ui/WORKSPACE_PRODUCT_QUALITY_STANDARD.md` — subordinate quality authority (not Spec) |
 | **Interaction language** | `docs/ui/WORKSPACE_INTERACTION_LANGUAGE.md` — product feel heuristics (not Spec) |
 | **PX2 report** | `docs/capability-runtime/product-proof/P16_PX2_PREMIUM_CONVERSATION_EXPERIENCE.md` |

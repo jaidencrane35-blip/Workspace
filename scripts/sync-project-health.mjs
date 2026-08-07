@@ -74,6 +74,7 @@ const verifiers = {
   "verify:dev-environment": "scripts/verify-dev-environment.mjs",
   "verify:production-readiness": "scripts/verify-production-readiness.mjs",
   "verify:installer-foundation": "scripts/verify-installer-foundation.mjs",
+  "verify:artifact-checksums": "scripts/verify-artifact-checksums.mjs",
   "verify:single-instance": "scripts/verify-single-instance.mjs",
   "verify:support-bundle": "scripts/verify-support-bundle.mjs",
   "verify:production-dependency-authority":
@@ -496,7 +497,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16.PQ1: Product Quality Standard established; calm post-dictation cue. Owner Product Proof still pending. P17 blocked. Production A1 await Owner. No Spec/governance reopen.",
+    note: "P16.PF1: Premium Finish — A1 artifact checksums Complete; nextReadyNow D1. Owner Product Proof still pending. P17 blocked. No Spec/governance reopen.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,

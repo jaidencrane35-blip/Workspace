@@ -42,7 +42,7 @@ Stop? Or is the next unit in the **canonical order** objectively justified and R
 
 | Gate | Focus | Status |
 | --- | --- | --- |
-| **A — Distribution** | Installer, signing, checksums, rollback | A0 done; A1 next ReadyNow; A2 external |
+| **A — Distribution** | Installer, signing, checksums, rollback | A0+A1 done; A2 external; next ReadyNow D1 |
 | **B — Operations** | Diagnostics, updater, crash | B1 done; B2 blocked by A2 |
 | **C — Reliability** | Single instance, validation, shutdown | C0 done |
 | **D — Security** | IPC, permissions | Open |
