@@ -6,7 +6,7 @@
 | **Kind** | Release-candidate polish decision + one production trust improvement |
 | **Date** | 2026-08-08 |
 | **Branch** | `v2-dev` |
-| **Commit** | _(stamped on ship)_ |
+| **Commit** | `4654b1a` |
 | **Inputs (not modified)** | Spec v2 · EES v1 · Capability Integration · Interaction Language · Product Quality Standard · Production Gate Specification |
 | **Decision rule** | Prefer production confidence over further UX polish when evidence favors trust |
 
