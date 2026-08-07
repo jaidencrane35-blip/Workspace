@@ -6,7 +6,7 @@
 | **Authority** | Product heuristics under Spec v2 — **not** constitutional law |
 | **Peers** | `PRODUCT_GRAVITY_RULE.md` · Product Presentation Spec · Product Proof Rule |
 | **Date** | 2026-08-07 |
-| **Commit** | _(stamped on ship)_ |
+| **Commit** | `5fef6e3` |
 
 This document defines how Workspace **feels**.  
 Future experience and presentation work should implement this language consistently.  
