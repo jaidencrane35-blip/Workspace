@@ -12,8 +12,8 @@ use crate::commands::pipeline::CommandPipeline;
 use crate::commands::window_capability::ExecuteWindowOperation;
 use crate::error::{KernelError, Result};
 use crate::operator::{
-    compose_user_reply, plan_capability_intent, CapabilityIntent, OperatorPlanStep,
-    OperatorTurnResult,
+    compose_failure_reply, compose_user_reply, plan_capability_intent, sanitize_owner_message,
+    CapabilityIntent, OperatorPlanStep, OperatorTurnResult,
 };
 use crate::WorkspaceKernel;
 use workspace_domain::{ActorContext, IntentContext};
@@ -311,7 +311,7 @@ fn execute_step(
 fn clarify(intent: &CapabilityIntent, message: impl Into<String>) -> OperatorTurnResult {
     OperatorTurnResult {
         ok: false,
-        message: message.into(),
+        message: sanitize_owner_message(&message.into()),
         status: Some("clarify".into()),
         domain: intent.domain.clone(),
         operation: intent.operation.clone(),
@@ -325,7 +325,29 @@ fn clarify(intent: &CapabilityIntent, message: impl Into<String>) -> OperatorTur
 }
 
 /// Kernel Operator entry: plan (Operator) → per-step Permission Gateway → compose.
+/// P17.S1: Owner-visible failures always return `Ok(OperatorTurnResult)` via compose —
+/// engineering detail is logged; never forwarded as IPC failure payload text.
 pub fn execute_capability_intent(
+    kernel: &WorkspaceKernel,
+    actor: ActorContext,
+    intent_ctx: IntentContext,
+    intent: CapabilityIntent,
+) -> Result<OperatorTurnResult> {
+    match execute_capability_intent_inner(kernel, actor, intent_ctx, intent.clone()) {
+        Ok(result) => Ok(result),
+        Err(error) => {
+            log::warn!(
+                target: "workspace_capability",
+                "capability intent failed (composed for Conversation): domain={} operation={} err={error:?}",
+                intent.domain,
+                intent.operation
+            );
+            Ok(compose_failure_reply(&intent, &error))
+        }
+    }
+}
+
+fn execute_capability_intent_inner(
     kernel: &WorkspaceKernel,
     actor: ActorContext,
     intent_ctx: IntentContext,

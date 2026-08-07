@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { resolveIntent } from "../app/src/lib/intentBridge";
 import {
   CAPABILITY_INTENT_COMMAND,
+  composeTransportFailureMessage,
   isBannedProviderCommand,
   isCapabilityIntentAction,
   toCapabilityIntent,
@@ -33,6 +34,28 @@ describe("P12 Finalization — Kernel Operator authority", () => {
     expect(isBannedProviderCommand(CAPABILITY_INTENT_COMMAND)).toBe(false);
   });
 
+  it("P17.S1 — transport failures never forward raw Error.message", () => {
+    const bridge = readFileSync(
+      path.join(root, "app/src/lib/operator/runtimeBridge.ts"),
+      "utf8",
+    );
+    expect(bridge).toContain("composeTransportFailureMessage");
+    expect(bridge).toMatch(/message:\s*composeTransportFailureMessage\(intent\)/);
+    expect(bridge).not.toMatch(/message:\s*\n?\s*(error\.message|error instanceof)/);
+    expect(
+      composeTransportFailureMessage({
+        domain: "notifications",
+        operation: "show",
+      }),
+    ).toMatch(/couldn’t show|couldn't show/i);
+    expect(
+      composeTransportFailureMessage({
+        domain: "notifications",
+        operation: "show",
+      }).toLowerCase(),
+    ).not.toContain("unknown error");
+  });
+
   it("keeps OperatorRoot and façade free of provider invoke paths", () => {
     const rootUi = readFileSync(
       path.join(root, "app/src/components/operator/OperatorRoot.tsx"),
@@ -49,7 +72,12 @@ describe("P12 Finalization — Kernel Operator authority", () => {
 
     expect(rootUi).toContain("handleOperatorUtterance");
     expect(rootUi).not.toContain("invokeIpc");
-    expect(intelligence).not.toContain("invokeIpc");
+    // Support-package intent may use invokeIpc; capability work must stay on runtimeBridge.
+    expect(intelligence).toContain("export_support_bundle");
+    expect(intelligence).toContain("executeCapabilityIntent");
+    expect(intelligence).not.toMatch(
+      /invokeIpc[\s\S]*"(execute_window_operation|execute_application_operation|read_clipboard|write_clipboard|execute_capability_intent)"/,
+    );
     expect(bridge).toContain(CAPABILITY_INTENT_COMMAND);
     // Sole invoke target is the CapabilityIntent command constant (banned names may appear in a deny-list).
     expect(bridge).toMatch(/invokeIpc[\s\S]*CAPABILITY_INTENT_COMMAND/);

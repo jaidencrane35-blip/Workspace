@@ -1,6 +1,7 @@
 /**
  * Sole Conversation-side Capability Runtime entry (P12 Finalization).
  * Presentation Purity: no provider-specific IPC from React/TS Operator façade.
+ * P17.S1: transport/IPC catch never forwards raw Error.message to Conversation.
  */
 
 import { IpcCommandError, invokeIpc } from "../ipc";
@@ -17,6 +18,26 @@ const BANNED_PROVIDER_COMMANDS = [
 
 export function isBannedProviderCommand(command: string): boolean {
   return (BANNED_PROVIDER_COMMANDS as readonly string[]).includes(command);
+}
+
+/** Defense-in-depth Owner language when IPC fails before Kernel compose returns. */
+export function composeTransportFailureMessage(intent: CapabilityIntent): string {
+  switch (intent.domain) {
+    case "notifications":
+      return "I couldn’t show that notification.";
+    case "screenshots":
+      return "I couldn’t capture that.";
+    case "browser":
+      return "I couldn’t open that website.";
+    case "clipboard":
+      return "I couldn’t use the clipboard just now.";
+    case "window":
+      return "I couldn’t change that window just now.";
+    case "application":
+      return "I couldn’t open or focus that app just now.";
+    default:
+      return "That didn’t work — and I won’t pretend it did. Try again in a moment.";
+  }
 }
 
 export async function executeCapabilityIntent(
@@ -45,13 +66,26 @@ export async function executeCapabilityIntent(
       },
     });
   } catch (error) {
-    const message =
-      error instanceof IpcCommandError
-        ? error.message
-        : "That action failed.";
+    // Preserve engineering detail in console for local diagnose; never show to Owner.
+    if (error instanceof IpcCommandError) {
+      console.warn(
+        "[capability] IPC failure composed for Conversation",
+        intent.domain,
+        intent.operation,
+        error.code,
+        error.message,
+      );
+    } else {
+      console.warn(
+        "[capability] unexpected failure composed for Conversation",
+        intent.domain,
+        intent.operation,
+        error,
+      );
+    }
     return {
       ok: false,
-      message,
+      message: composeTransportFailureMessage(intent),
       domain: intent.domain,
       operation: intent.operation,
       target: intent.query ?? null,

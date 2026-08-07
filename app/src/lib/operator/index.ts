@@ -2,6 +2,7 @@ export { handleOperatorUtterance } from "./intelligence";
 export { toCapabilityIntent, isCapabilityIntentAction } from "./intentMap";
 export {
   executeCapabilityIntent,
+  composeTransportFailureMessage,
   isBannedProviderCommand,
   CAPABILITY_INTENT_COMMAND,
 } from "./runtimeBridge";

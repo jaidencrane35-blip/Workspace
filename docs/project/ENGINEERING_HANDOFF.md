@@ -7,7 +7,9 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.PX4 — Product Cohesion (silent voice→composer; PQS heuristic #11); await Owner |
+| **Latest program** | P17.S1 — Conversation Capability Failure Compose; await Owner |
+| **S1 report** | `docs/ui/P17_S1_CONVERSATION_CAPABILITY_FAILURE_COMPOSE.md` |
+| **A1 audit** | `docs/ui/P17_A1_UNIFIED_ERROR_EXPERIENCE_AUDIT.md` |
 | **PX4 audit** | `docs/ui/P16_PX4_PRODUCT_COHESION_AUDIT.md` |
 | **PR2 audit** | `docs/production/P16_PR2_PRODUCTION_EXPERIENCE_AUDIT.md` |
 | **PF1 audit** | `docs/production/P16_PF1_PREMIUM_FINISH_AUDIT.md` |

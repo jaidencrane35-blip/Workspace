@@ -7,7 +7,7 @@ mod compose;
 mod intent;
 mod plan;
 
-pub use compose::compose_user_reply;
+pub use compose::{compose_failure_reply, compose_user_reply, sanitize_owner_message};
 pub use intent::{CapabilityIntent, OperatorTurnResult};
 pub use plan::{plan_capability_intent, OperatorPlan, OperatorPlanStep};
 
@@ -59,7 +59,23 @@ impl KernelOperator {
 
     /// Full turn: plan → execute steps (with open composition) → compose.
     /// Callers that need per-step Permission Gateway should use `plan` + per-command pipeline instead.
+    /// P17.S1: hard failures become composed Conversation turns (logged at warn).
     pub fn execute_turn(intent: CapabilityIntent) -> Result<OperatorTurnResult> {
+        match Self::execute_turn_inner(intent.clone()) {
+            Ok(result) => Ok(result),
+            Err(error) => {
+                log::warn!(
+                    target: "workspace_capability",
+                    "operator execute_turn failed (composed): domain={} operation={} err={error:?}",
+                    intent.domain,
+                    intent.operation
+                );
+                Ok(compose_failure_reply(&intent, &error))
+            }
+        }
+    }
+
+    fn execute_turn_inner(intent: CapabilityIntent) -> Result<OperatorTurnResult> {
         let plan = Self::plan(&intent)?;
         if plan.steps.is_empty() {
             return Ok(OperatorTurnResult {
