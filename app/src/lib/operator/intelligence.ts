@@ -32,11 +32,10 @@ export async function handleOperatorUtterance(
 
   if (intent.kind === "voiceStatus") {
     const status = await getVoiceStatus();
+    // Status copy already tells the Owner what to do next — do not invent “Voice is ready”.
     return {
       kind: "reply",
-      text: status.available
-        ? `${status.message} Use the microphone beside the message box to speak.`
-        : status.message,
+      text: status.message,
     };
   }
 

@@ -138,6 +138,22 @@ describe("conversation quality (P16.6)", () => {
     expect(resolveIntent("Launch browser.")).toMatchObject({
       kind: "browserOpen",
     });
+    expect(resolveIntent("Can you hear me?").kind).toBe("voiceStatus");
+    expect(resolveIntent("Could you hear me?").kind).toBe("voiceStatus");
+    expect(resolveIntent("Would you hear me?").kind).toBe("voiceStatus");
+    expect(resolveIntent("Do you hear me?").kind).toBe("voiceStatus");
+    expect(resolveIntent("Are you listening?").kind).toBe("voiceStatus");
+    expect(resolveIntent("Open GPT")).toMatchObject({
+      kind: "browserOpen",
+      url: "https://chatgpt.com",
+    });
+    expect(resolveIntent("Open YouTube beside ChatGPT.")).toMatchObject({
+      kind: "browserOpenBeside",
+    });
+    expect(resolveIntent("Open YouTube beside Cursor.")).toMatchObject({
+      kind: "browserOpenBeside",
+      beside: "Cursor",
+    });
   });
 
   it("does not send casual how-to chat into Guide", () => {

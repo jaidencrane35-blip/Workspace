@@ -288,7 +288,7 @@ Two stacked defects after P16.13:
 | spawn_blocking enter | immediate |
 | warm (already compiled) | &lt; 20ms (lock + check) |
 | Continuous start → Capturing | typically &lt; 500ms; timeout 2.5s |
-| Ready settle | 20ms (P16.15; was 45ms) |
+| Ready settle | 0ms after Capturing (P16.25; was 20ms) |
 | SoundStarted → Listening UI | event-driven |
 | User Stop / silence stitch | continuous; AutoStop 10s stitches |
 
@@ -456,6 +456,11 @@ Doc: `VOICE_LIVE_INSTRUMENTATION.md`. **WinRT remains WRAP.**
 
 Owner-feel chrome: Ready≠Listening; Preparing visibility; Error/Finished holds; permission copy never claims Ready at Idle; soft-fail vs Settings deny; onReady must not clobber Listening.  
 Doc: `VOICE_FINAL_LIVE_PRODUCT_PROOF.md`. **WinRT remains WRAP.** Engineering Complete ≠ Product Complete.
+
+### P16.25 Final Owner Readiness Investigation
+
+Hostile falsification found and fixed: warm-fail soft remap (R32), hear-me NL soften (R33), soft-mic counter after Settings (R34), remove Ready settle after Capturing (R35), defer bridge callback teardown.  
+Doc: `VOICE_FINAL_OWNER_READINESS_INVESTIGATION.md`. **WinRT remains WRAP.**
 
 ---
 

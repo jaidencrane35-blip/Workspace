@@ -171,10 +171,12 @@ function resolveVoiceIntent(_raw: string, text: string): IntentAction | null {
     };
   }
 
+  // Soften leaves “could you hear me?” → “hear me” — match both raw and softened (P16.25).
   if (
-    /\b(can you (use |hear )?voice|is voice available|voice support|microphone (available|working)|can you hear me|do you support voice)\b/.test(
+    /\b(can you (use |hear )?voice|is voice available|voice support|microphone (available|working)|((can|could|would|do) you hear me)|are you listening|do you support voice)\b/.test(
       text,
     ) ||
+    text === "hear me" ||
     text === "voice?" ||
     text === "voice" ||
     text === "microphone?"
@@ -1370,7 +1372,9 @@ export function resolveIntent(raw: string): IntentAction {
     return screenshotIntent;
   }
 
-  const voiceIntent = resolveVoiceIntent(raw, text);
+  const voiceIntent =
+    resolveVoiceIntent(raw, text) ??
+    (matchText !== text ? resolveVoiceIntent(softRaw, matchText) : null);
   if (voiceIntent) {
     return voiceIntent;
   }

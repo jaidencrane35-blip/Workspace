@@ -233,7 +233,7 @@ impl VoicePort for MemoryVoicePort {
             microphone_available: true,
             recognition_available: true,
             permission: "granted".into(),
-            message: "Voice is ready.".into(),
+            message: "Voice is set up — click the microphone to speak.".into(),
             warmed: self.warmed.load(Ordering::SeqCst),
         })
     }
@@ -463,7 +463,8 @@ impl VoicePort for SystemVoicePort {
                     microphone_available: true,
                     recognition_available: true,
                     permission: "granted".into(),
-                    message: "Voice is ready.".into(),
+                    // Allowed = prior successful listen; Capturing Ready is still mic-phase only.
+                    message: "Voice is set up — click the microphone to speak.".into(),
                     warmed: true,
                 },
                 MicAccess::ConfirmedDenied => VoiceCapabilityStatus {
@@ -548,12 +549,21 @@ impl VoicePort for SystemVoicePort {
                 if let Err(error) = winrt_warm_up(&self.engine, &self.warmed) {
                     log::warn!("voice.lifecycle: listen_warm_failed_classified");
                     let outcome = listen_outcome_from_engine_error(&error);
+                    // P16.25: warm-fail must use the same soft-mic remap as post-listen
+                    // (Access Denied → unavailable + retry; speech privacy → sticky).
+                    let outcome = apply_listen_failure_policy(
+                        outcome,
+                        &self.mic_access,
+                        &self.engine,
+                        &self.warmed,
+                        &self.active_session,
+                    );
                     proof_note_permission(&outcome.status);
                     let _ = proof_end_listen(&outcome.status);
                     return Ok(outcome);
                 }
             }
-            let outcome = winrt_listen_continuous_when_ready(
+            let mut outcome = winrt_listen_continuous_when_ready(
                 &self.engine,
                 &self.warmed,
                 &self.active_session,
@@ -567,84 +577,24 @@ impl VoicePort for SystemVoicePort {
                     *guard = Some(MicAccess::Allowed);
                 }
                 proof_mark("transcript_completed");
-            } else if matches!(
-                outcome.status.as_str(),
-                "no_speech" | "cancelled"
-            ) {
+            } else if matches!(outcome.status.as_str(), "no_speech" | "cancelled") {
                 log::info!(
                     "voice.lifecycle: listen_idle_keep_engine status={}",
                     outcome.status
                 );
-            } else if outcome.status == "microphone_unavailable" {
-                log::warn!(
-                    "voice.lifecycle: mic_unavailable_soft — reset engine, not sticky-deny"
-                );
-                if let Ok(mut guard) = self.mic_access.lock() {
-                    if matches!(*guard, Some(MicAccess::ConfirmedDenied)) {
-                        *guard = None;
-                        log::info!("voice.lifecycle: cleared_stale_confirmed_denied");
-                    }
-                }
-                proof_note_recovery("microphone_unavailable");
-                reset_voice_engine(
-                    &self.engine,
-                    &self.warmed,
-                    &self.active_session,
-                    "microphone_unavailable",
-                );
-            } else if outcome.status == "permission_denied" {
-                let sticky_privacy = outcome
-                    .message
-                    .to_ascii_lowercase()
-                    .contains("speech privacy");
-                if sticky_privacy {
-                    log::warn!(
-                        "voice.lifecycle: sticky_privacy_deny — ConfirmedDenied until Settings recheck"
-                    );
-                    proof_note_permission("speech_privacy");
-                    if let Ok(mut guard) = self.mic_access.lock() {
-                        *guard = Some(MicAccess::ConfirmedDenied);
-                    }
-                    reset_voice_engine(
-                        &self.engine,
-                        &self.warmed,
-                        &self.active_session,
-                        "speech_privacy",
-                    );
-                } else {
-                    log::warn!(
-                        "voice.lifecycle: permission_denied_soft_mic — remap unavailable, not Settings"
-                    );
-                    proof_note_recovery("permission_denied_soft_mic");
-                    reset_voice_engine(
-                        &self.engine,
-                        &self.warmed,
-                        &self.active_session,
-                        "permission_denied_soft_mic",
-                    );
-                    let remapped = VoiceListenOutcome {
-                        ok: false,
-                        transcript: None,
-                        status: "microphone_unavailable".into(),
-                        message: "I couldn’t reach the microphone just now. Try again.".into(),
-                    };
-                    let _ = proof_end_listen(&remapped.status);
-                    return Ok(remapped);
-                }
             } else if matches!(
                 outcome.status.as_str(),
-                "recognition_failed" | "recognition_unavailable"
+                "microphone_unavailable"
+                    | "permission_denied"
+                    | "recognition_failed"
+                    | "recognition_unavailable"
             ) {
-                log::warn!(
-                    "voice.lifecycle: listen_fail_recover status={} — resetting engine",
-                    outcome.status
-                );
-                proof_note_recovery(&outcome.status);
-                reset_voice_engine(
+                outcome = apply_listen_failure_policy(
+                    outcome,
+                    &self.mic_access,
                     &self.engine,
                     &self.warmed,
                     &self.active_session,
-                    &outcome.status,
                 );
             } else {
                 log::info!(
@@ -768,6 +718,76 @@ fn listen_outcome_from_engine_error(error: &impl std::fmt::Display) -> VoiceList
     } else {
         outcome
     }
+}
+
+/// Shared warm-fail + post-listen recovery: soft mic → retry; speech privacy → sticky; poison → reset.
+#[cfg(windows)]
+fn apply_listen_failure_policy(
+    outcome: VoiceListenOutcome,
+    mic_access: &Mutex<Option<MicAccess>>,
+    engine: &Mutex<Option<WinrtVoiceEngine>>,
+    warmed: &std::sync::atomic::AtomicBool,
+    active_session: &Mutex<
+        Option<windows::Media::SpeechRecognition::SpeechContinuousRecognitionSession>,
+    >,
+) -> VoiceListenOutcome {
+    if outcome.status == "microphone_unavailable" {
+        log::warn!("voice.lifecycle: mic_unavailable_soft — reset engine, not sticky-deny");
+        if let Ok(mut guard) = mic_access.lock() {
+            if matches!(*guard, Some(MicAccess::ConfirmedDenied)) {
+                *guard = None;
+                log::info!("voice.lifecycle: cleared_stale_confirmed_denied");
+            }
+        }
+        proof_note_recovery("microphone_unavailable");
+        reset_voice_engine(engine, warmed, active_session, "microphone_unavailable");
+        return outcome;
+    }
+    if outcome.status == "permission_denied" {
+        let sticky_privacy = outcome
+            .message
+            .to_ascii_lowercase()
+            .contains("speech privacy");
+        if sticky_privacy {
+            log::warn!(
+                "voice.lifecycle: sticky_privacy_deny — ConfirmedDenied until Settings recheck"
+            );
+            proof_note_permission("speech_privacy");
+            if let Ok(mut guard) = mic_access.lock() {
+                *guard = Some(MicAccess::ConfirmedDenied);
+            }
+            reset_voice_engine(engine, warmed, active_session, "speech_privacy");
+            return outcome;
+        }
+        log::warn!(
+            "voice.lifecycle: permission_denied_soft_mic — remap unavailable, not Settings"
+        );
+        proof_note_recovery("permission_denied_soft_mic");
+        reset_voice_engine(
+            engine,
+            warmed,
+            active_session,
+            "permission_denied_soft_mic",
+        );
+        return VoiceListenOutcome {
+            ok: false,
+            transcript: None,
+            status: "microphone_unavailable".into(),
+            message: "I couldn’t reach the microphone just now. Try again.".into(),
+        };
+    }
+    if matches!(
+        outcome.status.as_str(),
+        "recognition_failed" | "recognition_unavailable"
+    ) {
+        log::warn!(
+            "voice.lifecycle: listen_fail_recover status={} — resetting engine",
+            outcome.status
+        );
+        proof_note_recovery(&outcome.status);
+        reset_voice_engine(engine, warmed, active_session, &outcome.status);
+    }
+    outcome
 }
 
 #[cfg(windows)]
@@ -1278,8 +1298,7 @@ fn winrt_listen_continuous_when_ready(
                 });
                 break;
             }
-            // Minimal settle after Capturing — Ready means speech will be retained.
-            std::thread::sleep(Duration::from_millis(20));
+            // P16.25: Capturing already retains audio — emit Ready immediately (no artificial settle).
             if let Ok(mut cell) = on_ready_cell.lock() {
                 if let Some(cb) = cell.take() {
                     cb();

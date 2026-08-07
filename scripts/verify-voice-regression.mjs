@@ -116,8 +116,8 @@ if (!proof.responsiveness?.noStickyMediaCaptureDeny) {
 if (!proof.responsiveness?.engineResetOnListenFailure) {
   fail("proof must declare engineResetOnListenFailure");
 }
-if (proof.responsiveness?.settleBeforeReadyMs !== 20) {
-  fail("proof must declare settleBeforeReadyMs: 20 (P16.15)");
+if (proof.responsiveness?.settleBeforeReadyMs !== 0) {
+  fail("proof must declare settleBeforeReadyMs: 0 (P16.25 — Ready immediate after Capturing)");
 }
 if (!proof.responsiveness?.noListenPathWarmGate) {
   fail("proof must declare noListenPathWarmGate (P16.15)");
@@ -146,8 +146,16 @@ if (!protocol.includes("Evidence Before Modification")) {
 if (!protocol.includes("Root Cause Before Rewrite")) {
   fail("protocol must adopt Root Cause Before Rewrite permanently");
 }
-if (!voiceRs.includes("from_millis(20)")) {
-  fail("voice port Ready settle must be 20ms after Capturing (P16.15)");
+if (
+  /capturing_contract_failed[\s\S]{0,800}from_millis\(20\)/.test(voiceRs)
+) {
+  fail("voice port must not sleep before Ready after Capturing (P16.25)");
+}
+if (!voiceRs.includes("apply_listen_failure_policy")) {
+  fail("warm-fail and post-listen must share soft-mic remap policy (P16.25)");
+}
+if (!voiceRs.includes("listen_warm_failed_classified")) {
+  fail("listen warm failures must be classified (P16.22/P16.25)");
 }
 if (!voiceRs.includes("capturing_contract_failed")) {
   fail("voice port must fail honestly when Capturing never confirms (P16.16)");
@@ -277,12 +285,33 @@ if (
 ) {
   fail("regression matrix must cover P16.24 Owner-feel lifecycle chrome (R26–R31)");
 }
+if (
+  !matrix.includes("R32") ||
+  !matrix.includes("R33") ||
+  !matrix.includes("R34") ||
+  !matrix.includes("R35")
+) {
+  fail("regression matrix must cover P16.25 Owner-readiness falsification (R32–R35)");
+}
 const finalLive = path.join(
   root,
   "docs/capability-runtime/product-proof/VOICE_FINAL_LIVE_PRODUCT_PROOF.md",
 );
 if (!fs.existsSync(finalLive)) {
   fail("missing VOICE_FINAL_LIVE_PRODUCT_PROOF.md (P16.24 artifact)");
+}
+const ownerReady = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_FINAL_OWNER_READINESS_INVESTIGATION.md",
+);
+if (!fs.existsSync(ownerReady)) {
+  fail("missing VOICE_FINAL_OWNER_READINESS_INVESTIGATION.md (P16.25 artifact)");
+}
+if (!micUi.includes("softMicDenyCountRef.current = 0")) {
+  fail("soft mic deny count must reset on Settings open/return (P16.25)");
+}
+if (!bridge.includes("setTimeout") || !bridge.includes("readyCallbacks.delete")) {
+  fail("bridge must defer Ready/Listening callback teardown (P16.25)");
 }
 if (!guide.includes("voicePermissionSetMessage")) {
   fail("permissionGuidance must not claim Voice ready at Idle (P16.24)");

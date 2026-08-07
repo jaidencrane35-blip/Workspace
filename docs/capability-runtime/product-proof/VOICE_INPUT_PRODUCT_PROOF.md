@@ -1,12 +1,12 @@
 # Voice Input — Product Proof
-## P16 / P16.24 — Owner checklist (Final live Product Proof)
+## P16 / P16.25 — Owner checklist (Final Owner readiness)
 
 | Field | Value |
 | --- | --- |
-| **Program** | P16 Voice Input (+ P16.24 Final Live Product Proof Execution) |
+| **Program** | P16 Voice Input (+ P16.25 Final Owner Readiness Investigation) |
 | **Status** | **Pending live Product Owner acceptance** (**not** Product Complete) |
 | **Launch** | **Do not launch until Owner requests** |
-| **Engineering brief** | `VOICE_FINAL_LIVE_PRODUCT_PROOF.md` |
+| **Engineering brief** | `VOICE_FINAL_OWNER_READINESS_INVESTIGATION.md` |
 
 ---
 

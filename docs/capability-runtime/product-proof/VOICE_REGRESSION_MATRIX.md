@@ -38,6 +38,10 @@ See also: `VOICE_PRODUCTION_FAILURE_MATRIX.md`, `VOICE_LIFECYCLE_STATE_MACHINE.m
 | R29 | “✓ Voice ready” at Idle | Permission grant announced as Ready | `voicePermissionSetMessage` — click mic to speak | P16.24 |
 | R30 | Soft fail looks like Settings deny | Shared `!` / orange / Settings aria | `data-soft-fail` + distinct labels | P16.24 |
 | R31 | Late Ready clobbers Listening | Unconditional `setPhase("ready")` | Preserve speechDetected/listening in onReady | P16.24 |
+| R32 | Warm-fail Access Denied → Settings trap | Early warm return skipped soft remap | `apply_listen_failure_policy` on warm-fail + post-listen | P16.25 |
+| R33 | “Could you hear me?” → unknown | Voice matcher missed softened hear-me | Expand patterns + matchText retry | P16.25 |
+| R34 | Soft×2 count stuck after Settings | Counter never reset on return/open | Reset `softMicDenyCountRef` on Settings open/return | P16.25 |
+| R35 | Ready lag after Capturing | Unnecessary 20ms settle | Immediate Ready after Capturing (`settleBeforeReadyMs: 0`) | P16.25 |
 
 ### Engineering stress (non-Owner)
 

@@ -13,7 +13,7 @@ const DEMO_STATUS: VoiceStatus = {
   microphoneAvailable: true,
   recognitionAvailable: true,
   permission: "granted",
-  message: "Voice is ready.",
+  message: "Voice is set up — click the microphone to speak.",
   inputState: "idle",
   warmed: true,
 };
@@ -228,9 +228,15 @@ export async function listenOnce(
       message,
     };
   } finally {
-    if (hooks.onReady) readyCallbacks.delete(hooks.onReady);
-    if (hooks.onListening) listeningCallbacks.delete(hooks.onListening);
-    if (hooks.onSoundStarted) soundCallbacks.delete(hooks.onSoundStarted);
+    // Defer teardown so late Tauri emits after IPC return still paint Ready/Listening (P16.25).
+    const ready = hooks.onReady;
+    const listening = hooks.onListening;
+    const sound = hooks.onSoundStarted;
+    globalThis.setTimeout(() => {
+      if (ready) readyCallbacks.delete(ready);
+      if (listening) listeningCallbacks.delete(listening);
+      if (sound) soundCallbacks.delete(sound);
+    }, 120);
   }
 }
 

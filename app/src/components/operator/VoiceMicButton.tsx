@@ -154,6 +154,7 @@ export function VoiceMicButton({
         }
         // Recheck OK ≠ speech privacy proven — confirm on next listen (P16.20).
         noteSettingsReturnNeedsListenConfirm();
+        softMicDenyCountRef.current = 0;
         setDeniedUi(false);
         setSoftFailUi(false);
         setAvailable(Boolean(status.available || status.recognitionAvailable));
@@ -189,6 +190,7 @@ export function VoiceMicButton({
     if (shouldOpenSettingsOnMicClick()) {
       const kind = currentSettingsKind();
       noteSettingsOpened();
+      softMicDenyCountRef.current = 0;
       setDeniedUi(true);
       setSoftFailUi(false);
       await openVoiceSettings(kind);
