@@ -13,6 +13,26 @@ use workspace_windows_integration::{
 use super::error::CommandError;
 use super::response::IpcResponse;
 
+fn sanitize_voice_user_message(raw: impl std::fmt::Display) -> String {
+    let text = raw.to_string();
+    let lower = text.to_ascii_lowercase();
+    if lower.contains("privacy policy")
+        || lower.contains("privacy statement")
+        || lower.contains("0x80045509")
+    {
+        return "Windows needs speech privacy turned on before I can listen. Open Settings → Privacy & security → Speech, turn on Online speech recognition, then try again.".into();
+    }
+    if lower.contains("0x")
+        || lower.contains("recognize:")
+        || lower.contains("winrt")
+        || lower.contains("speechrecognizer")
+        || lower.contains("hresult")
+    {
+        return "I couldn’t listen just now. Check that a microphone is connected and try again.".into();
+    }
+    text
+}
+
 fn voice_port() -> &'static Arc<dyn VoicePort> {
     static PORT: OnceLock<Arc<dyn VoicePort>> = OnceLock::new();
     PORT.get_or_init(platform_voice)
@@ -67,7 +87,7 @@ pub fn voice_status() -> IpcResponse<VoiceStatusDto> {
         }),
         Err(error) => IpcResponse::failure(CommandError::new(
             "voice_failed",
-            error.to_string(),
+            sanitize_voice_user_message(error),
         )),
     }
 }
@@ -78,10 +98,13 @@ pub fn voice_listen_once() -> IpcResponse<VoiceListenOutcome> {
     let outcome = voice_port().listen_once();
     set_input_state("idle");
     match outcome {
-        Ok(result) => IpcResponse::success(result),
+        Ok(mut result) => {
+            result.message = sanitize_voice_user_message(&result.message);
+            IpcResponse::success(result)
+        }
         Err(error) => IpcResponse::failure(CommandError::new(
             "voice_failed",
-            error.to_string(),
+            sanitize_voice_user_message(error),
         )),
     }
 }
@@ -95,7 +118,7 @@ pub fn voice_cancel() -> IpcResponse<()> {
         }
         Err(error) => IpcResponse::failure(CommandError::new(
             "voice_failed",
-            error.to_string(),
+            sanitize_voice_user_message(error),
         )),
     }
 }

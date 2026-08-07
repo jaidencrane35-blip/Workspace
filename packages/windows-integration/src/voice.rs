@@ -8,6 +8,55 @@ use std::sync::Mutex;
 
 use crate::error::{Result, WindowsIntegrationError};
 
+/// Windows SPERR_PRIVACY_STATEMENT_DECLINED — speech privacy not accepted.
+pub const HRESULT_SPEECH_PRIVACY_DECLINED: u32 = 0x8004_5509;
+
+const SPEECH_PRIVACY_MESSAGE: &str = "Windows needs speech privacy turned on before I can listen. Open Settings → Privacy & security → Speech, turn on Online speech recognition, then try again.";
+
+/// Map OS / WinRT speech failures to ordinary-language listen outcomes.
+/// Never exposes HRESULT, stack traces, or provider terminology.
+pub fn classify_speech_failure(code: u32, detail: &str) -> VoiceListenOutcome {
+    let lower = detail.to_ascii_lowercase();
+    if code == HRESULT_SPEECH_PRIVACY_DECLINED
+        || lower.contains("privacy policy")
+        || lower.contains("privacy statement")
+    {
+        return VoiceListenOutcome {
+            ok: false,
+            transcript: None,
+            status: "permission_denied".into(),
+            message: SPEECH_PRIVACY_MESSAGE.into(),
+        };
+    }
+    if code == 0x8004_503A
+        || (lower.contains("recognizer") && lower.contains("not found"))
+    {
+        return VoiceListenOutcome {
+            ok: false,
+            transcript: None,
+            status: "recognition_unavailable".into(),
+            message: "Speech recognition isn’t set up for this language. Check Windows speech settings and try again.".into(),
+        };
+    }
+    if code == 0x8007_0005
+        || lower.contains("access is denied")
+        || lower.contains("microphone")
+    {
+        return VoiceListenOutcome {
+            ok: false,
+            transcript: None,
+            status: "microphone_unavailable".into(),
+            message: "I couldn’t reach a microphone. Check that one is connected and allowed for Workspace.".into(),
+        };
+    }
+    VoiceListenOutcome {
+        ok: false,
+        transcript: None,
+        status: "recognition_failed".into(),
+        message: "I couldn’t listen just now. Check that a microphone is connected and try again.".into(),
+    }
+}
+
 /// Level 1 voice capability snapshot.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -189,7 +238,7 @@ impl VoicePort for SystemVoicePort {
                     microphone_available: true,
                     recognition_available: true,
                     permission: "prompt".into(),
-                    message: "Voice input is available.".into(),
+                    message: "Voice can listen after Windows speech privacy is allowed.".into(),
                 }),
                 Err(message) => Ok(VoiceCapabilityStatus {
                     available: false,
@@ -259,25 +308,29 @@ fn winrt_probe() -> std::result::Result<(), String> {
     };
 
     ensure_com();
-    let recognizer = SpeechRecognizer::new().map_err(|e| {
-        format!("Speech recognition isn’t available ({e}).")
-    })?;
+    let unavailable = || "Speech recognition isn’t available on this system.".to_string();
+    let recognizer = SpeechRecognizer::new().map_err(|_| unavailable())?;
     let topic = SpeechRecognitionTopicConstraint::Create(
         SpeechRecognitionScenario::Dictation,
         &HSTRING::from("workspace-dictation"),
     )
-    .map_err(|e| format!("Speech recognition isn’t available ({e})."))?;
+    .map_err(|_| unavailable())?;
     recognizer
         .Constraints()
-        .map_err(|e| format!("Speech recognition isn’t available ({e})."))?
+        .map_err(|_| unavailable())?
         .Append(&topic)
-        .map_err(|e| format!("Speech recognition isn’t available ({e})."))?;
+        .map_err(|_| unavailable())?;
     let _ = recognizer
         .CompileConstraintsAsync()
-        .map_err(|e| format!("Speech recognition isn’t available ({e})."))?
+        .map_err(|_| unavailable())?
         .get()
-        .map_err(|e| format!("Speech recognition isn’t available ({e})."))?;
+        .map_err(|_| unavailable())?;
     Ok(())
+}
+
+#[cfg(windows)]
+fn outcome_from_winrt_error(error: windows::core::Error) -> VoiceListenOutcome {
+    classify_speech_failure(error.code().0 as u32, &error.to_string())
 }
 
 #[cfg(windows)]
@@ -289,54 +342,53 @@ fn winrt_listen_once() -> Result<VoiceListenOutcome> {
     };
 
     ensure_com();
-    let recognizer = SpeechRecognizer::new().map_err(|error| {
-        WindowsIntegrationError::VoiceFailed(format!("create recognizer: {error}"))
-    })?;
-    let topic = SpeechRecognitionTopicConstraint::Create(
+    let recognizer = match SpeechRecognizer::new() {
+        Ok(value) => value,
+        Err(error) => return Ok(outcome_from_winrt_error(error)),
+    };
+    let topic = match SpeechRecognitionTopicConstraint::Create(
         SpeechRecognitionScenario::Dictation,
         &HSTRING::from("workspace-dictation"),
-    )
-    .map_err(|error| {
-        WindowsIntegrationError::VoiceFailed(format!("create constraint: {error}"))
-    })?;
-    recognizer
+    ) {
+        Ok(value) => value,
+        Err(error) => return Ok(outcome_from_winrt_error(error)),
+    };
+    if let Err(error) = recognizer
         .Constraints()
-        .map_err(|error| {
-            WindowsIntegrationError::VoiceFailed(format!("constraints: {error}"))
-        })?
-        .Append(&topic)
-        .map_err(|error| {
-            WindowsIntegrationError::VoiceFailed(format!("append constraint: {error}"))
-        })?;
-    recognizer
-        .CompileConstraintsAsync()
-        .map_err(|error| {
-            WindowsIntegrationError::VoiceFailed(format!("compile: {error}"))
-        })?
-        .get()
-        .map_err(|error| {
-            WindowsIntegrationError::VoiceFailed(format!("compile wait: {error}"))
-        })?;
+        .and_then(|constraints| constraints.Append(&topic))
+    {
+        return Ok(outcome_from_winrt_error(error));
+    }
+    let compile = match recognizer.CompileConstraintsAsync() {
+        Ok(op) => op,
+        Err(error) => return Ok(outcome_from_winrt_error(error)),
+    };
+    if let Err(error) = compile.get() {
+        return Ok(outcome_from_winrt_error(error));
+    }
 
-    let result = recognizer
-        .RecognizeAsync()
-        .map_err(|error| {
-            WindowsIntegrationError::VoiceFailed(format!("recognize: {error}"))
-        })?
-        .get()
-        .map_err(|error| {
-            WindowsIntegrationError::VoiceFailed(format!("recognize wait: {error}"))
-        })?;
+    // First architectural failure observed in Product Owner review:
+    // RecognizeAsync → 0x80045509 when Windows speech privacy is not accepted.
+    let recognize = match recognizer.RecognizeAsync() {
+        Ok(op) => op,
+        Err(error) => return Ok(outcome_from_winrt_error(error)),
+    };
+    let result = match recognize.get() {
+        Ok(value) => value,
+        Err(error) => return Ok(outcome_from_winrt_error(error)),
+    };
 
-    let status = result.Status().map_err(|error| {
-        WindowsIntegrationError::VoiceFailed(format!("result status: {error}"))
-    })?;
+    let status = match result.Status() {
+        Ok(value) => value,
+        Err(error) => return Ok(outcome_from_winrt_error(error)),
+    };
 
     match status {
         SpeechRecognitionResultStatus::Success => {
-            let text = result.Text().map_err(|error| {
-                WindowsIntegrationError::VoiceFailed(format!("result text: {error}"))
-            })?;
+            let text = match result.Text() {
+                Ok(value) => value,
+                Err(error) => return Ok(outcome_from_winrt_error(error)),
+            };
             let transcript = text.to_string().trim().to_string();
             if transcript.is_empty() {
                 return Ok(VoiceListenOutcome {
@@ -375,16 +427,13 @@ fn winrt_listen_once() -> Result<VoiceListenOutcome> {
             ok: false,
             transcript: None,
             status: "recognition_unavailable".into(),
-            message: "Speech recognition isn’t available right now.".into(),
+            message: "Speech recognition isn’t available right now. Check your network and try again.".into(),
         }),
-        other => Ok(VoiceListenOutcome {
+        _ => Ok(VoiceListenOutcome {
             ok: false,
             transcript: None,
             status: "recognition_failed".into(),
-            message: format!(
-                "I couldn’t recognize that ({}).",
-                other.0
-            ),
+            message: "I couldn’t recognize that. Try again when you’re ready.".into(),
         }),
     }
 }
@@ -411,5 +460,29 @@ mod tests {
         let outcome = port.listen_once().unwrap();
         assert!(!outcome.ok);
         assert_eq!(outcome.status, "permission_denied");
+    }
+
+    #[test]
+    fn speech_privacy_hresult_maps_to_desktop_language() {
+        let outcome = classify_speech_failure(
+            HRESULT_SPEECH_PRIVACY_DECLINED,
+            "The speech privacy policy was not accepted prior to attempting a speech recognition. (0x80045509)",
+        );
+        assert!(!outcome.ok);
+        assert_eq!(outcome.status, "permission_denied");
+        assert!(outcome.message.contains("speech privacy"));
+        assert!(outcome.message.contains("Settings"));
+        assert!(!outcome.message.contains("0x"));
+        assert!(!outcome.message.to_ascii_lowercase().contains("winrt"));
+        assert!(!outcome.message.to_ascii_lowercase().contains("speechrecognizer"));
+    }
+
+    #[test]
+    fn speech_failure_never_echoes_raw_detail() {
+        let outcome = classify_speech_failure(0xDEAD_BEEF, "recognize: boom HRESULT");
+        assert!(!outcome.ok);
+        assert!(!outcome.message.contains("0x"));
+        assert!(!outcome.message.contains("HRESULT"));
+        assert!(!outcome.message.contains("recognize:"));
     }
 }

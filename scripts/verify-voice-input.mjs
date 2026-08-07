@@ -79,4 +79,34 @@ if (!research.includes("WRAP") || !research.includes("WinRT")) {
   fail("research must document WRAP WinRT decision");
 }
 
+const voiceRs = fs.readFileSync(
+  path.join(root, "packages/windows-integration/src/voice.rs"),
+  "utf8",
+);
+if (!voiceRs.includes("classify_speech_failure")) {
+  fail("voice port must map OS speech failures via classify_speech_failure");
+}
+if (!voiceRs.includes("0x8004_5509") && !voiceRs.includes("0x80045509")) {
+  fail("voice port must recognize Windows speech privacy HRESULT 0x80045509");
+}
+if (!voiceRs.includes("speech privacy")) {
+  fail("voice port must explain speech privacy in desktop language");
+}
+
+const bridge = fs.readFileSync(
+  path.join(root, "app/src/lib/voice/bridge.ts"),
+  "utf8",
+);
+if (!bridge.includes("desktopVoiceMessage")) {
+  fail("voice bridge must sanitize user-facing voice messages");
+}
+
+if (!Array.isArray(proof.failureModes) || proof.failureModes.length < 1) {
+  fail("proof must declare Voice failureModes (including speech privacy)");
+}
+const privacy = proof.failureModes.find((m) => m.id === "windows_speech_privacy");
+if (!privacy || privacy.osCode !== "0x80045509") {
+  fail("proof must declare windows_speech_privacy failure mode for 0x80045509");
+}
+
 console.log("verify-voice-input: ok");

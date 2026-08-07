@@ -1,2 +1,7 @@
 export type { VoiceListenResult, VoicePhase, VoiceStatus } from "./types";
-export { cancelListening, getVoiceStatus, listenOnce } from "./bridge";
+export {
+  cancelListening,
+  desktopVoiceMessage,
+  getVoiceStatus,
+  listenOnce,
+} from "./bridge";

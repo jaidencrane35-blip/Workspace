@@ -12,20 +12,44 @@ const DEMO_STATUS: VoiceStatus = {
   microphoneAvailable: true,
   recognitionAvailable: true,
   permission: "granted",
-  message: "Voice input is available.",
+  message: "Voice can listen after Windows speech privacy is allowed.",
   inputState: "idle",
 };
+
+const SPEECH_PRIVACY_MESSAGE =
+  "Windows needs speech privacy turned on before I can listen. Open Settings → Privacy & security → Speech, turn on Online speech recognition, then try again.";
+
+/** Strip technical IPC / OS detail before Conversation shows a voice error. */
+export function desktopVoiceMessage(raw: string): string {
+  const lower = raw.toLowerCase();
+  if (
+    lower.includes("privacy policy") ||
+    lower.includes("privacy statement") ||
+    lower.includes("0x80045509") ||
+    (lower.includes("speech privacy") && lower.includes("0x"))
+  ) {
+    return SPEECH_PRIVACY_MESSAGE;
+  }
+  if (
+    /0x[0-9a-f]{8}/i.test(raw) ||
+    /recognize\s*:|winrt|speechrecognizer|hresult|provider/i.test(raw)
+  ) {
+    return "I couldn’t listen just now. Check that a microphone is connected and try again.";
+  }
+  return raw;
+}
 
 export async function getVoiceStatus(): Promise<VoiceStatus> {
   if (!isTauriRuntime()) {
     return DEMO_STATUS;
   }
   try {
-    return await invokeIpc<VoiceStatus>("voice_status");
+    const status = await invokeIpc<VoiceStatus>("voice_status");
+    return { ...status, message: desktopVoiceMessage(status.message) };
   } catch (error) {
     const message =
       error instanceof IpcCommandError
-        ? error.message
+        ? desktopVoiceMessage(error.message)
         : "Voice input isn’t available right now.";
     return {
       available: false,
@@ -49,16 +73,23 @@ export async function listenOnce(): Promise<VoiceListenResult> {
     };
   }
   try {
-    return await invokeIpc<VoiceListenResult>("voice_listen_once");
+    const result = await invokeIpc<VoiceListenResult>("voice_listen_once");
+    return { ...result, message: desktopVoiceMessage(result.message) };
   } catch (error) {
+    const raw =
+      error instanceof IpcCommandError
+        ? error.message
+        : "I couldn’t listen just now.";
+    const message = desktopVoiceMessage(raw);
+    const status =
+      message === SPEECH_PRIVACY_MESSAGE
+        ? "permission_denied"
+        : "recognition_failed";
     return {
       ok: false,
       transcript: null,
-      status: "recognition_failed",
-      message:
-        error instanceof IpcCommandError
-          ? error.message
-          : "I couldn’t listen just now.",
+      status,
+      message,
     };
   }
 }

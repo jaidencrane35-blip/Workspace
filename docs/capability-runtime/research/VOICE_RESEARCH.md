@@ -59,6 +59,12 @@ Continuous listening deferred (not required for clean architecture).
 
 ---
 
+## Product Proof remediation (speech privacy)
+
+Owner mic click failed immediately with WinRT `RecognizeAsync` HRESULT `0x80045509` (speech privacy not accepted). Status probe only creates/compiles the recognizer, so it reported available while recognition could not start. Fix: map that OS failure (and similar) to desktop language via `classify_speech_failure`; never surface HRESULT / WinRT terms in Conversation.
+
+---
+
 ## Explicit non-goals
 
 Conversational AI · speech intelligence · dictation editor · hotword · provider execution from Voice · OCR of speech · cloud STT as default  

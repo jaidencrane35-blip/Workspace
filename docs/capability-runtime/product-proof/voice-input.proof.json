@@ -23,7 +23,29 @@
     "Never expose Provider, Router, Registry, Runtime, Kernel, WinRT, or SpeechRecognizer terminology",
     "Never invent transcripts",
     "Voice behaves exactly like typing after recognition",
-    "Capability Independence — desktop language only"
+    "Capability Independence — desktop language only",
+    "Never expose HRESULT, stack traces, or raw OS exception text"
+  ],
+  "failureModes": [
+    {
+      "id": "windows_speech_privacy",
+      "osCode": "0x80045509",
+      "status": "permission_denied",
+      "mustMention": ["speech privacy", "Settings"],
+      "mustNotMention": ["0x", "WinRT", "SpeechRecognizer", "recognize:"]
+    },
+    {
+      "id": "microphone_unavailable",
+      "status": "microphone_unavailable"
+    },
+    {
+      "id": "recognition_unavailable",
+      "status": "recognition_unavailable"
+    }
+  ],
+  "windowsPrerequisites": [
+    "Online speech recognition / speech privacy accepted in Windows Settings",
+    "Microphone connected and allowed for Workspace"
   ],
   "examples": [
     {

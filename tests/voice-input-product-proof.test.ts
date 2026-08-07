@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { resolveIntent } from "../app/src/lib/intentBridge";
 import { toCapabilityIntent } from "../app/src/lib/operator";
+import { desktopVoiceMessage } from "../app/src/lib/voice";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const proof = JSON.parse(
@@ -25,6 +26,13 @@ const proof = JSON.parse(
   kind: string;
   independenceRule: boolean;
   ipc: { desktop: string; voice: string[] };
+  failureModes: Array<{
+    id: string;
+    osCode?: string;
+    status?: string;
+    mustMention?: string[];
+    mustNotMention?: string[];
+  }>;
 };
 
 describe("Voice Input Product Proof harness (P16)", () => {
@@ -75,6 +83,22 @@ describe("Voice Input Product Proof harness (P16)", () => {
       } else {
         expect(`${ui}\n${rootTsx}`).toContain(token);
       }
+    }
+  });
+
+  it("maps Windows speech privacy failure to desktop language", () => {
+    const privacy = proof.failureModes.find(
+      (mode) => mode.id === "windows_speech_privacy",
+    );
+    expect(privacy?.osCode).toBe("0x80045509");
+    const raw =
+      "Voice input failed: recognize: The speech privacy policy was not accepted prior to attempting a speech recognition. (0x80045509)";
+    const message = desktopVoiceMessage(raw);
+    for (const token of privacy?.mustMention ?? []) {
+      expect(message.toLowerCase()).toContain(token.toLowerCase());
+    }
+    for (const token of privacy?.mustNotMention ?? []) {
+      expect(message.toLowerCase()).not.toContain(token.toLowerCase());
     }
   });
 });
