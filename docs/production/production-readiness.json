@@ -1,9 +1,12 @@
 {
   "id": "workspace-production-readiness",
   "program": "PR1",
-  "version": "1.0.0",
+  "implementationProgram": "P16.PI1",
+  "completedSlices": ["S1-installer-foundation"],
+  "version": "1.1.0",
   "updated": "2026-08-07",
   "authority": "docs/production/PR1_PRODUCTION_READINESS_PROGRAM.md",
+  "sliceAuthority": "docs/production/P16_PI1_SLICE1_INSTALLER_FOUNDATION.md",
   "normative": [
     "docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md",
     "docs/00-Constitution/WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md"
@@ -14,8 +17,8 @@
   "productProofGateOpen": true,
   "p17Blocked": true,
   "areas": [
-    { "id": "installer", "maturity": "TrackARequired", "confidence": "Verified", "evidence": "app/src-tauri/tauri.conf.json bundle.active true; no NSIS customization; no signing block" },
-    { "id": "packaging", "maturity": "MinorImprovement", "confidence": "Verified", "evidence": "bundle.targets all + icons present; version 0.1.0" },
+    { "id": "installer", "maturity": "MinorImprovement", "confidence": "Verified", "evidence": "NSIS foundation: tauri.conf windows.nsis + hooks.nsh + INSTALLER.md; signing still open" },
+    { "id": "packaging", "maturity": "MinorImprovement", "confidence": "Verified", "evidence": "bundle.targets nsis; publisher/descriptions; version 0.1.0" },
     { "id": "codeSigning", "maturity": "TrackARequired", "confidence": "Verified", "evidence": "no signing configuration in tauri.conf.json or CI" },
     { "id": "autoUpdate", "maturity": "TrackARequired", "confidence": "Verified", "evidence": "no updater plugin in Cargo.toml or tauri.conf.json" },
     { "id": "rollback", "maturity": "FutureScale", "confidence": "Verified", "evidence": "no updater/rollback machinery" },
@@ -42,8 +45,8 @@
     { "id": "performanceBudgets", "maturity": "TrackARequired", "confidence": "Verified", "evidence": "no published cold-start/memory budgets in repo standards" },
     { "id": "startupPerformance", "maturity": "MinorImprovement", "confidence": "Supported", "evidence": "Voice warm path engineered; no installer cold-start SLA" },
     { "id": "shutdownBehaviour", "maturity": "MinorImprovement", "confidence": "Supported", "evidence": "exit_workspace command; tray shutdown policy absent" },
-    { "id": "installerRepair", "maturity": "TrackARequired", "confidence": "Verified", "evidence": "default Tauri bundle only" },
-    { "id": "uninstallCleanliness", "maturity": "TrackARequired", "confidence": "Hypothesis", "evidence": "not verified in CI; no uninstall checklist" },
+    { "id": "installerRepair", "maturity": "MinorImprovement", "confidence": "Supported", "evidence": "NSIS reinstall/upgrade path; process close hooks; allowDowngrades false" },
+    { "id": "uninstallCleanliness", "maturity": "MinorImprovement", "confidence": "Supported", "evidence": "hooks POSTUNINSTALL; optional user-data purge; silent preserves data" },
     { "id": "dependencyManagement", "maturity": "MinorImprovement", "confidence": "Supported", "evidence": "pnpm + Cargo.lock; CI installs" },
     { "id": "releaseAutomation", "maturity": "TrackARequired", "confidence": "Verified", "evidence": ".github/workflows/ci-pr.yml validates only; no release/sign job" },
     { "id": "releaseVerification", "maturity": "MinorImprovement", "confidence": "Verified", "evidence": "pnpm verify:release exists; no signed artifact verify" },

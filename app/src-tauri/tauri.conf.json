@@ -51,13 +51,34 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis"],
+    "publisher": "Workspace",
+    "copyright": "Copyright © Workspace",
+    "category": "Productivity",
+    "shortDescription": "Conversational Desktop Operator for Windows",
+    "longDescription": "Workspace lets you operate your Windows desktop through trustworthy conversation — Moments, windows, apps, and voice — with explicit authority and local-first privacy.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "allowDowngrades": false,
+      "webviewInstallMode": {
+        "type": "embedBootstrapper",
+        "silent": true
+      },
+      "minimumWebview2Version": "110.0.1531.0",
+      "nsis": {
+        "installMode": "currentUser",
+        "compression": "lzma",
+        "displayLanguageSelector": false,
+        "languages": ["English"],
+        "startMenuFolder": "Workspace",
+        "installerHooks": "./windows/hooks.nsh"
+      }
+    }
   }
 }

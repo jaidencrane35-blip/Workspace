@@ -10,7 +10,7 @@ Before any implementation work:
 4. Read the engineering handoff: **[`docs/project/ENGINEERING_HANDOFF.md`](docs/project/ENGINEERING_HANDOFF.md)**
 5. Reassess `docs/project-health.json`.
 
-Current handoff posture: **Sustainable Engineering Operations.** Spec v2.1 + EES v1 are stable constraints. **PR1** production matrix: not public-release ready. Prioritize Owner Product Proof, then PR1 Phase 2 Critical (installer/signing/updater/tray/diagnostics/IPC), then P17 after P16 Accept. Do not open meta-governance. Do not begin P17 while P16 Product Proof is pending.
+Current handoff posture: **Sustainable Engineering Operations.** Spec v2.1 + EES v1 are stable constraints. **P16.PI1 Slice 1 (Installer Foundation) complete** — await Owner accept before Slice 2 (updater). Owner Product Proof still open. P17 blocked. Do not open meta-governance.
 
 ## Cursor Cloud specific instructions
 

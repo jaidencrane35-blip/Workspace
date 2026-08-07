@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T14:06:26.826Z",
+  "updatedAt": "2026-08-07T14:23:59.710Z",
   "constitution": {
     "document": "docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md",
     "version": "2.1",
@@ -17,7 +17,7 @@
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "note": "PR1: Production Readiness Program — matrix + verifier. Not production-ready for public release. Owner Product Proof remains product gate. Phase 2 Critical: installer/signing/updater/tray/diagnostics/IPC. No meta-governance. P17 blocked until Owner Accept."
+    "note": "P16.PI1 Slice 1: Installer Foundation landed (NSIS config/hooks/docs/verifier). Signing + updater + tray still open. Owner Product Proof remains product gate. Do not start Slice 2 until S1 accepted. P17 blocked."
   },
   "completedExecutionPrograms": [
     {
@@ -571,7 +571,7 @@
     {
       "id": "installer-signing",
       "track": "A",
-      "summary": "Signed professional installer / upgrade / uninstall not productionized (PR1)"
+      "summary": "NSIS installer foundation landed (PI1 S1); Authenticode signing still required for public trust"
     },
     {
       "id": "auto-updater",
@@ -789,6 +789,11 @@
       },
       "verify:production-readiness": {
         "script": "scripts/verify-production-readiness.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:installer-foundation": {
+        "script": "scripts/verify-installer-foundation.mjs",
         "present": true,
         "wiredInTest": true
       }

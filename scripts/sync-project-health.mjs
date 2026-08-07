@@ -72,6 +72,7 @@ const verifiers = {
   "verify:operator-activity": "scripts/verify-operator-activity.mjs",
   "verify:dev-environment": "scripts/verify-dev-environment.mjs",
   "verify:production-readiness": "scripts/verify-production-readiness.mjs",
+  "verify:installer-foundation": "scripts/verify-installer-foundation.mjs",
 };
 
 const verifierStatus = {};
@@ -485,7 +486,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "PR1: Production Readiness Program — matrix + verifier. Not production-ready for public release. Owner Product Proof remains product gate. Phase 2 Critical: installer/signing/updater/tray/diagnostics/IPC. No meta-governance. P17 blocked until Owner Accept.",
+    note: "P16.PI1 Slice 1: Installer Foundation landed (NSIS config/hooks/docs/verifier). Signing + updater + tray still open. Owner Product Proof remains product gate. Do not start Slice 2 until S1 accepted. P17 blocked.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -676,7 +677,7 @@ const health = {
       id: "installer-signing",
       track: "A",
       summary:
-        "Signed professional installer / upgrade / uninstall not productionized (PR1)",
+        "NSIS installer foundation landed (PI1 S1); Authenticode signing still required for public trust",
     },
     {
       id: "auto-updater",

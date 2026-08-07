@@ -1,18 +1,26 @@
 # Engineering Milestone Report
-## PR1 — Production Readiness Program
+## P16.PI1 Slice 1 — Installer Foundation
 
 | Field | Value |
 | --- | --- |
-| **Artifacts** | `docs/production/PR1_PRODUCTION_READINESS_PROGRAM.md`, `production-readiness.json`, `scripts/verify-production-readiness.mjs` |
+| **Artifacts** | NSIS `tauri.conf.json`, `windows/hooks.nsh`, `INSTALLER.md`, `verify-installer-foundation.mjs` |
 | **Date** | 2026-08-07 |
-| **Status** | Assessment + roadmap + verifier — not public-release ready; no Phase 2 runtime implementation in this commit |
-| **Max layer** | Production / Repository Standards / Documentation |
+| **Status** | Slice 1 implemented — unsigned NSIS foundation; signing remaining; Slice 2 not started |
+| **Max layer** | Production |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Commit** | `1d07b28` (+ follow-up matrix evidence fix) |
 
 ### Summary
 
-Production audit: installer/signing/updater/tray/diagnostics/IPC quarantine are Track A Required. Telemetry absence is Complete by design. Owner Product Proof remains Phase 1 product gate. Phase 2 Critical before broad release. No Spec/governance/P17 work.
+Production implementation (not assessment). Install/upgrade/uninstall/WebView2 prerequisites/manifest/verifier. Build with `pnpm installer:build`. Do not begin Slice 2 or P17 until Owner accepts.
+
+---
+
+## Prior: PR1 — Production Readiness Program
+
+| Field | Value |
+| --- | --- |
+| **Artifacts** | PR1 report + production-readiness.json |
+| **Status** | Accepted as repository truth |
 
 ---
 
