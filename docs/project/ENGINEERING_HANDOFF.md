@@ -7,7 +7,7 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.30 Product Completion Reopened (F9–F11; awaiting Owner live Product Proof) |
+| **Latest program** | P16.31 Semantic Intent Engine & Desktop Operator Completion (awaiting Owner live Product Proof) |
 | **Rule** | Ignore prior chat history. Reassess repository truth before any implementation. |
 
 **Start here before any execution program.**
@@ -108,7 +108,7 @@ One execution program
 
 Authoritative rolling list: `docs/capability-runtime/FIVE_PROGRAM_ROADMAP.md`.
 
-| Now | P16 Voice Input — **P16.30** engineering complete for reopen (Intent Grammar, dictation review/send, F9 evidence); Product Proof pending Owner live review; P17 blocked |
+| Now | P16 Voice Input — **P16.31** Semantic Intent Engine + Capability Registry; Product Proof pending Owner live review; P17 blocked |
 | Next (after P16 acceptance) | **P17 File Provider** |
 | Then | P18 Terminal · P19 Memory · P20 Automation · P21 Workspace Intelligence |
 
@@ -144,7 +144,7 @@ Do not reopen except bugfixes:
 | Notifications | Closed (P13) | |
 | Browser | Closed (P14) | |
 | Screenshots | Closed (P15) | |
-| **Voice Input** | **P16.30 engineering complete** (Product Proof open) | Conversation input device — Intent Grammar + review/send; WRAP frozen; `VOICE_P16_30_PRODUCT_COMPLETION.md` |
+| **Voice Input** | **P16.31 engineering complete** (Product Proof open) | Semantic Intent Engine + Capability Registry; WRAP frozen; `VOICE_P16_31_SEMANTIC_INTENT.md` |
 | File | Not started | **P17** (blocked) |
 | Terminal / Memory / Automation | Roadmap | P18+ |
 

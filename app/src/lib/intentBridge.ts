@@ -23,12 +23,11 @@ import {
   softenUtterance,
   voiceCheckReply,
 } from "./conversationGuidance";
-import {
-  parseDesktopIntent,
-  resolveShellFolder,
-  type DesktopIntent,
-} from "./intentGrammar";
 import type { PilotPrimaryView } from "./pilotChrome";
+import {
+  resolveSemanticIntent,
+  resolveWindowQuery,
+} from "./semanticIntentEngine";
 
 export type IntentAction =
   | { kind: "navigate"; view: PilotPrimaryView; reply: string }
@@ -74,6 +73,8 @@ export type IntentAction =
     }
   | { kind: "appOpenMaximize"; query: string; reply: string }
   | { kind: "browserExplain"; reply: string; suggestion?: string }
+  | { kind: "capabilityExplain"; reply: string; suggestion?: string }
+  | { kind: "winFocusMinimize"; query: string; reply: string }
   | { kind: "screenshotStatus"; reply: string }
   | { kind: "screenshotDesktop"; reply: string }
   | { kind: "screenshotWindow"; query: string; reply: string }
@@ -161,7 +162,9 @@ function windowTarget(rawQuery: string | undefined): string {
   if (!q || /^(this|it|the|active|current|foreground)(\s+window)?$/i.test(q)) {
     return "this";
   }
-  return q.replace(/^(the|my)\s+/i, "").trim() || "this";
+  const cleaned = q.replace(/^(the|my)\s+/i, "").trim();
+  // Semantic focus queries (GPT → ChatGPT, Chrome → Chrome — not spaced .exe names).
+  return resolveWindowQuery(cleaned) || cleaned || "this";
 }
 
 /**
@@ -636,6 +639,14 @@ function windowMatchLabel(name: string): string {
   if (key === "cursor") return "Cursor";
   if (key === "file explorer" || key === "explorer" || key === "this pc") {
     return "File Explorer";
+  }
+  if (
+    key === "microsoft store" ||
+    key === "ms store" ||
+    key === "windows store" ||
+    key === "store"
+  ) {
+    return "Microsoft Store";
   }
   if (key === "calculator" || key === "calc") return "Calculator";
   if (key === "notepad") return "Notepad";
@@ -1260,106 +1271,9 @@ function resolveWindowIntent(raw: string, text: string): IntentAction | null {
 }
 
 /**
- * Map Intent Grammar → IntentAction. Never passes raw compounds to appLaunch/appOpen.
- */
-function resolveFromDesktopGrammar(
-  grammar: DesktopIntent,
-  resolveOpenWebsiteTarget: (name: string) => IntentAction | null,
-): IntentAction | null {
-  const target = grammar.target.trim();
-  if (!target) {
-    return null;
-  }
-
-  if (grammar.action === "locate") {
-    const label = windowMatchLabel(target);
-    return {
-      kind: "winFocus",
-      query: label,
-      reply: `Looking for “${label}”.`,
-    };
-  }
-
-  if (grammar.modifier === "locate_object" && grammar.context === "folder") {
-    const shell = resolveShellFolder(grammar.object);
-    if (shell) {
-      return {
-        kind: "appLaunch",
-        query: shell,
-        reply: `Opening ${grammar.object} in File Explorer.`,
-      };
-    }
-    return {
-      kind: "appOpen",
-      query: "File Explorer",
-      reply: `Opening File Explorer — tell me which folder if you need a specific one.`,
-    };
-  }
-
-  if (grammar.modifier === "beside" && grammar.secondaryTarget) {
-    const site =
-      resolveOpenWebsiteTarget(target) ??
-      resolveOpenWebsiteTarget(expandSemanticAlias(target));
-    if (site && site.kind === "browserOpen") {
-      return {
-        kind: "browserOpenBeside",
-        url: site.url,
-        beside: windowMatchLabel(grammar.secondaryTarget),
-        reply: `Opening beside “${windowMatchLabel(grammar.secondaryTarget)}”.`,
-      };
-    }
-  }
-
-  if (grammar.modifier === "foreground") {
-    const site =
-      resolveOpenWebsiteTarget(target) ??
-      resolveOpenWebsiteTarget(expandSemanticAlias(target));
-    if (site && site.kind === "browserOpen") {
-      const focusQuery = windowMatchLabel(target);
-      return {
-        kind: "browserOpenFocus",
-        url: site.url,
-        focusQuery,
-        reply: `Opening ${focusQuery} and bringing it to the front.`,
-      };
-    }
-    const label = windowMatchLabel(target);
-    // open_or_focus already brings an existing window forward (or launches).
-    return {
-      kind: "appOpen",
-      query: label,
-      reply: `Opening “${label}” and bringing it to the front.`,
-    };
-  }
-
-  if (grammar.modifier === "fullscreen") {
-    const label = windowMatchLabel(target);
-    // Sites still open in browser; fullscreen → maximize after open when app-shaped.
-    const site =
-      resolveOpenWebsiteTarget(target) ??
-      resolveOpenWebsiteTarget(expandSemanticAlias(target));
-    if (site && site.kind === "browserOpen") {
-      return {
-        kind: "browserOpenFocus",
-        url: site.url,
-        focusQuery: windowMatchLabel(target),
-        reply: `Opening ${windowMatchLabel(target)}.`,
-      };
-    }
-    return {
-      kind: "appOpenMaximize",
-      query: label,
-      reply: `Opening “${label}” full size.`,
-    };
-  }
-
-  return null;
-}
-
-/**
  * Resolve a user utterance to an existing Workspace capability.
  * Never invents desktop awareness or memory.
- * Raw transcripts never become executable names (Intent Grammar — P16.30).
+ * Raw transcripts never become executable names (Semantic Intent Engine — P16.31).
  */
 export function resolveIntent(raw: string): IntentAction {
   const text = normalize(raw);
@@ -1378,16 +1292,13 @@ export function resolveIntent(raw: string): IntentAction {
     return voiceCheckReply(raw);
   }
 
-  // Intent Grammar — structured parse before app/exe fallthrough.
-  const grammar =
-    parseDesktopIntent(raw.trim()) ??
-    parseDesktopIntent(softRaw) ??
-    parseDesktopIntent(matchText);
-  if (grammar) {
-    const fromGrammar = resolveFromDesktopGrammar(grammar, resolveOpenWebsiteTarget);
-    if (fromGrammar) {
-      return fromGrammar;
-    }
+  // Semantic Intent Engine — grammar + entity reasoning before app/exe fallthrough.
+  const semantic =
+    resolveSemanticIntent(raw.trim()) ??
+    resolveSemanticIntent(softRaw) ??
+    resolveSemanticIntent(matchText);
+  if (semantic) {
+    return semantic;
   }
 
   if (
@@ -1631,6 +1542,7 @@ export function resolveIntent(raw: string): IntentAction {
     };
   }
 
+  // Guide chrome — explicit Guide/help navigation only (capability discovery is Semantic Engine).
   if (
     text === "guide" ||
     matchText === "guide" ||
@@ -1642,10 +1554,7 @@ export function resolveIntent(raw: string): IntentAction {
     matchText === "show guide" ||
     text === "show me the guide" ||
     matchText === "show me the guide" ||
-    /\b(open (the )?guide|show (me )?(the )?guide|trust limits?|what are (your|the) limits)\b/.test(
-      matchText,
-    ) ||
-    /^(how does workspace work|what can you (do|help with)|what do you (do|help with))$/i.test(
+    /\b(open (the )?guide|show (me )?(the )?guide|trust limits?|what are (your|the) limits|how does workspace work)\b/.test(
       matchText,
     )
   ) {

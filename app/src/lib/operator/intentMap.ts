@@ -134,6 +134,12 @@ export function toCapabilityIntent(action: IntentAction): CapabilityIntent | nul
       return { domain: "window", operation: "center", query: action.query };
     case "winFocus":
       return { domain: "window", operation: "focus", query: action.query };
+    case "winFocusMinimize":
+      return {
+        domain: "window",
+        operation: "focus_minimize",
+        query: action.query,
+      };
     case "winSnap":
       return {
         domain: "window",

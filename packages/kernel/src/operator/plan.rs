@@ -253,6 +253,31 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
         });
     }
 
+    // Locate then minimise (Semantic Intent Engine composition — Kernel only)
+    if domain == CapabilityDomainId::window() && op_raw == "focus_minimize" {
+        let query = intent.query.as_deref().unwrap_or("").trim();
+        if query.is_empty() {
+            return Err(KernelError::CapabilityRuntime {
+                message: "Which window should I find and minimize?".into(),
+            });
+        }
+        return Ok(OperatorPlan {
+            composition_id: Some("window.focus_minimize".into()),
+            steps: vec![
+                step_from_intent(
+                    CapabilityDomainId::window(),
+                    CapabilityOperation::Focus,
+                    intent,
+                ),
+                step_from_intent(
+                    CapabilityDomainId::window(),
+                    CapabilityOperation::Minimize,
+                    intent,
+                ),
+            ],
+        });
+    }
+
     // Browser focus composes to Window focus (providers stay independent)
     if domain == CapabilityDomainId::browser() && op_raw == "focus" {
         let query = intent.query.as_deref().unwrap_or("").trim();

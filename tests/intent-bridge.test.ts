@@ -46,7 +46,7 @@ describe("intent bridge", () => {
       query: "Notepad",
     });
     expect(resolveIntent("launch chrome")).toMatchObject({
-      kind: "appLaunch",
+      kind: "appOpen",
       query: "Google Chrome",
     });
     expect(resolveIntent("switch to Chrome")).toMatchObject({
@@ -77,7 +77,7 @@ describe("intent bridge", () => {
     });
     expect(resolveIntent("maximize notepad")).toMatchObject({
       kind: "winMaximize",
-      query: "notepad",
+      query: "Notepad",
     });
     expect(resolveIntent("Restore Chrome.")).toMatchObject({
       kind: "winRestore",
@@ -196,6 +196,62 @@ describe("intent bridge", () => {
     expect(resolveIntent("What can you do with browsers?").kind).toBe(
       "browserExplain",
     );
+  });
+
+  it("P16.31 Semantic Intent Engine — Store, window compose, discovery", () => {
+    expect(resolveIntent("Open Microsoft Store")).toMatchObject({
+      kind: "appLaunch",
+      query: "ms-windows-store:",
+    });
+    expect(resolveIntent("Bring GPT to the front")).toMatchObject({
+      kind: "winFocus",
+      query: "ChatGPT",
+    });
+    expect(
+      resolveIntent("Locate the browser with YouTube open"),
+    ).toMatchObject({
+      kind: "winFocus",
+      query: "YouTube",
+    });
+    expect(
+      resolveIntent(
+        "Locate the application with ChatGPT open and minimise it",
+      ),
+    ).toMatchObject({
+      kind: "winFocusMinimize",
+      query: "ChatGPT",
+    });
+    expect(resolveIntent("Restore Cursor")).toMatchObject({
+      kind: "winRestore",
+      query: "Cursor",
+    });
+    expect(resolveIntent("Maximise Cursor")).toMatchObject({
+      kind: "winMaximize",
+      query: "Cursor",
+    });
+    expect(resolveIntent("Focus Chrome")).toMatchObject({
+      kind: "winFocus",
+      query: "Chrome",
+    });
+    expect(resolveIntent("Focus Edge")).toMatchObject({
+      kind: "winFocus",
+      query: "Edge",
+    });
+    expect(resolveIntent("What can you do?")).toMatchObject({
+      kind: "capabilityExplain",
+    });
+    expect(resolveIntent("Show me your capabilities")).toMatchObject({
+      kind: "capabilityExplain",
+    });
+    expect(resolveIntent("List desktop actions")).toMatchObject({
+      kind: "capabilityExplain",
+    });
+    const discovery = resolveIntent("What can you do?");
+    expect(discovery.kind).toBe("capabilityExplain");
+    if (discovery.kind === "capabilityExplain") {
+      expect(discovery.reply.toLowerCase()).toMatch(/applications|windows|browser/);
+      expect(discovery.reply.toLowerCase()).not.toMatch(/provider|registry|kernel/);
+    }
   });
 
   it("P16.30 Intent Grammar — F11 compounds never become executable names", () => {

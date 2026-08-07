@@ -106,7 +106,7 @@ describe("conversation quality (P16.6)", () => {
     expect(resolveIntent("Put Chrome in front.")).toMatchObject({
       kind: "winFocus",
       query: "Chrome",
-    });
+    }); // Semantic entity focusQuery for Chrome
     expect(resolveIntent("Would you open Chrome for me?")).toMatchObject({
       kind: "appOpen",
       query: "Google Chrome",
@@ -120,12 +120,10 @@ describe("conversation quality (P16.6)", () => {
       url: "https://chatgpt.com",
     });
     expect(resolveIntent("What can you do for me?")).toMatchObject({
-      kind: "navigate",
-      view: "help",
+      kind: "capabilityExplain",
     });
     expect(resolveIntent("Please what can you do")).toMatchObject({
-      kind: "navigate",
-      view: "help",
+      kind: "capabilityExplain",
     });
     expect(resolveIntent("Please open Settings")).toMatchObject({
       kind: "appLaunch",

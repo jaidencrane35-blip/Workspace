@@ -21,7 +21,8 @@ export async function handleOperatorUtterance(
   if (
     intent.kind === "unknown" ||
     intent.kind === "browserExplain" ||
-    intent.kind === "voiceExplain"
+    intent.kind === "voiceExplain" ||
+    intent.kind === "capabilityExplain"
   ) {
     return {
       kind: "reply",

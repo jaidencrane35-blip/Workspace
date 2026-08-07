@@ -224,6 +224,18 @@ pub fn compose_user_reply(
                     )
                 }
             }
+            ("window", "focus_minimize") => {
+                if ok {
+                    let target = intent.query.as_deref().unwrap_or("that window");
+                    format!("Found “{target}” and minimized it.")
+                } else {
+                    strip_jargon(
+                        last.message
+                            .as_deref()
+                            .unwrap_or("I couldn’t find that window to minimize."),
+                    )
+                }
+            }
             ("screenshots", "status") => strip_jargon(
                 last.message
                     .as_deref()

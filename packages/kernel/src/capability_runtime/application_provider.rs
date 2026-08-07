@@ -107,10 +107,7 @@ impl ApplicationProvider {
             .map(str::trim)
             .filter(|value| !value.is_empty())
         {
-            if path.to_ascii_lowercase().starts_with("shell:") {
-                return Ok(("explorer.exe".into(), vec![path.to_string()]));
-            }
-            return Ok((path.to_string(), Vec::new()));
+            return Ok(Self::materialize_launch_target(path));
         }
         let query = request
             .query
@@ -120,10 +117,23 @@ impl ApplicationProvider {
             .ok_or_else(|| KernelError::CapabilityRuntime {
                 message: "application launch requires query or path".into(),
             })?;
-        if query.to_ascii_lowercase().starts_with("shell:") {
-            return Ok(("explorer.exe".into(), vec![query.to_string()]));
+        Ok(Self::materialize_launch_target(&launch_alias(query)))
+    }
+
+    /// shell: → explorer; ms-* protocols → rundll32 FileProtocolHandler; else raw exe.
+    fn materialize_launch_target(target: &str) -> (String, Vec<String>) {
+        let t = target.trim();
+        let lower = t.to_ascii_lowercase();
+        if lower.starts_with("shell:") {
+            return ("explorer.exe".into(), vec![t.to_string()]);
         }
-        Ok((launch_alias(query), Vec::new()))
+        if lower.starts_with("ms-") && lower.contains(':') {
+            return (
+                "rundll32.exe".into(),
+                vec!["url.dll,FileProtocolHandler".into(), t.to_string()],
+            );
+        }
+        (t.to_string(), Vec::new())
     }
 
     fn effect_response(
@@ -435,9 +445,17 @@ fn launch_alias(query: &str) -> String {
         "cursor" => "cursor.exe".into(),
         "spotify" => "spotify.exe".into(),
         "calculator" | "calc" => "calc.exe".into(),
+        // Windows Store — protocol via rundll32 (never "microsoft store.exe").
+        "microsoft store" | "ms store" | "windows store" | "store" => {
+            // Sentinel consumed by resolve_launch_target callers — keep protocol form.
+            "ms-windows-store:".into()
+        }
+        "windows settings" | "settings" => "ms-settings:".into(),
         other if other.ends_with(".exe") || other.contains('\\') || other.contains('/') => {
             query.trim().to_string()
         }
+        // Never invent "foo bar.exe" for multi-word unknown names (P16.31).
+        other if other.contains(' ') => query.trim().to_string(),
         other => format!("{other}.exe"),
     }
 }

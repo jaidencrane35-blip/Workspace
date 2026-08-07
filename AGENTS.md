@@ -8,7 +8,7 @@ Before any implementation work, read the canonical engineering handoff:
 
 Then reassess machine state in `docs/project-health.json`. Treat repository documentation as authoritative over chat history.
 
-Current handoff posture (see handoff + health for truth): **P16.30 Product Completion Reopened (F9–F11). P16.28 Engineering Exit was falsified by Owner live evidence. Engineering complete for this reopen — Product Proof pending Owner acceptance. Canonical: docs/capability-runtime/product-proof/VOICE_P16_30_PRODUCT_COMPLETION.md. Do not begin P17. Do not mark P16 permanently closed.**
+Current handoff posture (see handoff + health for truth): **P16.31 Semantic Intent Engine & Desktop Operator Completion — engineering complete for this program; Product Proof pending Owner acceptance. Canonical: docs/capability-runtime/product-proof/VOICE_P16_31_SEMANTIC_INTENT.md. Do not begin P17. Do not mark P16 permanently closed.**
 
 ## Cursor Cloud specific instructions
 

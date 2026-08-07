@@ -211,6 +211,22 @@ mod tests {
     }
 
     #[test]
+    fn plans_window_focus_minimize_composition() {
+        let plan = KernelOperator::plan(&CapabilityIntent {
+            domain: "window".into(),
+            operation: "focus_minimize".into(),
+            query: Some("ChatGPT".into()),
+            ..Default::default()
+        })
+        .unwrap();
+        assert_eq!(
+            plan.composition_id.as_deref(),
+            Some("window.focus_minimize")
+        );
+        assert_eq!(plan.steps.len(), 2);
+    }
+
+    #[test]
     fn plans_window_enumerate() {
         let plan = KernelOperator::plan(&CapabilityIntent {
             domain: "window".into(),
