@@ -6,8 +6,9 @@ Before any implementation work:
 
 1. Assume **[`docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md`](docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md)** is the sole architectural authority.
 2. Execute under **[`docs/00-Constitution/WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md`](docs/00-Constitution/WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md)** — classify work, declare max layer, lowest-layer invariant, pre-flight.
-3. Read the engineering handoff: **[`docs/project/ENGINEERING_HANDOFF.md`](docs/project/ENGINEERING_HANDOFF.md)**
-4. Reassess `docs/project-health.json`.
+3. For “why does it work this way?” see **[`docs/00-Constitution/ARCHITECTURAL_DECISION_RECORD_INDEX.md`](docs/00-Constitution/ARCHITECTURAL_DECISION_RECORD_INDEX.md)**.
+4. Read the engineering handoff: **[`docs/project/ENGINEERING_HANDOFF.md`](docs/project/ENGINEERING_HANDOFF.md)**
+5. Reassess `docs/project-health.json`.
 
 Current handoff posture: **Constitutional Operations. Spec v2.1 + Execution Standard v1 are authoritative. Architecture is stable by default; capabilities evolve within it. Architectural change requires a named Review Trigger with objective evidence. P16 Product Proof still pending. Do not begin P17.**
 

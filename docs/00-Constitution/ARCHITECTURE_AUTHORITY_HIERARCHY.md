@@ -12,6 +12,7 @@
 | **Repository Confidence Model** | `REPOSITORY_CONFIDENCE_MODEL.md` |
 | **Compliance checklist** | `CONSTITUTIONAL_COMPLIANCE_CHECKLIST.md` |
 | **Engineering Execution Standard** | `WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md` |
+| **Decision record index** | `ARCHITECTURAL_DECISION_RECORD_INDEX.md` |
 
 ---
 
@@ -41,7 +42,7 @@ Only the top layer is constitutional. All layers below MAY evolve without amendm
 | --- | --- |
 | **Constitutional Specification** | `WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md` |
 | **Architecture Standard** | Operator rules, Product Gravity rule, knowledge maps, subordinate `architecture/ARCHITECTURAL_CONSTITUTION_V2.md` |
-| **Engineering Governance** | **Engineering Execution Standard v1**, execution protocol, Product Proof Rule, engineering handoff, milestone report, compliance checklist, alignment audit |
+| **Engineering Governance** | **Engineering Execution Standard v1**, ADR index, execution protocol, Product Proof Rule, engineering handoff, milestone report, compliance checklist, alignment audit |
 | **Repository Standards** | project-health, verify/sync scripts, documentation standards |
 | **Capability Standards** | Provider Acceptance, capability-runtime provider docs |
 | **Engineering Programs** | Roadmaps, sprint history, Track work, capability delivery programs |

@@ -156,6 +156,16 @@ if (
 ) {
   fail("repository confidence model missing");
 }
+if (
+  !fs.existsSync(
+    path.join(
+      root,
+      "docs/00-Constitution/ARCHITECTURAL_DECISION_RECORD_INDEX.md",
+    ),
+  )
+) {
+  fail("architectural decision record index missing");
+}
 
 if (!fs.existsSync(path.join(root, "docs/engineering-milestone-report.md"))) {
   fail("milestone report missing");

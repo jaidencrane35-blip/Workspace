@@ -63,6 +63,7 @@ Conversation
 | **Engineering Execution Standard v1** | `docs/00-Constitution/WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md` — how programs execute |
 | Authority hierarchy | `docs/00-Constitution/ARCHITECTURE_AUTHORITY_HIERARCHY.md` |
 | Compliance checklist | `docs/00-Constitution/CONSTITUTIONAL_COMPLIANCE_CHECKLIST.md` |
+| Decision record index | `docs/00-Constitution/ARCHITECTURAL_DECISION_RECORD_INDEX.md` — why Workspace works this way |
 | Architectural Constitution (subordinate) | `architecture/ARCHITECTURAL_CONSTITUTION_V2.md` — MUST NOT override Spec |
 | Product Constitution | `docs/00-Constitution/PRODUCT_CONSTITUTION.md` — experience law; subordinate for architecture |
 | Execution protocol | `.cursor/rules/constitutional-execution-protocol.mdc` — governance under Spec |
