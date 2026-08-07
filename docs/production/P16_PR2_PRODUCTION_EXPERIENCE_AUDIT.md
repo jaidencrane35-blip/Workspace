@@ -5,7 +5,7 @@
 | **Program** | P16.PR2 — Production Experience Integration |
 | **Date** | 2026-08-08 |
 | **Branch** | `v2-dev` |
-| **Commit** | _(stamped on ship)_ |
+| **Commit** | `e9bf3e8` |
 | **Inputs (not modified)** | Spec v2 · EES · Interaction Language · Product Quality Standard · Production Gate Specification |
 | **Lens** | User Trust Journeys — not isolated gates |
 
