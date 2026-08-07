@@ -18,8 +18,26 @@ A provider is **not Product Complete** until all of the following are true:
 3. The Product Owner can naturally discover and use it without menus, dashboards, or documentation.
 4. Conversation returns **truthful** success and failure feedback (never invented success).
 5. Users never see Provider / Router / Registry terminology.
+6. **Natural Language Robustness** (below) is satisfied.
 
 Infrastructure alone is insufficient.
+
+---
+
+## Natural Language Robustness Rule (permanent — P14.5)
+
+A provider is **not Product Complete** merely because commands execute correctly.  
+A provider becomes Product Complete only when ordinary users can express the same intent naturally.
+
+Natural language improvements belong **only** inside:
+
+- Intent Layer  
+- Kernel Operator (planning / compose)  
+- Conversation reply generation  
+
+They do **not** belong inside providers.  
+Providers remain deterministic.  
+Intent resolution remains deterministic (no probabilistic AI matching).
 
 Future execution programs must satisfy **both**:
 

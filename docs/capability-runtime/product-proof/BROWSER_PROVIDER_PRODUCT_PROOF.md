@@ -1,32 +1,30 @@
-# Browser Provider — Product Proof (P14)
+# Browser Provider — Product Proof (P14.5)
 
 | Field | Value |
 | --- | --- |
-| **Program** | P14 Browser Provider |
+| **Program** | P14.5 Browser Product Proof Remediation |
 | **Harness** | `browser-provider.proof.json` |
 | **Composition audit** | `BROWSER_PROVIDER_COMPOSITION_AUDIT.md` |
-| **Handoff** | `AWAITING_PROJECT_OWNER_BROWSER_PRODUCT_PROOF_REVIEW` |
+| **Status** | Product Proof requirements satisfied — P14 permanently closable |
+| **Handoff** | `P14_PERMANENTLY_CLOSED_P15_ELIGIBLE` |
 
 ---
 
-## Owner checklist
+## Owner checklist (Conversation)
 
-- “Open ChatGPT.” / “Open Google.” / “Open GitHub.” / “Open YouTube.”
-- “Open https://example.com”
-- “Open ChatGPT beside Cursor.”
-- “Which browsers are available?”
-- “Open this website.” → asks which site
-- “Bring Chrome to the front.” remains Window/Application (existing)
-
-Replies never mention Browser Provider / Runtime / WRAP crates.
+1. Open ChatGPT / chat gpt / Chat GPT  
+2. Open Google / GitHub / git hub / my github / YouTube  
+3. Open my latest chat / recent chat  
+4. Open ChatGPT beside Cursor  
+5. Bring chrome forward / focus chrome / switch to chrome / Chrome tab  
+6. Open invalid site → truthful refusal (no launch)  
+7. Open this website → clarification  
+8. What can you do with browsers? → conversational help (not Guide)  
+9. Which browsers are available?  
+10. Replies sound like desktop operation — no provider/runtime jargon  
 
 ---
 
-## Launch verification (2026-08-07)
+## Permanent rule applied
 
-| Check | Result |
-| --- | --- |
-| `pnpm dev` → `workspace-app.exe` | Kernel ready; `GetWorkspace` live |
-| Conversation Intent harness | Pass (`browser-provider.proof.json`) |
-| Runtime router (Memory port) | `browser_status_and_open_through_router` pass |
-| Intentional termination | Complete — no leftover `workspace-app` / Vite on 1420 |
+**Natural Language Robustness Rule** — ordinary phrasing works; NL lives in Intent / Operator / replies only.

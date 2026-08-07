@@ -55,6 +55,7 @@ export type IntentAction =
       beside: string;
       reply: string;
     }
+  | { kind: "browserExplain"; reply: string; suggestion?: string }
   | { kind: "appOpen"; query: string; reply: string }
   | { kind: "appLaunch"; query: string; reply: string }
   | { kind: "appFocus"; query: string; reply: string }
@@ -213,27 +214,235 @@ function resolveNotificationIntent(raw: string, text: string): IntentAction | nu
   return null;
 }
 
+/** Deterministic phrase key — capitalization, punctuation, spacing collapsed. */
+function normalizeAliasKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[-_]+/g, " ")
+    .replace(/[^a-z0-9\s./]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function stripOpenDeterminers(value: string): string {
+  return value.replace(/^(my|the|our|a|an)\s+/i, "").trim();
+}
+
 const SITE_ALIASES: Record<string, string> = {
   chatgpt: "https://chatgpt.com",
   "chat gpt": "https://chatgpt.com",
+  "chat g p t": "https://chatgpt.com",
+  "latest chat": "https://chatgpt.com",
+  "recent chat": "https://chatgpt.com",
+  "latest chatgpt": "https://chatgpt.com",
+  "recent chatgpt": "https://chatgpt.com",
   google: "https://www.google.com",
   github: "https://github.com",
+  "git hub": "https://github.com",
   youtube: "https://www.youtube.com",
+  "you tube": "https://www.youtube.com",
   bing: "https://www.bing.com",
 };
 
 function resolveSiteAlias(name: string): string | null {
-  const key = name.trim().toLowerCase();
+  const key = normalizeAliasKey(stripOpenDeterminers(name));
   return SITE_ALIASES[key] ?? null;
 }
 
+const APP_OPEN_EXCLUSIONS =
+  /^(notepad|calculator|calc|spotify|discord|slack|figma|cursor|code|vscode|visual studio code|word|excel|outlook|chrome|edge|firefox|brave|msedge)$/i;
+
+const BROWSER_WINDOW_NAMES =
+  /^(chrome|google chrome|edge|microsoft edge|msedge|firefox|brave|browser|current browser|latest browser|chrome tab)$/i;
+
+const INVALID_WEBSITE_SUGGESTION =
+  'Try “open google”, “open github”, “open youtube”, or provide a complete URL.';
+
+function invalidWebsiteReply(): IntentAction {
+  return {
+    kind: "unknown",
+    reply: "I couldn’t determine a valid website.",
+    suggestion: INVALID_WEBSITE_SUGGESTION,
+  };
+}
+
+/** Common public suffixes — deterministic allowlist (not a full PSL). */
+const PLAUSIBLE_TLDS = new Set([
+  "com",
+  "org",
+  "net",
+  "edu",
+  "gov",
+  "mil",
+  "int",
+  "io",
+  "ai",
+  "app",
+  "dev",
+  "co",
+  "uk",
+  "au",
+  "ca",
+  "de",
+  "fr",
+  "jp",
+  "us",
+  "nz",
+  "in",
+  "info",
+  "biz",
+  "me",
+  "tv",
+  "cc",
+  "tech",
+  "online",
+  "site",
+  "store",
+  "cloud",
+  "gg",
+  "so",
+  "fm",
+  "xyz",
+  "pro",
+  "name",
+  "blog",
+  "page",
+  "shop",
+]);
+
+/** Deterministic hostname / URL plausibility — never invent a launch. */
+function isPlausibleWebsite(raw: string): boolean {
+  const trimmed = raw.trim();
+  if (!trimmed || /\s/.test(trimmed)) {
+    return false;
+  }
+  let candidate = trimmed;
+  if (!/^https?:\/\//i.test(candidate)) {
+    if (!candidate.includes(".")) {
+      return false;
+    }
+    candidate = `https://${candidate}`;
+  }
+  let url: URL;
+  try {
+    url = new URL(candidate);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    return false;
+  }
+  const host = url.hostname.toLowerCase();
+  if (!host || host.includes("..")) {
+    return false;
+  }
+  if (host === "localhost") {
+    return true;
+  }
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+    return host.split(".").every((part) => {
+      const n = Number(part);
+      return Number.isInteger(n) && n >= 0 && n <= 255;
+    });
+  }
+  if (
+    !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i.test(
+      host,
+    )
+  ) {
+    return false;
+  }
+  const labels = host.split(".");
+  if (labels.length < 2) {
+    return false;
+  }
+  const tld = labels[labels.length - 1] ?? "";
+  if (!PLAUSIBLE_TLDS.has(tld)) {
+    return false;
+  }
+  const sld = labels[labels.length - 2] ?? "";
+  if (sld.length < 2) {
+    return false;
+  }
+  return true;
+}
+
+function resolveOpenWebsiteTarget(target: string): IntentAction | null {
+  const cleaned = stripTrailingPunctuation(target);
+  if (!cleaned || /^(workspace|conversation)$/i.test(cleaned)) {
+    return null;
+  }
+  if (APP_OPEN_EXCLUSIONS.test(normalizeAliasKey(cleaned))) {
+    return null;
+  }
+
+  // open browser / current browser / latest browser
+  if (
+    /^(my\s+)?(current\s+|latest\s+)?browsers?$/i.test(cleaned) ||
+    /^(current|latest)\s+browser$/i.test(cleaned)
+  ) {
+    return {
+      kind: "browserOpen",
+      url: "https://www.google.com",
+      reply: "Opening your browser.",
+    };
+  }
+
+  const alias = resolveSiteAlias(cleaned);
+  if (alias) {
+    return {
+      kind: "browserOpen",
+      url: alias,
+      reply: `Opening ${stripOpenDeterminers(cleaned)}.`,
+    };
+  }
+
+  const looksLikeUrl =
+    /^https?:\/\//i.test(cleaned) ||
+    /^www\./i.test(cleaned) ||
+    cleaned.includes(".");
+
+  if (looksLikeUrl) {
+    if (!isPlausibleWebsite(cleaned)) {
+      return invalidWebsiteReply();
+    }
+    const url = /^https?:\/\//i.test(cleaned) ? cleaned : `https://${cleaned}`;
+    return {
+      kind: "browserOpen",
+      url,
+      reply: "Opening that site.",
+    };
+  }
+
+  return null;
+}
+
 /**
- * Browser intents — URL / site open via Kernel Operator (P14).
+ * Browser intents — URL / site open via Kernel Operator (P14 / P14.5).
  * Must run before generic “open <app>” application intents.
+ * Natural-language robustness lives here — not inside desktop browser adapters.
  */
 function resolveBrowserIntent(raw: string, text: string): IntentAction | null {
+  const utterance = stripTrailingPunctuation(raw);
+
+  // Capability discovery — never route browser “what can you…” to Guide.
   if (
-    /\b(can you (use |open )?browsers?|are browsers? available|browser support|which browsers)\b/.test(
+    /\b(what can you do with browsers?|what do you do with browsers?|browser help|help with browsers?|how do (i|you) use (the )?browser|browser capabilities|what browsers? can you)\b/.test(
+      text,
+    )
+  ) {
+    return {
+      kind: "browserExplain",
+      reply:
+        "With browsers I can open websites, bring Chrome or Edge forward, open a site beside Cursor, move or restore browser windows, and check which browsers are available on this PC.",
+      suggestion:
+        'Try “open google”, “open chatgpt beside cursor”, “bring chrome to the front”, or “which browsers are available?”.',
+    };
+  }
+
+  if (
+    /\b(can you (use |open )?browsers?|are browsers? available|browser support|which browsers|supported browsers)\b/.test(
       text,
     ) ||
     text === "browsers?" ||
@@ -241,34 +450,86 @@ function resolveBrowserIntent(raw: string, text: string): IntentAction | null {
   ) {
     return {
       kind: "browserStatus",
-      reply: "Checking browser support.",
+      reply: "Checking which browsers are available.",
     };
   }
 
+  // Bare browser window names → bring that browser forward
+  if (BROWSER_WINDOW_NAMES.test(utterance) || BROWSER_WINDOW_NAMES.test(text)) {
+    const query = utterance.replace(/\s+tab$/i, "").trim() || "Chrome";
+    const label = /browser/i.test(query) ? "your browser" : query;
+    return {
+      kind: "winFocus",
+      query: /^(current|latest)\s+browser$/i.test(query) ? "Chrome" : query,
+      reply: `Bringing ${label} to the front.`,
+    };
+  }
+
+  const browserFocus =
+    utterance.match(
+      /^(?:bring)\s+(.+?)\s+(?:to\s+(?:the\s+)?front|forward)$/i,
+    ) ??
+    utterance.match(/^(?:focus|activate)\s+(.+)$/i) ??
+    utterance.match(/^(?:switch\s+to)\s+(.+)$/i);
+  if (browserFocus?.[1]) {
+    const target = stripTrailingPunctuation(browserFocus[1]);
+    const key = normalizeAliasKey(target);
+    if (
+      BROWSER_WINDOW_NAMES.test(target) ||
+      BROWSER_WINDOW_NAMES.test(key) ||
+      /^(chrome|edge|firefox|brave)(\s+tab)?$/i.test(key)
+    ) {
+      const query = key.replace(/\s+tab$/, "").replace(/^google\s+/, "").replace(/^microsoft\s+/, "");
+      const focusQuery =
+        query === "msedge" || query === "microsoft edge"
+          ? "Edge"
+          : query === "google chrome"
+            ? "Chrome"
+            : query === "current browser" ||
+                query === "latest browser" ||
+                query === "browser"
+              ? "Chrome"
+              : query;
+      return {
+        kind: "winFocus",
+        query: focusQuery,
+        reply: `Bringing “${focusQuery}” to the front.`,
+      };
+    }
+  }
+
   if (
-    /^(open|go to)\s+this\s+website[.!]?$/i.test(raw.trim()) ||
+    /^(open|go to|visit|browse)\s+this\s+website$/i.test(utterance) ||
     text === "open this website"
   ) {
     return {
       kind: "unknown",
       reply: "Which website should I open?",
-      suggestion: 'Try “open google”, “open github”, or “open https://example.com”.',
+      suggestion: INVALID_WEBSITE_SUGGESTION,
     };
   }
 
-  const beside = raw
-    .trim()
-    .match(
-      /^open\s+(.+?)\s+beside\s+(.+)$/i,
-    );
+  const beside = utterance.match(/^open\s+(.+?)\s+beside\s+(.+)$/i);
   if (beside?.[1] && beside[2]) {
     const left = stripTrailingPunctuation(beside[1]);
     const right = stripTrailingPunctuation(beside[2]);
-    const url =
-      resolveSiteAlias(left) ??
-      (/^https?:\/\//i.test(left) ? left : null) ??
-      (/^www\./i.test(left) ? `https://${left}` : null);
-    if (url && right) {
+    if (!right) {
+      return null;
+    }
+    const alias = resolveSiteAlias(left);
+    if (alias) {
+      return {
+        kind: "browserOpenBeside",
+        url: alias,
+        beside: right,
+        reply: `Opening beside “${right}”.`,
+      };
+    }
+    if (left.includes(".") || /^https?:\/\//i.test(left) || /^www\./i.test(left)) {
+      if (!isPlausibleWebsite(left)) {
+        return invalidWebsiteReply();
+      }
+      const url = /^https?:\/\//i.test(left) ? left : `https://${left}`;
       return {
         kind: "browserOpenBeside",
         url,
@@ -278,51 +539,9 @@ function resolveBrowserIntent(raw: string, text: string): IntentAction | null {
     }
   }
 
-  const openUrl = raw.trim().match(/^(?:open|go to|visit|browse)\s+(.+)$/i);
+  const openUrl = utterance.match(/^(?:open|go to|visit|browse)\s+(.+)$/i);
   if (openUrl?.[1]) {
-    const target = stripTrailingPunctuation(openUrl[1]);
-    if (!target || /^(workspace|conversation)$/i.test(target)) {
-      return null;
-    }
-    // App-like launches stay with Application Provider
-    if (
-      /^(notepad|calculator|calc|spotify|discord|slack|figma|cursor|code|vscode|word|excel|outlook)$/i.test(
-        target,
-      )
-    ) {
-      return null;
-    }
-    const alias = resolveSiteAlias(target);
-    if (alias) {
-      return {
-        kind: "browserOpen",
-        url: alias,
-        reply: `Opening ${target}.`,
-      };
-    }
-    if (/^https?:\/\//i.test(target)) {
-      return {
-        kind: "browserOpen",
-        url: target,
-        reply: "Opening that site.",
-      };
-    }
-    if (/^www\./i.test(target) || /\.[a-z]{2,}([/?#]|$)/i.test(target)) {
-      const url = target.startsWith("http") ? target : `https://${target}`;
-      return {
-        kind: "browserOpen",
-        url,
-        reply: "Opening that site.",
-      };
-    }
-    // "open browser" / "open my browser"
-    if (/^(my\s+)?browsers?$/i.test(target)) {
-      return {
-        kind: "browserOpen",
-        url: "https://www.google.com",
-        reply: "Opening your browser.",
-      };
-    }
+    return resolveOpenWebsiteTarget(openUrl[1]);
   }
 
   return null;
@@ -501,8 +720,11 @@ function resolveWindowIntent(raw: string, text: string): IntentAction | null {
   }
 
   const focusFront =
-    utterance.match(/^(?:bring)\s+(.+?)\s+to\s+(?:the\s+)?front$/i) ??
-    utterance.match(/^(?:focus(?:\s+window)?|activate)\s+(.+)$/i);
+    utterance.match(
+      /^(?:bring)\s+(.+?)\s+(?:to\s+(?:the\s+)?front|forward)$/i,
+    ) ??
+    utterance.match(/^(?:focus(?:\s+window)?|activate)\s+(.+)$/i) ??
+    utterance.match(/^(?:switch\s+to)\s+(.+)$/i);
   if (focusFront?.[1]) {
     const query = windowTarget(focusFront[1]);
     return {

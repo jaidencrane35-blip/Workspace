@@ -33,8 +33,11 @@ const proof = JSON.parse(
     "utf8",
   ),
 );
-if (proof.provider !== "browser" || proof.program !== "P14") {
-  fail("proof must declare provider=browser program=P14");
+if (
+  proof.provider !== "browser" ||
+  (proof.program !== "P14" && proof.program !== "P14.5")
+) {
+  fail("proof must declare provider=browser program=P14 or P14.5");
 }
 if (proof.ipc !== "execute_capability_intent") {
   fail("Conversation ipc must be execute_capability_intent");
@@ -45,7 +48,14 @@ if (!proof.pipeline?.includes("Kernel Operator")) {
 }
 
 const intent = fs.readFileSync(path.join(root, "app/src/lib/intentBridge.ts"), "utf8");
-for (const token of ["browserStatus", "browserOpen", "browserOpenBeside", "resolveBrowserIntent"]) {
+for (const token of [
+  "browserStatus",
+  "browserOpen",
+  "browserOpenBeside",
+  "browserExplain",
+  "resolveBrowserIntent",
+  "isPlausibleWebsite",
+]) {
   if (!intent.includes(token)) fail(`intentBridge must include ${token}`);
 }
 if (/Browser Provider|webbrowser|Capability Runtime/i.test(intent)) {

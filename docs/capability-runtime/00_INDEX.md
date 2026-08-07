@@ -4,9 +4,9 @@
 | --- | --- |
 | **P10–P12** | Complete (P12 series permanently closed) |
 | **P13** | Notifications Provider — **permanently closed** |
-| **P14** | Browser Provider — engineering complete; **Owner Product Proof review** |
-| **P15** | Screenshot Provider — **preparation docs only** (no implementation) |
-| **Next** | P15 implementation after P14 Owner acceptance |
+| **P14** | Browser Provider — **permanently closed** (P14.5 Product Proof) |
+| **P15** | Screenshot Provider — preparation docs ready; **next eligible** |
+| **Next** | P15 Screenshot Provider implementation |
 | **Operator law** | Conversation → Intent → Kernel Operator → Runtime |
 | **Composition law** | Kernel owns composition |
 

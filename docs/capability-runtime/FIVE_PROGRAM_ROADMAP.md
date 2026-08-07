@@ -1,9 +1,9 @@
 # Rolling Capability Provider Roadmap
-## Updated after P14 Browser Provider
+## Updated after P14.5 — P14 permanently closed
 
 UI Architecture, Desktop Operator, Conversation, and Capability Runtime pipeline remain **frozen**.  
 Providers own **operations**. Providers never call each other.  
-Every provider requires **Engineering Completion + Product Proof**.  
+Every provider requires **Engineering Completion + Product Proof** (including Natural Language Robustness).  
 Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 
 ---
@@ -21,17 +21,12 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 | **P12 Finalization** | Kernel Operator + Presentation Purity | `daf3ae9` |
 | **P12 COMPLETE** | Final Repository Closure | `030fa3f` |
 | **P13** | Notifications Provider | `f0e03c4` (closed `f1a359c`) |
+| **P14** | Browser Provider | `1670822` |
+| **P14.5** | Browser Product Proof Remediation | *(this commit)* |
 
 P12 series remains **permanently closed**.  
-**P13 is permanently closed** (Product Proof + Composition Audit).
-
----
-
-## Current
-
-| Program | Title | Status |
-| --- | --- | --- |
-| **P14** | Browser Provider | Engineering complete (`1670822`) — awaiting Owner Product Proof review |
+**P13 is permanently closed.**  
+**P14 is permanently closed** (Product Proof + NL Robustness + Composition Audit).
 
 ---
 
@@ -39,7 +34,7 @@ P12 series remains **permanently closed**.
 
 | Program | Title | Why |
 | --- | --- | --- |
-| **P15** | Screenshot Provider | Prep pack ready (`SCREENSHOT_PROVIDER_PREPARATION.md`) — implement only after P14 Owner acceptance |
+| **P15** | Screenshot Provider | Prep pack ready — next eligible program |
 | **P16** | File Provider | Scoped FS for later automation |
 | **P17** | Terminal Provider | Governed ConPTY |
 | **P18** | Voice Provider | Spoken operator entry |
@@ -55,5 +50,6 @@ Longer: P20 Automation → P21 Intelligence
 2. Pipeline only — no bypasses.  
 3. Providers own operations; independently testable.  
 4. Every provider ends with Conversation Product Proof.  
-5. One program → stop for Owner review.  
-6. Kernel Operator is sole composition / execution authority after Intent.  
+5. Natural Language Robustness (Intent / Operator / replies only).  
+6. One program → stop for Owner review.  
+7. Kernel Operator is sole composition / execution authority after Intent.  

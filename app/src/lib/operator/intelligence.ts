@@ -16,11 +16,11 @@ export async function handleOperatorUtterance(
 ): Promise<OperatorOutcome> {
   const intent = resolveIntent(utterance);
 
-  if (intent.kind === "unknown") {
+  if (intent.kind === "unknown" || intent.kind === "browserExplain") {
     return {
       kind: "reply",
       text: intent.reply,
-      suggestion: intent.suggestion,
+      suggestion: "suggestion" in intent ? intent.suggestion : undefined,
     };
   }
 

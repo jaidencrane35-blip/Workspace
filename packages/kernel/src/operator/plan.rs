@@ -3,6 +3,66 @@ use crate::error::{KernelError, Result};
 use crate::operator::intent::CapabilityIntent;
 use crate::operator::parse_domain;
 
+const PLAUSIBLE_TLDS: &[&str] = &[
+    "com", "org", "net", "edu", "gov", "mil", "int", "io", "ai", "app", "dev",
+    "co", "uk", "au", "ca", "de", "fr", "jp", "us", "nz", "in", "info", "biz",
+    "me", "tv", "cc", "tech", "online", "site", "store", "cloud", "gg", "so",
+    "fm", "xyz", "pro", "name", "blog", "page", "shop",
+];
+
+/// Deterministic URL plausibility for browser open (Intent also validates).
+fn is_plausible_website_url(raw: &str) -> bool {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() || trimmed.contains(char::is_whitespace) {
+        return false;
+    }
+    let lower = trimmed.to_ascii_lowercase();
+    let candidate = if lower.starts_with("http://") || lower.starts_with("https://") {
+        trimmed.to_string()
+    } else if trimmed.contains('.') {
+        format!("https://{trimmed}")
+    } else {
+        return false;
+    };
+    let without_scheme = candidate
+        .split_once("://")
+        .map(|(_, rest)| rest)
+        .unwrap_or(candidate.as_str());
+    let host = without_scheme
+        .split(['/', '?', '#'])
+        .next()
+        .unwrap_or("")
+        .trim()
+        .trim_start_matches('[')
+        .trim_end_matches(']');
+    if host.is_empty() || host.contains("..") {
+        return false;
+    }
+    if host.eq_ignore_ascii_case("localhost") {
+        return true;
+    }
+    let labels: Vec<&str> = host.split('.').collect();
+    if labels.len() < 2 {
+        return false;
+    }
+    let tld = labels[labels.len() - 1].to_ascii_lowercase();
+    if !PLAUSIBLE_TLDS.iter().any(|item| *item == tld) {
+        return false;
+    }
+    let sld = labels[labels.len() - 2];
+    if sld.len() < 2 {
+        return false;
+    }
+    labels.iter().all(|label| {
+        !label.is_empty()
+            && !label.starts_with('-')
+            && !label.ends_with('-')
+            && label
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-')
+    })
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OperatorPlanStep {
     pub domain: CapabilityDomainId,
@@ -204,6 +264,11 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
         if url.is_empty() {
             return Err(KernelError::CapabilityRuntime {
                 message: "Which website should I open?".into(),
+            });
+        }
+        if !is_plausible_website_url(url) {
+            return Err(KernelError::CapabilityRuntime {
+                message: "I couldn’t determine a valid website. Try “open google”, “open github”, “open youtube”, or provide a complete URL.".into(),
             });
         }
     }

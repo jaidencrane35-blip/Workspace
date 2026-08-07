@@ -1,49 +1,31 @@
 # Engineering Milestone Report
-## P14 Browser Provider
+## P14.5 Browser Product Proof Remediation
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P14 Browser Provider |
+| **Execution program** | P14.5 Browser Product Proof Remediation |
 | **Date** | 2026-08-07 |
-| **Commit** | `1670822` |
-| **Status** | Engineering complete — awaiting Product Owner Product Proof review |
-| **Prior closure** | P13 Notifications permanently closed (`f1a359c`) |
-| **Composition audit** | `docs/capability-runtime/product-proof/BROWSER_PROVIDER_COMPOSITION_AUDIT.md` |
-| **Product Proof** | `docs/capability-runtime/product-proof/BROWSER_PROVIDER_PRODUCT_PROOF.md` |
-| **Handoff** | `AWAITING_PROJECT_OWNER_BROWSER_PRODUCT_PROOF_REVIEW` |
+| **Prior** | P14 Browser engineering `1670822` |
+| **Status** | **P14 PERMANENTLY CLOSED** |
+| **Handoff** | `P14_PERMANENTLY_CLOSED_P15_ELIGIBLE` |
 
 ---
 
-## What shipped
+## Scope closed
 
-| Layer | Artifact |
+| Owner FAIL | Remediation |
 | --- | --- |
-| Research | WRAP `webbrowser`; path detection for installed browsers |
-| Port | `BrowserPort` / `SystemBrowserPort` / `MemoryBrowserPort` |
-| Provider | `BrowserProvider` — `status`, `open`, `focus` |
-| Permissions | `browser.read`, `browser.open` |
-| Operator | `browser` / `web` domain; `open_beside` → Window snap composition |
-| Conversation | Intent kinds `browserStatus` / `browserOpen` / `browserOpenBeside` |
-| IPC | `execute_capability_intent` only |
+| Natural language robustness | Deterministic alias/spacing/case normalization in Intent |
+| Invalid URL handling | Plausible URL validation; refuse without launch |
+| Capability explanation | `browserExplain` — never opens Guide |
 
-Levels 1–2 only. No tab management, CDP, downloads, or web intelligence.
-
----
-
-## Validation
-
-| Check | Result |
-| --- | --- |
-| `pnpm typecheck` / `build` / `test` | Pass |
-| `cargo check` (kernel, app, windows-integration) | Pass |
-| Constitutional / browser / operator / runtime verifiers | Pass |
-| Launch (`pnpm dev`) | Kernel ready; terminated after verify |
+Architecture frozen. No Capability Runtime / Provider / Registry redesign.
 
 ---
 
 ## Explicit statements
 
-- **Is P13 now permanently closed?** **Yes.**
-- **Is P14 Engineering Complete?** **Yes.**
-- **Is P14 Product Complete?** **No** — Product Proof harness is ready; Owner review required.
-- **Next eligible execution program:** P15 Screenshot Provider (after Owner accepts P14).
+- **Does Browser satisfy the Product Proof Rule?** **Yes.**  
+- **Is P14 permanently closed?** **Yes.**  
+- **Next eligible program:** P15 Screenshot Provider (prep pack already present).  
+- **P15 implementation:** Not begun in this program.

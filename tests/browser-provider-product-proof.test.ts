@@ -18,8 +18,10 @@ const proof = JSON.parse(
   examples: Array<{
     utterance: string;
     expectedKind: string;
+    expectedDomain?: string | null;
     expectedUrl?: string;
     expectedBeside?: string;
+    expectedQuery?: string;
   }>;
   clarifications: Array<{
     utterance: string;
@@ -27,34 +29,75 @@ const proof = JSON.parse(
     mustMention: string;
   }>;
   ipc: string;
+  program: string;
 };
 
-describe("Browser Provider Product Proof harness", () => {
-  it("routes Owner-facing conversation examples to browser intents", () => {
+describe("Browser Provider Product Proof harness (P14.5)", () => {
+  it("declares Kernel Operator Conversation IPC", () => {
     expect(proof.ipc).toBe("execute_capability_intent");
+    expect(proof.program).toBe("P14.5");
+  });
+
+  it("routes Owner-facing conversation examples with NL robustness", () => {
     for (const example of proof.examples) {
       const action = resolveIntent(example.utterance);
       expect(action.kind, example.utterance).toBe(example.expectedKind);
+
       if (example.expectedUrl != null && "url" in action) {
         expect(action.url, example.utterance).toBe(example.expectedUrl);
       }
-      if (example.expectedBeside != null && action.kind === "browserOpenBeside") {
-        expect(action.beside).toBe(example.expectedBeside);
+      if (
+        example.expectedBeside != null &&
+        action.kind === "browserOpenBeside"
+      ) {
+        expect(action.beside.toLowerCase()).toBe(
+          example.expectedBeside.toLowerCase(),
+        );
       }
+      if (
+        example.expectedQuery != null &&
+        action.kind === "winFocus" &&
+        "query" in action
+      ) {
+        expect(action.query.toLowerCase()).toBe(
+          example.expectedQuery.toLowerCase(),
+        );
+      }
+
       const capability = toCapabilityIntent(action);
-      expect(capability?.domain).toBe("browser");
+      if (example.expectedDomain === null) {
+        expect(capability, example.utterance).toBeNull();
+      } else if (example.expectedDomain != null) {
+        expect(capability?.domain, example.utterance).toBe(
+          example.expectedDomain,
+        );
+      }
+
       expect(JSON.stringify(action).toLowerCase()).not.toMatch(
-        /browser provider|capability runtime|webbrowser/,
+        /browser provider|capability runtime|webbrowser|provider registry|kernel operator/,
       );
     }
   });
 
-  it("clarifies missing website targets", () => {
+  it("clarifies missing and invalid website targets without launching", () => {
     for (const example of proof.clarifications) {
       const action = resolveIntent(example.utterance);
-      expect(action.kind).toBe(example.expectedKind);
-      expect(action.reply.toLowerCase()).toContain(
+      expect(action.kind, example.utterance).toBe(example.expectedKind);
+      expect(action.reply.toLowerCase(), example.utterance).toContain(
         example.mustMention.toLowerCase(),
+      );
+      expect(toCapabilityIntent(action)).toBeNull();
+    }
+  });
+
+  it("never opens Guide for browser capability discovery", () => {
+    const action = resolveIntent("What can you do with browsers?");
+    expect(action.kind).toBe("browserExplain");
+    expect(action.kind).not.toBe("navigate");
+    if (action.kind === "browserExplain") {
+      expect(action.reply.toLowerCase()).toMatch(/open websites|beside/);
+      expect(action.reply.toLowerCase()).not.toMatch(
+        /provider|runtime|registry|kernel|ipc/,
       );
     }
   });

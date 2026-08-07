@@ -3,7 +3,7 @@ use crate::operator::intent::{CapabilityIntent, OperatorTurnResult};
 use crate::operator::plan::OperatorPlan;
 
 fn strip_jargon(text: &str) -> String {
-    text        .replace("Capability Runtime", "Workspace")
+    text.replace("Capability Runtime", "Workspace")
         .replace("Window Provider", "Workspace")
         .replace("Application Provider", "Workspace")
         .replace("Notification Provider", "Workspace")
@@ -11,6 +11,14 @@ fn strip_jargon(text: &str) -> String {
         .replace("Browser Provider", "Workspace")
         .replace("Provider Registry", "Workspace")
         .replace("Capability Router", "Workspace")
+        .replace("Kernel Operator", "Workspace")
+        .replace("Capability Provider", "Workspace")
+        .replace("Provider", "Workspace")
+        .replace("Runtime", "Workspace")
+        .replace("Registry", "Workspace")
+        .replace("Router", "Workspace")
+        .replace("IPC", "connection")
+        .replace("Kernel", "Workspace")
 }
 
 /// Compose truthful Conversation reply — no provider jargon.
@@ -153,19 +161,16 @@ pub fn compose_user_reply(
                     .unwrap_or("I couldn’t dismiss that notification."),
             ),
             ("browser", "status") => {
-                let browsers = last.text.as_deref().unwrap_or("system default");
+                let browsers = last.text.as_deref().unwrap_or("your system default");
                 if ok {
                     format!(
-                        "{}\nBrowsers: {browsers}",
-                        last.message
-                            .as_deref()
-                            .unwrap_or("Browser support looks available.")
+                        "Here’s what I can use on this PC: {browsers}."
                     )
                 } else {
                     strip_jargon(
                         last.message
                             .as_deref()
-                            .unwrap_or("Browser support isn’t available."),
+                            .unwrap_or("I can’t reach a browser on this PC right now."),
                     )
                 }
             }
@@ -175,7 +180,7 @@ pub fn compose_user_reply(
                     .unwrap_or(if ok {
                         "Opened in your browser."
                     } else {
-                        "I couldn’t open that."
+                        "I couldn’t open that website."
                     }),
             ),
             ("browser", "open_beside") => {
@@ -186,7 +191,7 @@ pub fn compose_user_reply(
                     strip_jargon(
                         last.message
                             .as_deref()
-                            .unwrap_or("I couldn’t arrange that beside the other window."),
+                            .unwrap_or("I couldn’t place that beside the other window."),
                     )
                 }
             }

@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "provider": "browser",
-  "program": "P14",
+  "program": "P14.5",
   "pipeline": [
     "Conversation",
     "Intent Layer",
@@ -16,65 +16,195 @@
   ],
   "ipc": "execute_capability_intent",
   "userLanguageRules": [
-    "Never expose Provider, Router, or Registry terminology",
+    "Never expose Provider, Router, Registry, Runtime, Kernel, or IPC terminology",
     "Never invent success",
-    "Ask for a URL when missing"
+    "Ask for a URL when missing",
+    "Reject invalid URLs without launching",
+    "Natural Language Robustness — ordinary phrasing must work"
   ],
   "examples": [
     {
       "category": "status",
       "utterance": "Which browsers are available?",
       "expectedKind": "browserStatus",
-      "expectedOperation": "status"
+      "expectedDomain": "browser"
+    },
+    {
+      "category": "status",
+      "utterance": "supported browsers",
+      "expectedKind": "browserStatus",
+      "expectedDomain": "browser"
     },
     {
       "category": "open",
       "utterance": "Open ChatGPT.",
       "expectedKind": "browserOpen",
-      "expectedOperation": "open",
+      "expectedDomain": "browser",
       "expectedUrl": "https://chatgpt.com"
     },
     {
-      "category": "open",
-      "utterance": "Open Google.",
+      "category": "alias",
+      "utterance": "open chat gpt",
       "expectedKind": "browserOpen",
-      "expectedOperation": "open",
-      "expectedUrl": "https://www.google.com"
+      "expectedDomain": "browser",
+      "expectedUrl": "https://chatgpt.com"
     },
     {
-      "category": "open",
-      "utterance": "Open GitHub.",
+      "category": "alias",
+      "utterance": "open chatgpt",
       "expectedKind": "browserOpen",
-      "expectedOperation": "open",
+      "expectedDomain": "browser",
+      "expectedUrl": "https://chatgpt.com"
+    },
+    {
+      "category": "alias",
+      "utterance": "Open Chat GPT",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser",
+      "expectedUrl": "https://chatgpt.com"
+    },
+    {
+      "category": "alias",
+      "utterance": "open git hub",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser",
       "expectedUrl": "https://github.com"
     },
     {
-      "category": "open",
-      "utterance": "Open YouTube.",
+      "category": "alias",
+      "utterance": "open github",
       "expectedKind": "browserOpen",
-      "expectedOperation": "open",
+      "expectedDomain": "browser",
+      "expectedUrl": "https://github.com"
+    },
+    {
+      "category": "alias",
+      "utterance": "open my github",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser",
+      "expectedUrl": "https://github.com"
+    },
+    {
+      "category": "alias",
+      "utterance": "open google",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser",
+      "expectedUrl": "https://www.google.com"
+    },
+    {
+      "category": "alias",
+      "utterance": "open youtube",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser",
       "expectedUrl": "https://www.youtube.com"
+    },
+    {
+      "category": "alias",
+      "utterance": "open my latest chat",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser",
+      "expectedUrl": "https://chatgpt.com"
+    },
+    {
+      "category": "alias",
+      "utterance": "open my recent chat",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser",
+      "expectedUrl": "https://chatgpt.com"
     },
     {
       "category": "open",
       "utterance": "Open https://example.com",
       "expectedKind": "browserOpen",
-      "expectedOperation": "open",
+      "expectedDomain": "browser",
       "expectedUrl": "https://example.com"
     },
     {
-      "category": "compose",
-      "utterance": "Open ChatGPT beside Cursor.",
-      "expectedKind": "browserOpenBeside",
-      "expectedOperation": "open_beside",
-      "expectedUrl": "https://chatgpt.com",
-      "expectedBeside": "Cursor"
+      "category": "open",
+      "utterance": "open example.com",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser",
+      "expectedUrl": "https://example.com"
     },
     {
       "category": "open",
       "utterance": "Open browser.",
       "expectedKind": "browserOpen",
-      "expectedOperation": "open"
+      "expectedDomain": "browser",
+      "expectedUrl": "https://www.google.com"
+    },
+    {
+      "category": "open",
+      "utterance": "open current browser",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser",
+      "expectedUrl": "https://www.google.com"
+    },
+    {
+      "category": "open",
+      "utterance": "open latest browser",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser",
+      "expectedUrl": "https://www.google.com"
+    },
+    {
+      "category": "compose",
+      "utterance": "Open ChatGPT beside Cursor.",
+      "expectedKind": "browserOpenBeside",
+      "expectedDomain": "browser",
+      "expectedUrl": "https://chatgpt.com",
+      "expectedBeside": "Cursor"
+    },
+    {
+      "category": "compose",
+      "utterance": "open chatgpt beside cursor",
+      "expectedKind": "browserOpenBeside",
+      "expectedDomain": "browser",
+      "expectedUrl": "https://chatgpt.com",
+      "expectedBeside": "cursor"
+    },
+    {
+      "category": "focus",
+      "utterance": "Bring Chrome to the front.",
+      "expectedKind": "winFocus",
+      "expectedDomain": "window",
+      "expectedQuery": "Chrome"
+    },
+    {
+      "category": "focus",
+      "utterance": "bring chrome forward",
+      "expectedKind": "winFocus",
+      "expectedDomain": "window"
+    },
+    {
+      "category": "focus",
+      "utterance": "focus chrome",
+      "expectedKind": "winFocus",
+      "expectedDomain": "window"
+    },
+    {
+      "category": "focus",
+      "utterance": "switch to chrome",
+      "expectedKind": "winFocus",
+      "expectedDomain": "window"
+    },
+    {
+      "category": "focus",
+      "utterance": "Chrome",
+      "expectedKind": "winFocus",
+      "expectedDomain": "window"
+    },
+    {
+      "category": "focus",
+      "utterance": "chrome tab",
+      "expectedKind": "winFocus",
+      "expectedDomain": "window"
+    },
+    {
+      "category": "explain",
+      "utterance": "What can you do with browsers?",
+      "expectedKind": "browserExplain",
+      "expectedDomain": null
     }
   ],
   "clarifications": [
@@ -82,14 +212,29 @@
       "utterance": "Open this website.",
       "expectedKind": "unknown",
       "mustMention": "which website"
+    },
+    {
+      "utterance": "open not-a-real-site.zzz",
+      "expectedKind": "unknown",
+      "mustMention": "valid website"
+    },
+    {
+      "utterance": "open http://",
+      "expectedKind": "unknown",
+      "mustMention": "valid website"
+    },
+    {
+      "utterance": "open a.b",
+      "expectedKind": "unknown",
+      "mustMention": "valid website"
     }
   ],
   "ownerReviewChecklist": [
-    "Open ChatGPT / Google / GitHub through Conversation",
-    "Open a raw https URL",
-    "Open ChatGPT beside Cursor (Window composition)",
-    "Ask which browsers are available",
-    "Open this website → clarification",
-    "No provider / runtime jargon in replies"
+    "Aliases: chat gpt / git hub / my github / latest chat",
+    "Invalid URL → truthful refusal, no browser launch",
+    "What can you do with browsers? → conversational explanation (not Guide)",
+    "Bring chrome forward / focus chrome / switch to chrome",
+    "Open ChatGPT beside Cursor",
+    "No provider / runtime / kernel jargon"
   ]
 }

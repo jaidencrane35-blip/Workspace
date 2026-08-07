@@ -44,11 +44,20 @@ A Capability Provider is **not Product Complete** until:
 3. The Product Owner can naturally discover and use it without menus or documentation
 4. Conversation returns truthful success and failure (never invented success)
 5. Users never see Provider / Router / Registry terminology
+6. Natural Language Robustness is satisfied (ordinary phrasing works)
 
 Infrastructure alone is insufficient.  
 Every future provider program must end with **Product Proof** (harness under `docs/capability-runtime/product-proof/` + Owner-usable Conversation path).  
 Completion requires **both** Engineering Completion **and** Product Proof.  
 Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
+## Natural Language Robustness Rule (permanent — P14.5)
+
+A provider is not Product Complete merely because commands execute correctly.  
+Product Complete requires that ordinary users can express the same intent naturally.  
+NL improvements belong only in Intent Layer, Kernel Operator planning/compose, and Conversation replies — **never** inside providers.  
+Intent resolution stays deterministic (no probabilistic AI).  
+Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
 ## Product Gravity Rule (permanent — P12.6)
 

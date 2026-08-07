@@ -3,7 +3,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Status** | Implemented — awaiting Product Owner Product Proof review |
+| **Status** | **Permanently closed** — Product Complete (P14.5) |
 | **Domain** | `browser` |
 | **Adoption** | WRAP `webbrowser` |
 | **Research** | `research/BROWSER_RESEARCH.md` |

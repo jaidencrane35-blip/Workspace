@@ -43,7 +43,7 @@ describe("intent bridge", () => {
       query: "chrome",
     });
     expect(resolveIntent("switch to Chrome")).toMatchObject({
-      kind: "appFocus",
+      kind: "winFocus",
       query: "Chrome",
     });
     expect(resolveIntent("close Spotify")).toMatchObject({
