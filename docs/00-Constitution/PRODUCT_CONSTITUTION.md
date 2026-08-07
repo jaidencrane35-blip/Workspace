@@ -97,6 +97,13 @@ Learning comes from observation under consent and from confirmed user actions �
 
 No onboarding cards, feature tours, or capability quizzes. The user discovers by asking. Workspace adapts to the user; the user does not study a syllabus.
 
+### P11 — User Adaptation Prohibition (permanent — P16.6)
+
+A capability is not Product Complete if the user must adapt their behaviour to accommodate implementation details.  
+Product Complete means Workspace guides successful interaction without hidden timing, workarounds, memorized phrasing, undocumented OS knowledge, or rigid command wording.  
+**The software adapts to the user. The user does not adapt to the software.**  
+Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
 ---
 
 ## 3. Presentation modes (binding intent)

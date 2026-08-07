@@ -1,34 +1,48 @@
 # Engineering Milestone Report
-## P16 Voice Input — status correction for handoff
+## P16.6 Voice Conversation Product Proof Finalization
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16 Voice Input (+ P16.5 naturalness) |
+| **Execution program** | P16.6 Voice Conversation Product Proof Finalization |
 | **Date** | 2026-08-07 |
-| **Latest Voice commits** | `5eb10de` (deliver) · `798a884` (privacy) · `1434aa3` (naturalness) |
 | **Status** | **Engineering Complete** — live Product Owner Product Proof **pending** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Adoption** | WRAP WinRT `SpeechRecognizer` behind `VoicePort` |
+| **Not** | P17 · not a new Capability Provider |
 | **Canonical onboarding** | `docs/project/ENGINEERING_HANDOFF.md` |
+| **Owner brief** | `docs/capability-runtime/product-proof/VOICE_INPUT_PRODUCT_PROOF.md` |
 
 ---
 
-## Repository truth
+## Repository truth (reassessment)
 
 | Item | Result |
 | --- | --- |
-| P16 Voice Input | **Engineering Complete — not permanently closed** |
-| Product Proof | **Pending final Product Owner acceptance** |
+| P10–P15 | Permanently closed |
+| P16 Voice Input | Engineering Complete (P16.5 + P16.6) — **not** permanently closed |
+| Product Proof | Pending final Product Owner acceptance |
 | Kind | Conversation **input device** (not a desktop Capability Provider) |
-| Levels | 1–2 + warm-up / settings guidance / first-word capture |
-| Pipeline | Mic ? VoicePort ? Conversation ? Intent ? Kernel Operator ? Providers |
+| Next after Owner acceptance | P17 File Provider (**blocked** until closure) |
+
+---
+
+## What shipped (P16.6)
+
+1. **User Adaptation Prohibition** — permanent product principle (`PRODUCT_PROOF_RULE.md`, Product Constitution P11, execution protocol).  
+2. **Conversation quality** — varied truthful unsupported guidance; mic-check acknowledgements; near-miss desktop suggestions (`conversationGuidance.ts`).  
+3. **Intent robustness** — polite wrappers, spacing/punctuation tolerance, synonym expansions; deterministic only (no AI).  
+4. **Verifier** — `pnpm verify:conversation-quality` wired into `pnpm test`.
 
 ---
 
 ## Explicit confirmation
 
-- **P16 Engineering Complete:** Yes  
+- **P16 Engineering Complete:** Yes (incl. P16.6)  
 - **P16 Product Complete / permanently closed:** **No — awaiting Owner**  
-- **Capability Independence Rule:** Satisfied for shipped Voice design  
-- **Next planned program after P16 acceptance:** P17 File Provider  
-- **P17 implementation:** Not begun — **blocked** until P16 Owner acceptance  
+- **Does Voice feel like natural desktop interaction?** Engineering judgment: **ready for Owner live review** — Owner decides  
+- **P17 implementation:** Not begun — **blocked**  
+
+---
+
+## Artifact obligation
+
+New verifier: `scripts/verify-conversation-quality.mjs` (`pnpm verify:conversation-quality`).

@@ -55,6 +55,9 @@ const verifiers = {
   "verify:operator-intelligence": "scripts/verify-operator-intelligence.mjs",
   "verify:notifications-provider": "scripts/verify-notifications-provider.mjs",
   "verify:browser-provider": "scripts/verify-browser-provider.mjs",
+  "verify:screenshot-provider": "scripts/verify-screenshot-provider.mjs",
+  "verify:voice-input": "scripts/verify-voice-input.mjs",
+  "verify:conversation-quality": "scripts/verify-conversation-quality.mjs",
 };
 
 const verifierStatus = {};
@@ -453,7 +456,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16 Engineering Complete (incl. P16.5 naturalness). Live Product Owner Product Proof still pending final acceptance. Do not mark permanently closed. Do not begin P17.",
+    note: "P16 Engineering Complete (P16.5 naturalness + P16.6 conversation quality). User Adaptation Prohibition permanent. Live Product Owner Product Proof still pending final acceptance. Do not mark permanently closed. Do not begin P17.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -486,6 +489,7 @@ const health = {
     p12_5: "accepted_do_not_reopen",
     providerAcceptanceStandard: "permanent",
     capabilityIndependenceRule: "permanent",
+    userAdaptationProhibition: "permanent",
     notes: [
       "UI Architecture Spec accepted/frozen (P8)",
       "Capability Runtime research accepted (P9)",
@@ -496,7 +500,8 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16 Voice Input Engineering Complete — Product Proof pending Owner acceptance (NOT permanently closed)",
+      "P16 Voice Input Engineering Complete (incl. P16.6 conversation quality) — Product Proof pending Owner acceptance (NOT permanently closed)",
+      "User Adaptation Prohibition permanent (P16.6)",
       "Natural Language Robustness Rule permanent",
       "Provider Acceptance Standard permanent",
       "Capability Independence Rule permanent (P15)",
@@ -505,8 +510,8 @@ const health = {
     ],
   },
   currentMilestone: {
-    id: "voice-input-p16",
-    title: "P16 Voice Input",
+    id: "voice-conversation-product-proof-p16-6",
+    title: "P16.6 Voice Conversation Product Proof Finalization",
     status: "engineering_complete_product_proof_pending",
     commit: milestoneCommit,
   },
@@ -608,7 +613,7 @@ const health = {
       id: "p16-voice-product-proof",
       track: "B",
       summary:
-        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (Engineering Complete; not permanently closed)",
+        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (Engineering Complete incl. P16.6 conversation quality; not permanently closed)",
     },
     {
       id: "capability-providers-p17-plus",
@@ -649,7 +654,8 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16 Voice Input Engineering Complete — Product Proof pending Owner acceptance",
+      "P16 Voice Input Engineering Complete (P16.6 conversation quality) — Product Proof pending Owner acceptance",
+      "User Adaptation Prohibition permanent",
       "Capability Independence Rule permanent",
       "Natural Language Robustness Rule permanent",
       "Non-PP domain.ts remains manual (G1 remainder)",
@@ -718,8 +724,9 @@ const health = {
   },
   lastMilestone: {
     date: "2026-08-07",
-    document: "docs/project/ENGINEERING_HANDOFF.md",
-    title: "Repository handoff — P16 Engineering Complete, Product Proof pending",
+    document: "docs/engineering-milestone-report.md",
+    title:
+      "P16.6 Voice Conversation Product Proof Finalization — awaiting Owner acceptance",
     reviewBrief: "docs/capability-runtime/product-proof/VOICE_INPUT_PRODUCT_PROOF.md",
   },
   handoffStatus: "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",

@@ -17,6 +17,12 @@ import {
   undoLastStatusChange,
   appendProposal,
 } from "./capabilityEvolution";
+import {
+  isVoiceCheckUtterance,
+  resolveUnknownGuidance,
+  softenUtterance,
+  voiceCheckReply,
+} from "./conversationGuidance";
 import type { PilotPrimaryView } from "./pilotChrome";
 
 export type IntentAction =
@@ -102,7 +108,17 @@ function normalize(input: string): string {
     .trim()
     .toLowerCase()
     .replace(/[.!?]+$/g, "")
+    .replace(/,/g, " ")
     .replace(/\s+/g, " ");
+}
+
+/** Match against original or politeness-softened wording (deterministic). */
+function matchFirst(
+  raw: string,
+  softRaw: string,
+  pattern: RegExp,
+): RegExpMatchArray | null {
+  return raw.trim().match(pattern) ?? softRaw.trim().match(pattern);
 }
 
 function stripTrailingPunctuation(value: string): string {
@@ -355,10 +371,12 @@ function resolveScreenshotIntent(raw: string, text: string): IntentAction | null
   }
 
   if (
-    /^(take a screenshot|take screenshot|screenshot|capture my desktop|capture the desktop|capture my screen|capture the screen|capture screen|screen capture)$/i.test(
+    /^(take a screenshot|take screenshot|screenshot|grab a screenshot|snap a screenshot|capture my desktop|capture the desktop|capture my screen|capture the screen|capture screen|screen capture)$/i.test(
       text,
     ) ||
-    /\b(take a screenshot|capture my (desktop|screen))\b/.test(text)
+    /\b(take a screenshot|grab a screenshot|snap a screenshot|capture my (desktop|screen))\b/.test(
+      text,
+    )
   ) {
     if (andCopy) {
       return {
@@ -829,12 +847,14 @@ function resolveWindowIntent(raw: string, text: string): IntentAction | null {
   const utterance = stripTrailingPunctuation(raw);
 
   if (
-    /\b(what windows are open|which windows are open|show( me)?( my)?( open)? windows|list( (all|my|open))? windows|open windows|what('?s| is) open on (my |the )?desktop)\b/.test(
+    /\b(what windows are open|which windows are open|what windows do i have|show( me)?( my)?( open)? windows|list( (all|my|open))? windows|open windows|what('?s| is) open on (my |the )?desktop|what('?s| is) on (my |the )?screen)\b/.test(
       text,
     ) ||
     text === "windows" ||
     text === "what windows" ||
-    text === "show windows"
+    text === "show windows" ||
+    text === "show me what's open" ||
+    text === "show me whats open"
   ) {
     return {
       kind: "winEnumerate",
@@ -995,7 +1015,7 @@ function resolveWindowIntent(raw: string, text: string): IntentAction | null {
 
   const focusFront =
     utterance.match(
-      /^(?:bring)\s+(.+?)\s+(?:to\s+(?:the\s+)?front|forward)$/i,
+      /^(?:bring|put)\s+(.+?)\s+(?:to\s+(?:the\s+)?front|forward|in\s+front)$/i,
     ) ??
     utterance.match(/^(?:focus(?:\s+window)?|activate)\s+(.+)$/i) ??
     utterance.match(/^(?:show)\s+(?!me\b)(.+)$/i) ??
@@ -1081,6 +1101,14 @@ export function resolveIntent(raw: string): IntentAction {
     };
   }
 
+  const softText = softenUtterance(text);
+  const softRaw = softenUtterance(raw.trim());
+  const matchText = softText || text;
+
+  if (isVoiceCheckUtterance(text) || isVoiceCheckUtterance(matchText)) {
+    return voiceCheckReply(raw);
+  }
+
   if (
     /^(hi|hello|hey)\b/.test(text) ||
     text === "hi" ||
@@ -1089,6 +1117,8 @@ export function resolveIntent(raw: string): IntentAction {
     return {
       kind: "unknown",
       reply: "Here when you need the desktop.",
+      suggestion:
+        'Try “open ChatGPT”, “take a screenshot”, or “what windows are open?”.',
     };
   }
 
@@ -1146,22 +1176,39 @@ export function resolveIntent(raw: string): IntentAction {
   }
 
   // Window operations before evolution (evolution also matches move/resize/show).
-  const windowIntent = resolveWindowIntent(raw, text);
+  // Softened wording covers “please / could you …” without rigid command memorization.
+  const windowIntent =
+    resolveWindowIntent(raw, text) ??
+    (matchText !== text
+      ? resolveWindowIntent(softRaw, matchText)
+      : null);
   if (windowIntent) {
     return windowIntent;
   }
 
-  const notificationIntent = resolveNotificationIntent(raw, text);
+  const notificationIntent =
+    resolveNotificationIntent(raw, text) ??
+    (matchText !== text
+      ? resolveNotificationIntent(softRaw, matchText)
+      : null);
   if (notificationIntent) {
     return notificationIntent;
   }
 
-  const browserIntent = resolveBrowserIntent(raw, text);
+  const browserIntent =
+    resolveBrowserIntent(raw, text) ??
+    (matchText !== text
+      ? resolveBrowserIntent(softRaw, matchText)
+      : null);
   if (browserIntent) {
     return browserIntent;
   }
 
-  const screenshotIntent = resolveScreenshotIntent(raw, text);
+  const screenshotIntent =
+    resolveScreenshotIntent(raw, text) ??
+    (matchText !== text
+      ? resolveScreenshotIntent(softRaw, matchText)
+      : null);
   if (screenshotIntent) {
     return screenshotIntent;
   }
@@ -1302,7 +1349,15 @@ export function resolveIntent(raw: string): IntentAction {
   }
 
   if (
-    /\b(guide|help|how (does|do)|what (do you|can you)|limits?|trust)\b/.test(
+    text === "guide" ||
+    text === "help" ||
+    text === "open guide" ||
+    text === "show guide" ||
+    text === "show me the guide" ||
+    /\b(open (the )?guide|show (me )?(the )?guide|trust limits?|what are (your|the) limits)\b/.test(
+      text,
+    ) ||
+    /^(how does workspace work|what can you (do|help with)|what do you (do|help with))$/i.test(
       text,
     )
   ) {
@@ -1321,11 +1376,11 @@ export function resolveIntent(raw: string): IntentAction {
     };
   }
 
-  const clipboardWrite = raw
-    .trim()
-    .match(
-      /^(?:copy(?:\s+to\s+clipboard)?|clipboard\s+write|put\s+on\s+clipboard)\s*[:\s]+(.+)$/i,
-    );
+  const clipboardWrite = matchFirst(
+    raw,
+    softRaw,
+    /^(?:copy(?:\s+to\s+clipboard)?|clipboard\s+write|put\s+on\s+clipboard)\s*[:\s]+(.+)$/i,
+  );
   if (clipboardWrite?.[1]) {
     const payload = clipboardWrite[1].trim();
     if (payload.length > 0) {
@@ -1339,9 +1394,9 @@ export function resolveIntent(raw: string): IntentAction {
 
   if (
     /\b(what'?s on my clipboard|read clipboard|show clipboard|clipboard)\b/.test(
-      text,
+      matchText,
     ) ||
-    text === "clipboard?"
+    matchText === "clipboard?"
   ) {
     return {
       kind: "clipboardRead",
@@ -1351,7 +1406,7 @@ export function resolveIntent(raw: string): IntentAction {
 
   if (
     /\b(list (running )?apps?|list applications|what('?s| is) running|running applications)\b/.test(
-      text,
+      matchText,
     )
   ) {
     return {
@@ -1360,9 +1415,11 @@ export function resolveIntent(raw: string): IntentAction {
     };
   }
 
-  const appClose = raw
-    .trim()
-    .match(/^(?:close|quit|exit)\s+(.+)$/i);
+  const appClose = matchFirst(
+    raw,
+    softRaw,
+    /^(?:close|quit|exit)\s+(.+)$/i,
+  );
   if (appClose?.[1]) {
     const query = stripTrailingPunctuation(appClose[1]);
     if (query && !/^(workspace|conversation)$/i.test(query)) {
@@ -1374,9 +1431,11 @@ export function resolveIntent(raw: string): IntentAction {
     }
   }
 
-  const appFocus = raw
-    .trim()
-    .match(/^(?:switch\s+to|bring\s+up)\s+(.+)$/i);
+  const appFocus = matchFirst(
+    raw,
+    softRaw,
+    /^(?:switch\s+to|bring\s+up)\s+(.+)$/i,
+  );
   if (appFocus?.[1]) {
     const query = stripTrailingPunctuation(appFocus[1]);
     if (query) {
@@ -1388,9 +1447,11 @@ export function resolveIntent(raw: string): IntentAction {
     }
   }
 
-  const appLaunchExplicit = raw
-    .trim()
-    .match(/^(?:launch|start)\s+(.+)$/i);
+  const appLaunchExplicit = matchFirst(
+    raw,
+    softRaw,
+    /^(?:launch|start)\s+(.+)$/i,
+  );
   if (appLaunchExplicit?.[1]) {
     const query = stripTrailingPunctuation(appLaunchExplicit[1]);
     if (query) {
@@ -1402,7 +1463,7 @@ export function resolveIntent(raw: string): IntentAction {
     }
   }
 
-  const appOpen = raw.trim().match(/^open\s+(.+)$/i);
+  const appOpen = matchFirst(raw, softRaw, /^open\s+(.+)$/i);
   if (appOpen?.[1]) {
     const query = stripTrailingPunctuation(appOpen[1]);
     if (query && !/^(workspace|conversation)$/i.test(query)) {
@@ -1414,13 +1475,7 @@ export function resolveIntent(raw: string): IntentAction {
     }
   }
 
-  return {
-    kind: "unknown",
-    reply:
-      "I don’t have that yet — and I won’t invent it. Closest available: window control, open/launch apps, Save, Continue, Moments, Check-in, or Guide.",
-    suggestion:
-      "Try “what windows are open?”, “show me a notification”, “open notepad”, or “save this”.",
-  };
+  return resolveUnknownGuidance(matchText);
 }
 
 /** Progressive reveal for reply text (not model streaming). */

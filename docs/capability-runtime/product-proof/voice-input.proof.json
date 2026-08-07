@@ -111,8 +111,39 @@
       "utterance": "Copy this screenshot.",
       "expectedKind": "screenshotCopy",
       "expectedDomain": "screenshots"
+    },
+    {
+      "category": "typed_equivalence",
+      "utterance": "Open my browser.",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser"
+    },
+    {
+      "category": "typed_equivalence",
+      "utterance": "Could you take a screenshot?",
+      "expectedKind": "screenshotDesktop",
+      "expectedDomain": "screenshots",
+      "note": "Polite ordinary phrasing — User Adaptation Prohibition"
+    },
+    {
+      "category": "conversation_quality",
+      "utterance": "Testing testing 123",
+      "expectedKind": "unknown",
+      "note": "Mic check — acknowledge hearing; not mechanical fallback"
+    },
+    {
+      "category": "conversation_quality",
+      "utterance": "What windows are open?",
+      "expectedKind": "winEnumerate",
+      "expectedDomain": "window"
     }
   ],
+  "conversationQuality": {
+    "program": "P16.6",
+    "userAdaptationProhibition": true,
+    "variedUnsupportedGuidance": true,
+    "voiceCheckAcknowledgement": true
+  },
   "uiRequirements": [
     "op-shell__mic",
     "VoiceMicButton",

@@ -1,10 +1,11 @@
 # Rolling Capability Provider Roadmap
-## Updated for repository handoff (P16 Product Proof pending)
+## Updated for P16.6 (conversation Product Proof pending Owner)
 
 UI Architecture, Desktop Operator, Conversation, and Capability Runtime pipeline remain **frozen**.  
 Providers own **operations**. Providers never call each other.  
 Voice Input is a Conversation **input device** (not a desktop provider domain).  
 Every provider / input capability requires the **Permanent Provider Acceptance Standard**.  
+**User Adaptation Prohibition** is permanent (P16.6).  
 Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).  
 **Capability Independence Rule** is permanent.
 
@@ -30,7 +31,7 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 
 | Program | Title | Status |
 | --- | --- | --- |
-| **P16** | Voice Input | **Engineering Complete** — live Product Owner Product Proof **pending final acceptance**. **Not permanently closed.** |
+| **P16** | Voice Input | **Engineering Complete** (P16.5 naturalness + **P16.6** conversation quality). Live Product Owner Product Proof **pending final acceptance**. **Not permanently closed.** |
 
 ---
 
@@ -51,8 +52,9 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 1. Frozen pipeline.  
 2. Providers own operations; no provider-to-provider calls.  
 3. Product Proof + Natural Language Robustness.  
-4. Provider Acceptance Standard (full sequence).  
-5. Capability Independence Rule.  
-6. P12–P15 — do not reopen except bugfixes. P16 — do not reopen design; finish Owner Product Proof only.  
-7. One program → Owner review → permanent closure → next.  
-8. **Do not begin P17 until P16 is permanently closed.**  
+4. **User Adaptation Prohibition** — software adapts to the user.  
+5. Provider Acceptance Standard (full sequence).  
+6. Capability Independence Rule.  
+7. P12–P15 — do not reopen except bugfixes. P16 — finish Owner Product Proof only.  
+8. One program → Owner review → permanent closure → next.  
+9. **Do not begin P17 until P16 is permanently closed.**  

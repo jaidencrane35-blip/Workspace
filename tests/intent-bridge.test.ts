@@ -13,10 +13,17 @@ describe("intent bridge", () => {
     expect(resolveIntent("collapse").kind).toBe("collapse");
   });
 
-  it("refuses unknown desktop claims honestly", () => {
+  it("refuses unknown desktop claims honestly without mechanical churn", () => {
     const unknown = resolveIntent("teleport my windows to Mars");
     expect(unknown.kind).toBe("unknown");
-    expect(unknown.reply.toLowerCase()).toMatch(/don.t have that yet/);
+    expect(unknown.reply.toLowerCase()).toMatch(/window|can.?t|won.?t invent/);
+    expect(unknown.suggestion).toBeTruthy();
+    expect(unknown.suggestion?.toLowerCase()).toMatch(
+      /what windows are open|bring chrome|snap/,
+    );
+    expect(unknown.reply.toLowerCase()).not.toMatch(
+      /provider|runtime|winrt|kernel|don.?t have that yet/,
+    );
   });
 
   it("opens repository health as a secondary surface", () => {

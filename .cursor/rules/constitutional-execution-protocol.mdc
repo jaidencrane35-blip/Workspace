@@ -59,6 +59,13 @@ NL improvements belong only in Intent Layer, Kernel Operator planning/compose, a
 Intent resolution stays deterministic (no probabilistic AI).  
 Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
+## User Adaptation Prohibition (permanent — P16.6)
+
+A capability is not Product Complete if the user must adapt their behaviour to accommodate implementation details.  
+Product Complete means the software naturally guides successful interaction — no hidden timing, workarounds, memorized phrasing, undocumented OS knowledge, or rigid command wording.  
+**The software adapts to the user. The user does not adapt to the software.**  
+Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
 ## Permanent Provider Acceptance Standard (permanent — P14.5 Finalization)
 
 Every provider from **P15 onward** must complete this sequence before permanent acceptance:

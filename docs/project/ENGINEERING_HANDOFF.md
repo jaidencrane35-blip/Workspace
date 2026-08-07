@@ -7,6 +7,7 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
+| **Latest program** | P16.6 Voice Conversation Product Proof Finalization (awaiting Owner) |
 | **Rule** | Ignore prior chat history. Reassess repository truth before any implementation. |
 
 **Start here before any execution program.**
@@ -62,6 +63,7 @@ Conversation
 | Machine state | `docs/project-health.json` (synced to `app/public/project-health.json`) |
 | Product Gravity | `docs/ui/PRODUCT_GRAVITY_RULE.md` |
 | Product Proof | `docs/capability-runtime/PRODUCT_PROOF_RULE.md` |
+| User Adaptation Prohibition | Permanent (P16.6) — same Product Proof authority |
 | Provider Acceptance Standard | `docs/capability-runtime/PROVIDER_ACCEPTANCE_STANDARD.md` |
 | Capability Independence Rule | Recorded in Provider Acceptance Standard + protocol |
 | UI Architecture | Accepted / frozen (P8) |
@@ -100,7 +102,7 @@ One execution program
 
 Authoritative rolling list: `docs/capability-runtime/FIVE_PROGRAM_ROADMAP.md`.
 
-| Now | P16 Voice Input — Engineering Complete; Product Proof pending Owner |
+| Now | P16 Voice Input — Engineering Complete (P16.5 + **P16.6** conversation quality); Product Proof pending Owner |
 | Next (after P16 acceptance) | **P17 File Provider** |
 | Then | P18 Terminal · P19 Memory · P20 Automation · P21 Workspace Intelligence |
 
@@ -136,7 +138,7 @@ Do not reopen except bugfixes:
 | Notifications | Closed (P13) | |
 | Browser | Closed (P14) | |
 | Screenshots | Closed (P15) | |
-| **Voice Input** | **Engineering Complete** | Conversation input device — **not** a Runtime desktop provider; **Product Proof pending Owner** |
+| **Voice Input** | **Engineering Complete** (P16.6) | Conversation input device — **not** a Runtime desktop provider; **Product Proof pending Owner** |
 | File | Not started | **P17** (blocked) |
 | Terminal / Memory / Automation | Roadmap | P18+ |
 
@@ -159,7 +161,7 @@ Catalogue: `docs/capability-runtime/CAPABILITY_DOMAIN_CATALOGUE.md`.
 
 - Foundation frozen at P10.
 - Runtime hosts providers; Intent enters via Kernel Operator.
-- Verifiers: `pnpm verify:capability-runtime-foundation`, provider-specific `pnpm verify:*-provider`, `pnpm verify:voice-input`, `pnpm verify:product-proof-harness`.
+- Verifiers: `pnpm verify:capability-runtime-foundation`, provider-specific `pnpm verify:*-provider`, `pnpm verify:voice-input`, `pnpm verify:conversation-quality`, `pnpm verify:product-proof-harness`.
 - Index: `docs/capability-runtime/00_INDEX.md`.
 
 ---
@@ -174,6 +176,8 @@ Do not redesign without a new constitutional program:
 4. Provider non-orchestration (no provider-to-provider calls)  
 5. Voice as input device (never owns desktop orchestration)  
 6. Capability Independence Rule  
+7. User Adaptation Prohibition  
+
 
 ---
 
@@ -195,10 +199,10 @@ Do not redesign without a new constitutional program:
 | Item | Status |
 | --- | --- |
 | **P16 Voice Input — live Owner Product Proof** | **PENDING FINAL ACCEPTANCE** |
-| Harness / verifiers for Voice | Green (engineering) — do not treat as Owner acceptance |
+| Harness / verifiers for Voice + conversation quality | Green (engineering) — do not treat as Owner acceptance |
 | P10–P15 Product Proof | Accepted / closed |
 
-Voice engineering remediations already shipped (privacy messaging, warm engine, first-word capture) do **not** equal permanent closure.
+Voice remediations (privacy, warm engine, first-word capture) and P16.6 conversation quality do **not** equal permanent closure.
 
 ---
 
@@ -210,9 +214,9 @@ Voice engineering remediations already shipped (privacy messaging, warm engine, 
 
 ## 15. Latest commit
 
-| Tip | Use `git log -1 --oneline` on `v2-dev` (handoff series: `f2835a0` → health stamps) |
+| Tip | Use `git log -1 --oneline` on `v2-dev` after P16.6 push |
 | --- | --- |
-| Voice engineering | `1434aa3` (P16.5 naturalness) · `798a884` (privacy) · `5eb10de` (P16 deliver) |
+| Prior Voice engineering | `1434aa3` (P16.5) · `798a884` (privacy) · `5eb10de` (P16 deliver) |
 
 ---
 
@@ -260,10 +264,11 @@ pnpm build
 pnpm test
 cargo check -p workspace-app
 pnpm verify:voice-input
+pnpm verify:conversation-quality
 pnpm verify:project-health
 pnpm --filter @workspace/app exec tauri dev   # Windows Product Proof launch
 ```
 
 ---
 
-**STOP condition for this handoff:** documentation and health alignment only. No P17. No feature implementation from this document alone.
+**STOP condition for this handoff:** await Product Owner P16 acceptance. No P17. No further feature implementation from this document alone.
