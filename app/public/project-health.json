@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T10:01:34.779Z",
+  "updatedAt": "2026-08-07T10:01:53.574Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -440,7 +440,7 @@
     "id": "semantic-intent-engine-p16-31",
     "title": "P16.31 Semantic Intent Engine & Desktop Operator Completion",
     "status": "engineering_complete_product_proof_pending",
-    "commit": "00f162f"
+    "commit": "fc77ed9"
   },
   "acceptedReviews": [
     {
