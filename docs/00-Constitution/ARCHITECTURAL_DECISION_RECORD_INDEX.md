@@ -26,6 +26,8 @@ This is an **index of settled decisions**, not a redesign surface. Individual ra
 | P16.PI2 Gate C Single-Instance | Active (complete) | Production | `P16_PI2_GATE_C_SINGLE_INSTANCE.md` | Assuming updater is next; dual Workspace processes |
 | Production Dependency Authority | Active | Production | `PRODUCTION_DEPENDENCY_AUTHORITY.md`; dependency JSON | Ad-hoc gate order; Eng Complete = Release Ready |
 | P16.PI3 Gate B1 Diagnostics | Active (complete) | Production | `P16_PI3_GATE_B1_DIAGNOSTICS.md` | Updater before signing; bundling Moments DB in support export |
+| Production Gate Specification | Active | Production | `PRODUCTION_GATE_SPECIFICATION.md`; catalog v2 | Implementing gates without schema; CI green = Production Ready |
+| P16.PI4 Normalize-only | Active (complete) | Production | `P16_PI4_PRODUCTION_GATE_SPECIFICATION.md` | Implementing A1 in PI4; inventing further meta-frameworks |
 | Product Gravity | Active (principle) | Constitution | Spec §9; `docs/ui/PRODUCT_GRAVITY_RULE.md` | Catalogue / launcher-first product identity |
 | Capability Integration Standard | Active | Constitution | Spec §15 | Provider-specific bespoke architectures |
 | Kernel Operator sole Effect composition | Active | Architecture Standard under Spec | `KERNEL_AUTHORITY_RULE.md`; Operations Audit | Conversation→provider IPC; provider→provider |

@@ -7,8 +7,10 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.PI3 — Dependency Authority + Gate B1 diagnostics; await Owner before next gate |
+| **Latest program** | P16.PI4 — Gate Specification + catalog normalize; **no gate implemented**; await Owner before A1 |
+| **Production gate schema** | `docs/production/PRODUCTION_GATE_SPECIFICATION.md` |
 | **Production dependency authority** | `docs/production/PRODUCTION_DEPENDENCY_AUTHORITY.md` |
+| **Production gate catalog** | `docs/production/PRODUCTION_GATE_CATALOG.md` |
 | **Production gates** | `docs/production/PRODUCTION_GATES.md` |
 | **Production readiness** | `docs/production/PR1_PRODUCTION_READINESS_PROGRAM.md` · `docs/production/production-readiness.json` |
 | **Installer** | `docs/production/INSTALLER.md` · `docs/production/P16_PI1_SLICE1_INSTALLER_FOUNDATION.md` |

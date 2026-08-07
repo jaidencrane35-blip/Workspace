@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T15:29:24.619Z",
+  "updatedAt": "2026-08-07T15:36:06.019Z",
   "constitution": {
     "document": "docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md",
     "version": "2.1",
@@ -17,7 +17,7 @@
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "note": "P16.PI3: Production Dependency Authority canonical. B1 diagnostics/support bundle closed. Next Ready Now=A1 checksums. Signing external-blocked; updater blocked by signing. Eng Complete ≠ Production Ready ≠ Release Ready. Owner PP pending. P17 blocked."
+    "note": "P16.PI4: Canonical Production Gate Spec + Operational Acceptance. All units schema-normalized. No gate implemented (A1 not started). Order unchanged. No further meta-frameworks. Owner PP pending. P17 blocked."
   },
   "completedExecutionPrograms": [
     {
@@ -811,13 +811,19 @@
         "script": "scripts/verify-production-dependency-authority.mjs",
         "present": true,
         "wiredInTest": true
+      },
+      "verify:production-gate-specification": {
+        "script": "scripts/verify-production-gate-specification.mjs",
+        "present": true,
+        "wiredInTest": true
       }
     },
     "generators": {
       "sync:explanation-catalog": true,
       "sync:ipc-tiers": true,
       "sync:contracts": true,
-      "sync:project-health": true
+      "sync:project-health": true,
+      "sync:production-gate-catalog": true
     }
   },
   "validation": {

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Verify Production Dependency Authority artifacts are coherent. */
+/** Verify Production Dependency Authority sequencing remains coherent. */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,7 +37,7 @@ for (const phrase of [
   "Production Ready",
   "Release Ready",
   "canonical execution order",
-  "B1 — Diagnostics",
+  "PRODUCTION_GATE_SPECIFICATION.md",
 ]) {
   if (!auth.includes(phrase)) fail(`authority missing phrase: ${phrase}`);
 }
@@ -58,38 +58,16 @@ const byId = new Map((dep.units ?? []).map((u) => [u.id, u]));
 const expectedNext = dep.canonicalOrder.find((id) => {
   const unit = byId.get(id);
   if (!unit) return false;
-  if (completed.has(id) || unit.class === "Complete") return false;
-  return unit.class === "ReadyNow";
+  if (completed.has(id) || unit.productionClassification === "Complete") {
+    return false;
+  }
+  return unit.productionClassification === "ReadyNow";
 });
-if (!expectedNext) {
-  fail("no ReadyNow unit left in canonical order");
-}
+if (!expectedNext) fail("no ReadyNow unit left in canonical order");
 if (dep.nextReadyNow !== expectedNext) {
   fail(
     `nextReadyNow is ${dep.nextReadyNow}, expected first incomplete ReadyNow: ${expectedNext}`,
   );
-}
-
-const classes = new Set(dep.units.map((u) => u.class));
-for (const required of [
-  "ReadyNow",
-  "BlockedExternal",
-  "BlockedByGate",
-  "OptionalPolish",
-  "ReleaseOnly",
-  "Complete",
-]) {
-  if (!classes.has(required)) fail(`dependency json missing class ${required}`);
-}
-
-for (const level of [
-  "EngineeringComplete",
-  "ProductionReady",
-  "ReleaseReady",
-]) {
-  if (!dep.readinessLevels?.includes(level)) {
-    fail(`readinessLevels missing ${level}`);
-  }
 }
 
 console.log(

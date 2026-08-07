@@ -77,6 +77,8 @@ const verifiers = {
   "verify:support-bundle": "scripts/verify-support-bundle.mjs",
   "verify:production-dependency-authority":
     "scripts/verify-production-dependency-authority.mjs",
+  "verify:production-gate-specification":
+    "scripts/verify-production-gate-specification.mjs",
 };
 
 const verifierStatus = {};
@@ -95,6 +97,9 @@ const generators = {
   "sync:ipc-tiers": fileExists("scripts/sync-ipc-tiers.mjs"),
   "sync:contracts": fileExists("scripts/sync-product-contracts.mjs"),
   "sync:project-health": fileExists("scripts/sync-project-health.mjs"),
+  "sync:production-gate-catalog": fileExists(
+    "scripts/sync-production-gate-catalog.mjs",
+  ),
 };
 
 const completedPrograms = [
@@ -490,7 +495,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16.PI3: Production Dependency Authority canonical. B1 diagnostics/support bundle closed. Next Ready Now=A1 checksums. Signing external-blocked; updater blocked by signing. Eng Complete ≠ Production Ready ≠ Release Ready. Owner PP pending. P17 blocked.",
+    note: "P16.PI4: Canonical Production Gate Spec + Operational Acceptance. All units schema-normalized. No gate implemented (A1 not started). Order unchanged. No further meta-frameworks. Owner PP pending. P17 blocked.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,

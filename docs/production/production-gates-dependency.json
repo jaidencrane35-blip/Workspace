@@ -1,9 +1,36 @@
 {
   "id": "workspace-production-gates-dependency",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "authority": "docs/production/PRODUCTION_DEPENDENCY_AUTHORITY.md",
+  "gateSpecification": "docs/production/PRODUCTION_GATE_SPECIFICATION.md",
+  "catalog": "docs/production/PRODUCTION_GATE_CATALOG.md",
   "updated": "2026-08-07",
-  "readinessLevels": ["EngineeringComplete", "ProductionReady", "ReleaseReady"],
+  "schemaVersion": 2,
+  "requiredFields": [
+    "id",
+    "gate",
+    "purpose",
+    "userValue",
+    "engineeringValue",
+    "constitutionalJustification",
+    "productionClassification",
+    "prerequisites",
+    "dependents",
+    "blockingConditions",
+    "entryCriteria",
+    "exitCriteria",
+    "verification",
+    "productionReadinessDelta",
+    "regressionRisks",
+    "rollbackStrategy",
+    "successMetrics",
+    "operationalAcceptance"
+  ],
+  "readinessLevels": [
+    "EngineeringComplete",
+    "ProductionReady",
+    "ReleaseReady"
+  ],
   "current": {
     "engineeringComplete": "partial",
     "productionReady": false,
@@ -29,121 +56,679 @@
     "E2-polish",
     "A3-install-rollback"
   ],
+  "nextReadyNow": "A1-artifact-checksums",
   "units": [
     {
       "id": "A0-installer-foundation",
       "gate": "A",
-      "class": "Complete",
+      "productionClassification": "Complete",
+      "purpose": "Provide a professional NSIS install/upgrade/uninstall path for Workspace on Windows.",
+      "userValue": "A user can install, upgrade, repair, and remove Workspace without engineering assistance.",
+      "engineeringValue": "Reproducible installer package, hooks, and install-manifest version detection.",
+      "constitutionalJustification": "Production layer; Presentation/install surface only — no new Information Owner.",
       "prerequisites": [],
-      "dependents": ["A1-artifact-checksums", "A2-code-signing"]
+      "dependents": [
+        "A1-artifact-checksums",
+        "A2-code-signing"
+      ],
+      "blockingConditions": [],
+      "entryCriteria": [
+        "PR1 accepted",
+        "Tauri 2 bundle available"
+      ],
+      "exitCriteria": [
+        "NSIS config",
+        "hooks.nsh",
+        "INSTALLER.md",
+        "verify:installer-foundation",
+        "setup.exe buildable"
+      ],
+      "verification": [
+        "pnpm verify:installer-foundation",
+        "pnpm installer:build"
+      ],
+      "productionReadinessDelta": "Engineering Complete for install foundation; not Release Ready (unsigned).",
+      "regressionRisks": [
+        "Broken hooks block upgrade",
+        "Silent uninstall data policy surprises"
+      ],
+      "rollbackStrategy": "Revert tauri.conf/hooks; ship prior setup.exe.",
+      "successMetrics": [
+        "setup.exe produced",
+        "verifier green"
+      ],
+      "operationalAcceptance": [
+        "A user can run the installer without developer instructions",
+        "A user can uninstall cleanly or knowingly keep data",
+        "A user can reinstall/upgrade over an existing install"
+      ]
     },
     {
       "id": "C0-single-instance",
       "gate": "C",
-      "class": "Complete",
+      "productionClassification": "Complete",
+      "purpose": "Ensure one Workspace process owns local state at a time.",
+      "userValue": "Opening Workspace twice no longer risks corrupted Moments/DB behaviour.",
+      "engineeringValue": "Process-level Singular Truth before kernel init.",
+      "constitutionalJustification": "Singular Truth / Conservation at process boundary; Runtime only.",
       "prerequisites": [],
-      "dependents": ["E1-tray-lifecycle", "C1-config-db-ux"]
+      "dependents": [
+        "E1-tray-lifecycle",
+        "C1-config-db-ux"
+      ],
+      "blockingConditions": [],
+      "entryCriteria": [
+        "Installer foundation usable or tauri dev"
+      ],
+      "exitCriteria": [
+        "Plugin first",
+        "secondary launch focuses main",
+        "verify:single-instance"
+      ],
+      "verification": [
+        "pnpm verify:single-instance",
+        "cargo check -p workspace-app"
+      ],
+      "productionReadinessDelta": "Engineering Complete + Production Ready for process integrity.",
+      "regressionRisks": [
+        "Plugin order wrong allows dual kernel",
+        "Focus fails on odd window state"
+      ],
+      "rollbackStrategy": "Remove plugin registration; accept dual-instance risk temporarily.",
+      "successMetrics": [
+        "Second launch focuses existing window",
+        "No second kernel init"
+      ],
+      "operationalAcceptance": [
+        "A user can relaunch Workspace and return to the existing session",
+        "A user can avoid two competing Workspace windows editing the same data"
+      ]
     },
     {
       "id": "B1-diagnostics-support-bundle",
       "gate": "B",
-      "class": "Complete",
+      "productionClassification": "Complete",
+      "purpose": "Let operators produce privacy-preserving local diagnostics without a developer present.",
+      "userValue": "A user can export logs/version info for support when something fails.",
+      "engineeringValue": "File logs, rotation, export_support_bundle IPC, Conversation path.",
+      "constitutionalJustification": "Observability + Evidence; privacy — no Moments DB contents; no telemetry.",
       "prerequisites": [],
-      "dependents": ["B3-crash-local"],
-      "exitCriteria": ["file-logs", "log-rotation", "support-export", "conversation-path", "verifier"]
+      "dependents": [
+        "B3-crash-local"
+      ],
+      "blockingConditions": [],
+      "entryCriteria": [
+        "Dependency Authority lists B1 Ready Now"
+      ],
+      "exitCriteria": [
+        "file_log rotation",
+        "export_support_bundle",
+        "NL path",
+        "verify:support-bundle"
+      ],
+      "verification": [
+        "pnpm verify:support-bundle",
+        "pnpm verify:production-dependency-authority"
+      ],
+      "productionReadinessDelta": "Engineering Complete for support export; Production Ready pending Owner Operational Acceptance.",
+      "regressionRisks": [
+        "Log volume disk growth",
+        "Accidental PII in logs"
+      ],
+      "rollbackStrategy": "Disable file logger attach; remove Conversation intent.",
+      "successMetrics": [
+        "Support folder created",
+        "manifest databaseContentsIncluded=false"
+      ],
+      "operationalAcceptance": [
+        "A user can ask Conversation to export a support package",
+        "A user can understand the package excludes Moments",
+        "A user can find the saved folder path from the reply"
+      ]
     },
     {
       "id": "A1-artifact-checksums",
       "gate": "A",
-      "class": "ReadyNow",
-      "prerequisites": ["A0-installer-foundation"],
-      "dependents": ["F1-ci-automation"]
+      "productionClassification": "ReadyNow",
+      "purpose": "Publish integrity hashes for installer artifacts so downloads can be verified.",
+      "userValue": "A user (or CI) can confirm the setup.exe was not tampered with in transit.",
+      "engineeringValue": "SHA-256 sidecars + verify:artifact-checksums feeding release automation.",
+      "constitutionalJustification": "Integrity / Observability of distributed Effects artifacts — Production/Repository Standards.",
+      "prerequisites": [
+        "A0-installer-foundation"
+      ],
+      "dependents": [
+        "F1-ci-automation"
+      ],
+      "blockingConditions": [],
+      "entryCriteria": [
+        "Gate Spec schema satisfied",
+        "A0 Complete",
+        "Owner authorizes next unit"
+      ],
+      "exitCriteria": [
+        "SHA-256 file beside setup.exe",
+        "documented verify command",
+        "verifier green"
+      ],
+      "verification": [
+        "pnpm verify:artifact-checksums (to be added at implementation)"
+      ],
+      "productionReadinessDelta": "Toward Release Ready integrity; not Release Ready alone.",
+      "regressionRisks": [
+        "Stale checksums after rebuild",
+        "Path mismatch in CI"
+      ],
+      "rollbackStrategy": "Stop publishing sidecars; remove verify from CI.",
+      "successMetrics": [
+        "Checksum matches rebuilt artifact",
+        "CI can fail on mismatch"
+      ],
+      "operationalAcceptance": [
+        "A user can verify a downloaded installer hash against a published checksum",
+        "A release engineer can regenerate checksums in one command"
+      ]
     },
     {
       "id": "D1-ipc-quarantine",
       "gate": "D",
-      "class": "ReadyNow",
+      "productionClassification": "ReadyNow",
+      "purpose": "Reduce unused IPC attack surface to the commands Workspace actually needs.",
+      "userValue": "Less risk of obscure commands being abused; clearer product surface.",
+      "engineeringValue": "Hard quarantine or removal of unused registered commands; smaller surface-size risk.",
+      "constitutionalJustification": "Least privilege / Singular Truth of entry — Repository Standards + Runtime.",
       "prerequisites": [],
-      "dependents": ["D2-permission-audit"]
+      "dependents": [
+        "D2-permission-audit"
+      ],
+      "blockingConditions": [
+        "Regression risk on experimental/developer surfaces"
+      ],
+      "entryCriteria": [
+        "Gate Spec satisfied",
+        "B1 available for diagnosing fallout",
+        "Owner authorizes"
+      ],
+      "exitCriteria": [
+        "Documented quarantine list enforced",
+        "Product Proof IPC path green",
+        "surface-size improved"
+      ],
+      "verification": [
+        "pnpm verify:ipc-tiers",
+        "pnpm test",
+        "product conversation smoke"
+      ],
+      "productionReadinessDelta": "Security hardening toward Production/Release Ready.",
+      "regressionRisks": [
+        "Break developer/diagnostic tools",
+        "Miss a still-needed command"
+      ],
+      "rollbackStrategy": "Restore command registration from git; loosen quarantine list.",
+      "successMetrics": [
+        "Registered count down",
+        "No product path regressions"
+      ],
+      "operationalAcceptance": [
+        "A user can complete supported Conversation workflows after quarantine",
+        "A developer can still run required diagnostics without inventing new IPC"
+      ]
     },
     {
       "id": "E1-tray-lifecycle",
       "gate": "E",
-      "class": "ReadyNow",
-      "prerequisites": ["C0-single-instance"],
-      "dependents": ["C2-shutdown-policy"]
+      "productionClassification": "ReadyNow",
+      "purpose": "Provide persistent desktop presence that serves Conversation without becoming a second product.",
+      "userValue": "Workspace remains reachable from the tray; Exit/Show are obvious.",
+      "engineeringValue": "Tray icon, restore, Exit policy foundation for C2.",
+      "constitutionalJustification": "Product Gravity — tray supports Conversation; Presentation/Production only.",
+      "prerequisites": [
+        "C0-single-instance"
+      ],
+      "dependents": [
+        "C2-shutdown-policy"
+      ],
+      "blockingConditions": [],
+      "entryCriteria": [
+        "Gate Spec satisfied",
+        "C0 Complete",
+        "Owner authorizes"
+      ],
+      "exitCriteria": [
+        "Tray Show Conversation",
+        "Exit",
+        "restore",
+        "no catalogue chrome"
+      ],
+      "verification": [
+        "Manual Operational Acceptance",
+        "verify script for tray wiring"
+      ],
+      "productionReadinessDelta": "Major perceived Production Ready lift for desktop presence.",
+      "regressionRisks": [
+        "Zombie processes",
+        "Competing with Conversation attention"
+      ],
+      "rollbackStrategy": "Disable tray plugin; keep window-only lifecycle.",
+      "successMetrics": [
+        "Tray appears on launch",
+        "Exit terminates process"
+      ],
+      "operationalAcceptance": [
+        "A user can restore Conversation from the tray",
+        "A user can Exit Workspace from the tray without confusion",
+        "A user can use the tray without seeing a second app compete with Conversation"
+      ]
     },
     {
       "id": "C1-config-db-ux",
       "gate": "C",
-      "class": "ReadyNow",
-      "prerequisites": ["C0-single-instance"],
-      "dependents": []
+      "productionClassification": "ReadyNow",
+      "purpose": "Tell the truth when session/DB recovery yields empty or corrupt state.",
+      "userValue": "A user understands recovery happened instead of silent empty desktop.",
+      "engineeringValue": "Presentation of existing kernel checksum recovery Facts.",
+      "constitutionalJustification": "Observability / truthful Experience — Presentation over Evidence.",
+      "prerequisites": [
+        "C0-single-instance"
+      ],
+      "dependents": [],
+      "blockingConditions": [],
+      "entryCriteria": [
+        "Gate Spec satisfied",
+        "Owner authorizes"
+      ],
+      "exitCriteria": [
+        "Honest Conversation/UI on corrupt session",
+        "no invented success"
+      ],
+      "verification": [
+        "Manual corrupt-session drill",
+        "unit tests for recovery path if added"
+      ],
+      "productionReadinessDelta": "Reliability honesty toward Production Ready.",
+      "regressionRisks": [
+        "Alarm fatigue",
+        "False corrupt warnings"
+      ],
+      "rollbackStrategy": "Revert copy to prior quiet recovery.",
+      "successMetrics": [
+        "Corrupt fixture shows clear message"
+      ],
+      "operationalAcceptance": [
+        "A user can understand that recovery occurred",
+        "A user can see that success was not claimed when state was reset"
+      ]
     },
     {
       "id": "F1-ci-automation",
       "gate": "F",
-      "class": "ReleaseOnly",
-      "prerequisites": ["A0-installer-foundation"],
-      "dependents": []
+      "productionClassification": "ReleaseOnly",
+      "purpose": "Automate validation and artifact checks on the active development branch.",
+      "userValue": "Indirect — fewer broken builds reach humans.",
+      "engineeringValue": "CI on v2-dev; checksum/verify jobs.",
+      "constitutionalJustification": "Repository Standards — no architectural change.",
+      "prerequisites": [
+        "A0-installer-foundation"
+      ],
+      "dependents": [],
+      "blockingConditions": [],
+      "entryCriteria": [
+        "Gate Spec satisfied",
+        "Owner authorizes release engineering work"
+      ],
+      "exitCriteria": [
+        "Workflow covers v2-dev",
+        "verify:release or subset in CI"
+      ],
+      "verification": [
+        "GitHub Actions green on sample PR"
+      ],
+      "productionReadinessDelta": "Release engineering maturity; not Release Ready alone.",
+      "regressionRisks": [
+        "CI flakiness blocking merges"
+      ],
+      "rollbackStrategy": "Narrow workflow triggers; make jobs advisory temporarily.",
+      "successMetrics": [
+        "CI runs on v2-dev push/PR"
+      ],
+      "operationalAcceptance": [
+        "A release engineer can see pass/fail without local full matrix",
+        "A release engineer can see the pipeline fail when installer verify is broken"
+      ]
     },
     {
       "id": "A2-code-signing",
       "gate": "A",
-      "class": "BlockedExternal",
-      "prerequisites": ["A0-installer-foundation"],
-      "dependents": ["B2-auto-updater", "F2-signed-release"],
-      "externalBlocker": "Authenticode certificate / thumbprint"
+      "productionClassification": "BlockedExternal",
+      "purpose": "Authenticode-sign Windows installers so users and OS trust the binary.",
+      "userValue": "SmartScreen/trust barriers drop for legitimate installs.",
+      "engineeringValue": "Signed artifacts unlock updater integrity and Release Ready.",
+      "constitutionalJustification": "Trust of Effects delivered to the OS — Production.",
+      "prerequisites": [
+        "A0-installer-foundation"
+      ],
+      "dependents": [
+        "B2-auto-updater",
+        "F2-signed-release"
+      ],
+      "blockingConditions": [
+        "Owner/org Authenticode certificate or equivalent"
+      ],
+      "entryCriteria": [
+        "Certificate available",
+        "Gate Spec satisfied",
+        "Owner authorizes"
+      ],
+      "exitCriteria": [
+        "Signed setup.exe",
+        "signature verify path",
+        "docs for thumbprint/CI secret"
+      ],
+      "verification": [
+        "signtool/ossl verify",
+        "WORKSPACE_REQUIRE_SIGNED=1 gate"
+      ],
+      "productionReadinessDelta": "Critical step to Release Ready.",
+      "regressionRisks": [
+        "Cert expiry",
+        "Timestamp server outage"
+      ],
+      "rollbackStrategy": "Ship unsigned with explicit Owner risk acceptance only.",
+      "successMetrics": [
+        "Windows shows publisher",
+        "Signature valid"
+      ],
+      "operationalAcceptance": [
+        "A user can install without unexplained SmartScreen distrust (normal channels)",
+        "A release engineer can sign in CI or one documented command"
+      ]
     },
     {
       "id": "B2-auto-updater",
       "gate": "B",
-      "class": "BlockedByGate",
-      "prerequisites": ["A2-code-signing"],
-      "dependents": ["A3-install-rollback"]
+      "productionClassification": "BlockedByGate",
+      "purpose": "Deliver trusted in-app updates without full reinstall.",
+      "userValue": "A user can stay current safely.",
+      "engineeringValue": "Tauri updater + signed manifests + failure recovery.",
+      "constitutionalJustification": "Production; Authority still gates Effects; no telemetry dependence.",
+      "prerequisites": [
+        "A2-code-signing"
+      ],
+      "dependents": [
+        "A3-install-rollback"
+      ],
+      "blockingConditions": [
+        "A2-code-signing incomplete"
+      ],
+      "entryCriteria": [
+        "A2 Complete",
+        "Gate Spec satisfied",
+        "Owner authorizes"
+      ],
+      "exitCriteria": [
+        "Stable channel",
+        "integrity validation",
+        "honest update UX",
+        "failure recovery"
+      ],
+      "verification": [
+        "Updater integration tests",
+        "manual update drill"
+      ],
+      "productionReadinessDelta": "Major Release Ready unlock.",
+      "regressionRisks": [
+        "Broken update bricks install",
+        "Downgrade attacks"
+      ],
+      "rollbackStrategy": "Disable updater endpoint; instruct manual A0 reinstall.",
+      "successMetrics": [
+        "Update applies",
+        "Failed update recovers"
+      ],
+      "operationalAcceptance": [
+        "A user can update without losing Moments",
+        "A user can understand when an update fails",
+        "A user can update without a developer workflow"
+      ]
     },
     {
       "id": "F2-signed-release",
       "gate": "F",
-      "class": "BlockedByGate",
-      "prerequisites": ["A2-code-signing"],
-      "dependents": []
+      "productionClassification": "BlockedByGate",
+      "purpose": "Automate signed artifact publication and verification.",
+      "userValue": "Indirect — trustworthy published builds.",
+      "engineeringValue": "Release workflow producing signed setup + notes.",
+      "constitutionalJustification": "Repository Standards / Production.",
+      "prerequisites": [
+        "A2-code-signing"
+      ],
+      "dependents": [],
+      "blockingConditions": [
+        "A2-code-signing incomplete"
+      ],
+      "entryCriteria": [
+        "A2 Complete",
+        "Owner authorizes"
+      ],
+      "exitCriteria": [
+        "CI release job",
+        "signed artifacts",
+        "checksums",
+        "release notes template"
+      ],
+      "verification": [
+        "Dry-run release pipeline"
+      ],
+      "productionReadinessDelta": "Release Ready pipeline.",
+      "regressionRisks": [
+        "Secret leakage",
+        "Wrong channel publish"
+      ],
+      "rollbackStrategy": "Disable publish job; yank bad release.",
+      "successMetrics": [
+        "One-tag release produces signed setup"
+      ],
+      "operationalAcceptance": [
+        "A release engineer can ship a signed build without tribal knowledge",
+        "A user can obtain the intended channel artifact"
+      ]
     },
     {
       "id": "C2-shutdown-policy",
       "gate": "C",
-      "class": "BlockedByGate",
-      "prerequisites": ["E1-tray-lifecycle"],
-      "dependents": []
+      "productionClassification": "BlockedByGate",
+      "purpose": "Define close vs Exit vs tray-hide so shutdown matches user intent.",
+      "userValue": "Closing the window does not mysteriously kill or zombie Workspace.",
+      "engineeringValue": "Lifecycle policy coordinated with tray.",
+      "constitutionalJustification": "Presentation purity for chrome; Production lifecycle.",
+      "prerequisites": [
+        "E1-tray-lifecycle"
+      ],
+      "dependents": [],
+      "blockingConditions": [
+        "E1-tray-lifecycle incomplete"
+      ],
+      "entryCriteria": [
+        "E1 Complete",
+        "Owner authorizes"
+      ],
+      "exitCriteria": [
+        "Documented + implemented close/Exit/tray semantics"
+      ],
+      "verification": [
+        "Manual lifecycle matrix",
+        "verifier for policy constants"
+      ],
+      "productionReadinessDelta": "Reliability/UX Production Ready.",
+      "regressionRisks": [
+        "Users lose work on unexpected Exit"
+      ],
+      "rollbackStrategy": "Revert to explicit Exit-only policy.",
+      "successMetrics": [
+        "Close≠crash",
+        "Exit terminates"
+      ],
+      "operationalAcceptance": [
+        "A user can predict what Close does",
+        "A user can fully quit Workspace when they intend to"
+      ]
     },
     {
       "id": "D2-permission-audit",
       "gate": "D",
-      "class": "BlockedByGate",
-      "prerequisites": ["D1-ipc-quarantine"],
-      "dependents": []
+      "productionClassification": "BlockedByGate",
+      "purpose": "Audit remaining IPC/capabilities for least privilege after quarantine.",
+      "userValue": "Fewer surprising permission prompts and tighter OS privilege use.",
+      "engineeringValue": "Permission matrix + capability review.",
+      "constitutionalJustification": "Explicit Authority; least privilege.",
+      "prerequisites": [
+        "D1-ipc-quarantine"
+      ],
+      "dependents": [],
+      "blockingConditions": [
+        "D1-ipc-quarantine incomplete"
+      ],
+      "entryCriteria": [
+        "D1 Complete",
+        "Owner authorizes"
+      ],
+      "exitCriteria": [
+        "Audit doc",
+        "fixes for over-broad permissions"
+      ],
+      "verification": [
+        "Audit checklist sign-off",
+        "targeted tests"
+      ],
+      "productionReadinessDelta": "Security Production/Release hardening.",
+      "regressionRisks": [
+        "Over-tight permissions break Voice/OS features"
+      ],
+      "rollbackStrategy": "Restore prior capability grants with documented exception.",
+      "successMetrics": [
+        "No unjustified broad permissions remain"
+      ],
+      "operationalAcceptance": [
+        "A user can complete supported workflows after permission tightening",
+        "A user can see truthful guidance when OS permission is denied"
+      ]
     },
     {
       "id": "B3-crash-local",
       "gate": "B",
-      "class": "OptionalPolish",
-      "prerequisites": ["B1-diagnostics-support-bundle"],
-      "dependents": []
+      "productionClassification": "OptionalPolish",
+      "purpose": "Capture local crash evidence for inclusion in support bundles.",
+      "userValue": "Hard crashes become diagnosable without reinventing the failure.",
+      "engineeringValue": "Local minidump/WER opt-in; attach to B1 bundle.",
+      "constitutionalJustification": "Observability; default no network telemetry.",
+      "prerequisites": [
+        "B1-diagnostics-support-bundle"
+      ],
+      "dependents": [],
+      "blockingConditions": [
+        "Priority below Ready Now critical path"
+      ],
+      "entryCriteria": [
+        "B1 Complete",
+        "Owner prioritizes"
+      ],
+      "exitCriteria": [
+        "Local crash artifact",
+        "included in support export when present"
+      ],
+      "verification": [
+        "Crash drill",
+        "bundle contains dump metadata"
+      ],
+      "productionReadinessDelta": "Ops polish toward Production Ready.",
+      "regressionRisks": [
+        "Large dump disk use",
+        "Sensitive memory in dumps"
+      ],
+      "rollbackStrategy": "Disable dump capture.",
+      "successMetrics": [
+        "Crash produces local artifact"
+      ],
+      "operationalAcceptance": [
+        "A user can export a support package that notes a crash occurred",
+        "A user can keep crash dumps local with no network upload by default"
+      ]
     },
     {
       "id": "E2-polish",
       "gate": "E",
-      "class": "OptionalPolish",
+      "productionClassification": "OptionalPolish",
+      "purpose": "Improve animations, a11y, and micro-interactions without redesigning UI.",
+      "userValue": "Workspace feels calmer and more accessible.",
+      "engineeringValue": "Targeted Presentation polish.",
+      "constitutionalJustification": "Presentation; Product Gravity preserved.",
       "prerequisites": [],
-      "dependents": []
+      "dependents": [],
+      "blockingConditions": [
+        "Not on critical readiness path"
+      ],
+      "entryCriteria": [
+        "Owner prioritizes polish over Ready Now units"
+      ],
+      "exitCriteria": [
+        "Scoped polish checklist done",
+        "no new chrome product"
+      ],
+      "verification": [
+        "Manual a11y pass",
+        "visual regression as available"
+      ],
+      "productionReadinessDelta": "Perceived quality only.",
+      "regressionRisks": [
+        "Motion sickness / reduced-motion ignored"
+      ],
+      "rollbackStrategy": "Revert CSS/animation commits.",
+      "successMetrics": [
+        "Keyboard paths work",
+        "reduced-motion respected"
+      ],
+      "operationalAcceptance": [
+        "A user can operate primary flows by keyboard",
+        "A user can use reduced motion without distracting animation"
+      ]
     },
     {
       "id": "A3-install-rollback",
       "gate": "A",
-      "class": "BlockedByGate",
-      "prerequisites": ["B2-auto-updater"],
-      "dependents": []
+      "productionClassification": "BlockedByGate",
+      "purpose": "Recover from a failed upgrade to a known-good install.",
+      "userValue": "A bad update does not strand the user.",
+      "engineeringValue": "Rollback path tied to updater/OS previous version.",
+      "constitutionalJustification": "Reversibility / recoverability — Production.",
+      "prerequisites": [
+        "B2-auto-updater"
+      ],
+      "dependents": [],
+      "blockingConditions": [
+        "B2-auto-updater incomplete"
+      ],
+      "entryCriteria": [
+        "B2 Complete",
+        "Owner authorizes"
+      ],
+      "exitCriteria": [
+        "Documented + tested rollback"
+      ],
+      "verification": [
+        "Failed-upgrade drill"
+      ],
+      "productionReadinessDelta": "Release Ready resilience.",
+      "regressionRisks": [
+        "Rollback data mismatch"
+      ],
+      "rollbackStrategy": "Manual A0 reinstall from last good setup.exe.",
+      "successMetrics": [
+        "Failed upgrade returns to prior version"
+      ],
+      "operationalAcceptance": [
+        "A user can return to a working Workspace after a failed update",
+        "A user can learn what to do if automatic rollback fails"
+      ]
     }
-  ],
-  "nextReadyNow": "A1-artifact-checksums"
+  ]
 }

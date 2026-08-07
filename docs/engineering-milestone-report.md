@@ -1,25 +1,25 @@
 # Engineering Milestone Report
-## P16.PI3 — Production Dependency Authority + Gate B1
+## P16.PI4 — Canonical Production Gate Specification
 
 | Field | Value |
 | --- | --- |
-| **Artifacts** | `PRODUCTION_DEPENDENCY_AUTHORITY.md`, `production-gates-dependency.json`, B1 file log + support bundle, verifiers |
+| **Artifacts** | `PRODUCTION_GATE_SPECIFICATION.md`, schema v2 JSON, generated catalog, sync/verify scripts |
 | **Date** | 2026-08-07 |
-| **Status** | Authority established; B1 closed; stop — next Ready Now A1 after Owner review |
-| **Max layer** | Production / Documentation / Presentation (NL path) |
+| **Status** | Schema + normalize complete — **no production gate implemented** |
+| **Max layer** | Documentation / Repository Standards |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
 
 ### Summary
 
-Canonical dependency-ordered Track A authority with Eng/Production/Release readiness levels. Implemented only B1 (diagnostics). Updater remains blocked by signing. Do not start A1 until Owner reviews.
+Every gate unit now shares an identical executable schema including Operational Acceptance. Order unchanged. A1 not implemented. Stop meta-frameworks; await Owner before executing A1.
 
 ---
 
-## Prior: P16.PI2 — Gate C Single-Instance Reliability
+## Prior: P16.PI3 — Production Dependency Authority + Gate B1
 
 | Field | Value |
 | --- | --- |
-| **Status** | Complete |
+| **Status** | B1 complete; authority order established |
 
 ---
 
