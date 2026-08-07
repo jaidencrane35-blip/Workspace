@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T01:24:40.832Z",
+  "updatedAt": "2026-08-07T01:24:41.075Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -405,7 +405,7 @@
     "id": "browser-provider-p14-5-finalization",
     "title": "P14.5 Browser Product Proof Finalization & Permanent Closure",
     "status": "permanently_closed",
-    "commit": "fca6dca"
+    "commit": "06f7d06"
   },
   "acceptedReviews": [
     {
