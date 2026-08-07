@@ -67,6 +67,7 @@ const verifiers = {
   "verify:goal-resolution": "scripts/verify-goal-resolution.mjs",
   "verify:workspace-context": "scripts/verify-workspace-context.mjs",
   "verify:product-intelligence": "scripts/verify-product-intelligence.mjs",
+  "verify:operator-activity": "scripts/verify-operator-activity.mjs",
   "verify:dev-environment": "scripts/verify-dev-environment.mjs",
 };
 
@@ -466,7 +467,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16.38 Product Intelligence Boundary & Premium Desktop Operator Validation. Registry discovery maturity + Back/Previous continuity + ≥500 product battery + Repository Evidence Before Architectural Confidence. Canonical: VOICE_P16_38_PRODUCT_INTELLIGENCE.md. Do not mark permanently closed. Do not begin P17.",
+    note: "P16.39 Product Operator Intelligence Validation. Situation Goals own operator activity states + ≥750 battery + State vs Goal ownership proof. Context/Goal Resolution/Registry not expanded. Canonical: VOICE_P16_39_OPERATOR_INTELLIGENCE.md. Do not mark permanently closed. Do not begin P17.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -511,7 +512,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16.38 Product Intelligence — boundary + Registry maturity + ≥500 product battery; Product Proof pending Owner acceptance (NOT permanently closed)",
+      "P16.39 Operator Intelligence — Situation Goals activity states + ≥750 battery; Product Proof pending Owner acceptance (NOT permanently closed)",
       "Owner Experience Before Engineering Confidence permanent (P16.21)",
       "Repository Quality Before Milestone Closure permanent (P16.21)",
       "User Adaptation Prohibition permanent (P16.6)",
@@ -533,8 +534,8 @@ const health = {
     ],
   },
   currentMilestone: {
-    id: "product-intelligence-p16-38",
-    title: "P16.38 Product Intelligence Boundary & Premium Desktop Operator Validation",
+    id: "operator-intelligence-p16-39",
+    title: "P16.39 Product Operator Intelligence Validation",
     status: "engineering_complete_product_proof_pending",
     commit: milestoneCommit,
   },
@@ -636,7 +637,7 @@ const health = {
       id: "p16-voice-product-proof",
       track: "B",
       summary:
-        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.38 Product Intelligence; not permanently closed)",
+        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.39 Operator Intelligence; not permanently closed)",
     },
     {
       id: "capability-providers-p17-plus",
@@ -677,7 +678,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16.38 Product Intelligence — Product Proof pending Owner acceptance; WinRT WRAP frozen; Voice not reopened; Owner evidence outranks engineering confidence",
+      "P16.39 Operator Intelligence — Product Proof pending Owner acceptance; WinRT WRAP frozen; Voice not reopened; Owner evidence outranks engineering confidence",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -759,9 +760,9 @@ const health = {
     date: "2026-08-07",
     document: "docs/engineering-milestone-report.md",
     title:
-      "P16.38 Product Intelligence — awaiting Owner live Product Proof",
+      "P16.39 Operator Intelligence — awaiting Owner live Product Proof",
     reviewBrief:
-      "docs/capability-runtime/product-proof/VOICE_P16_38_PRODUCT_INTELLIGENCE.md",
+      "docs/capability-runtime/product-proof/VOICE_P16_39_OPERATOR_INTELLIGENCE.md",
   },
   handoffStatus: "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   nextRecommendedExecutionProgram: {

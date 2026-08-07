@@ -1,7 +1,8 @@
 /**
- * Product Intelligence Boundary (P16.38) — Intent / Conversation surface.
+ * Product Intelligence Boundary (P16.38 / P16.39) — Intent / Conversation surface.
  *
  * Classifies what belongs inside Workspace vs outside.
+ * Proves State vs Goal ownership without adding a pipeline stage.
  * Enforces production trust: Owner-facing text must not expose engineering substrate.
  * Deterministic only — no ML, no hidden AI.
  */
@@ -35,6 +36,12 @@ export const PRODUCT_INTELLIGENCE_GAPS: IntelligenceGap[] = [
     topic: "Goal-oriented situation phrasing (setup / lost / screenshots / back)",
     owner: "P16",
     note: "Situation Goals + Goal Resolution + Context — not alias tables",
+  },
+  {
+    id: "operator-activities",
+    topic: "Operator activity states (coding / debugging / starting day / break)",
+    owner: "P16",
+    note: "Situation Goals owns work modes + session resume/end — not a new layer",
   },
   {
     id: "registry-discovery",
@@ -98,6 +105,19 @@ export const PRODUCT_INTELLIGENCE_GAPS: IntelligenceGap[] = [
   },
 ];
 
+/**
+ * State vs Goal ownership — proven separation (P16.39).
+ * Mixed responsibilities are forbidden; each maps to exactly one owner.
+ */
+export const STATE_VS_GOAL_OWNERS = {
+  userGoal: "Situation Goals + Goal Resolution",
+  desktopState: "Desktop Operator (window enumerate / Window Provider)",
+  workspaceState: "Desktop Operator (Moments / Continue)",
+  executionState: "Execution Planning",
+  conversationState: "Workspace Context (session referents / again)",
+  capabilityState: "Capability Registry",
+} as const;
+
 /** Engineering substrate that must never appear in Owner-facing replies. */
 export const ENGINEERING_LEAK_PATTERN =
   /Provider|Registry|Kernel|WinRT|HRESULT|Intent Layer|grammar|parser|Capability graph|execution engine|Capability Runtime|IPC/i;
@@ -146,13 +166,13 @@ export function classifyProductExperience(
     };
   }
   if (
-    /development setup|working on something|everything back|where was i|take me where|i was coding|need my workspace/.test(
+    /development setup|working on something|everything back|where was i|take me where|i was coding|need my workspace|get back into work|set me up|starting my day|take me back|i'?m coding|i'?m debugging|i'?m researching|i'?m reviewing|writing documentation/.test(
       t,
     )
   ) {
     return {
       family: "resume_intention",
-      goalOriented: kind === "navigate",
+      goalOriented: kind === "navigate" || kind === "unknown",
     };
   }
   if (/lost it|looking for something|find it|where did it go/.test(t)) {

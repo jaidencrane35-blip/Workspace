@@ -7,7 +7,7 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.38 Product Intelligence Boundary & Premium Desktop Operator Validation (awaiting Owner live Product Proof) |
+| **Latest program** | P16.39 Product Operator Intelligence Validation (awaiting Owner live Product Proof) |
 | **Rule** | Ignore prior chat history. Reassess repository truth before any implementation. |
 
 **Start here before any execution program.**
@@ -108,7 +108,7 @@ One execution program
 
 Authoritative rolling list: `docs/capability-runtime/FIVE_PROGRAM_ROADMAP.md`.
 
-| Now | P16 Voice Input — **P16.38** Product Intelligence (Owner evidence > eng confidence); Product Proof pending Owner live review; P17 blocked |
+| Now | P16 Voice Input — **P16.39** Operator Intelligence (Owner evidence > eng confidence); Product Proof pending Owner live review; P17 blocked |
 | Next (after P16 acceptance) | **P17 File Provider** |
 | Then | P18 Terminal · P19 Memory · P20 Automation · P21 Workspace Intelligence |
 
@@ -144,7 +144,7 @@ Do not reopen except bugfixes:
 | Notifications | Closed (P13) | |
 | Browser | Closed (P14) | |
 | Screenshots | Closed (P15) | |
-| **Voice Input** | **P16.38 engineering complete** (Product Proof open) | Product Intelligence Boundary + Registry maturity + ≥500 product battery; WRAP frozen; Voice not reopened; `VOICE_P16_38_PRODUCT_INTELLIGENCE.md` |
+| **Voice Input** | **P16.39 engineering complete** (Product Proof open) | Operator activity states via Situation Goals + ≥750 battery; WRAP frozen; Voice not reopened; `VOICE_P16_39_OPERATOR_INTELLIGENCE.md` |
 | File | Not started | **P17** (blocked) |
 | Terminal / Memory / Automation | Roadmap | P18+ |
 
@@ -230,9 +230,9 @@ After Owner closes Workspace: cleanup only — **never relaunch**.
 
 ## 15. Latest commit
 
-| Tip | Use `git log -1 --oneline` on `v2-dev` after P16.38 push |
+| Tip | Use `git log -1 --oneline` on `v2-dev` after P16.39 push |
 | --- | --- |
-| Canonical Product Proof | `docs/capability-runtime/product-proof/VOICE_P16_38_PRODUCT_INTELLIGENCE.md` |
+| Canonical Product Proof | `docs/capability-runtime/product-proof/VOICE_P16_39_OPERATOR_INTELLIGENCE.md` |
 
 ---
 
