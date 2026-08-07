@@ -5,7 +5,7 @@
 | --- | --- |
 | **Execution program** | P14 Browser Provider |
 | **Date** | 2026-08-07 |
-| **Commit** | `d258533` |
+| **Commit** | `1670822` |
 | **Status** | Engineering complete — awaiting Product Owner Product Proof review |
 | **Prior closure** | P13 Notifications permanently closed (`f1a359c`) |
 | **Composition audit** | `docs/capability-runtime/product-proof/BROWSER_PROVIDER_COMPOSITION_AUDIT.md` |

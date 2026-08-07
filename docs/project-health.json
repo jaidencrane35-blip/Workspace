@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T00:30:59.491Z",
+  "updatedAt": "2026-08-07T00:31:29.744Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -377,7 +377,7 @@
     "id": "browser-provider-p14",
     "title": "P14 Browser Provider",
     "status": "awaiting_owner_review",
-    "commit": "d258533"
+    "commit": "1670822"
   },
   "acceptedReviews": [
     {
