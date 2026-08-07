@@ -13,6 +13,8 @@ export interface CapabilityNode {
   /** User-facing domain label (not Provider jargon). */
   domain: string;
   summary: string;
+  /** Owner-facing purpose (intention), distinct from summary mechanics. */
+  purpose: string;
   verbs: string[];
   aliases: string[];
   objects: string[];
@@ -54,6 +56,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     id: "open-app",
     domain: "Applications",
     summary: "Open or bring forward desktop apps on this PC",
+    purpose: "Get the app you need open and ready on this PC",
     verbs: ["open", "launch", "start"],
     aliases: ["run", "start up", "take me to"],
     objects: ["apps", "Microsoft Store", "Cursor", "Notepad", "File Explorer"],
@@ -76,7 +79,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     alternatives: ["focus-window", "folders"],
     discoverability: "Ask to open a named app, or ask what applications I can control.",
     documentation:
-      "Resolved apps go through Find → Focus or Launch — never raw transcripts.",
+      "Named apps are found or launched truthfully — unknown names are never invented.",
     ownership: "Owns product semantics; Wraps Windows process/window launch",
     permissions: ["Desktop application launch", "Window focus"],
     dependencies: ["Application Provider", "Window Provider", "Kernel Operator"],
@@ -92,6 +95,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     id: "focus-window",
     domain: "Windows",
     summary: "Find windows and bring them forward",
+    purpose: "Find the window you mean and put it in front",
     verbs: ["focus", "bring forward", "bring to the front", "locate", "show", "switch to"],
     aliases: ["activate", "put in front", "take me to"],
     objects: ["Chrome", "Edge", "Cursor", "ChatGPT", "YouTube"],
@@ -111,7 +115,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     similar: ["open-app", "window-state"],
     alternatives: ["open-app", "browser"],
     discoverability: "Ask what windows are open, or say you’ve got an app somewhere.",
-    documentation: "Locate/focus compose to Window focus (and optional minimise).",
+    documentation: "Locate a matching open window and bring it forward when you ask.",
     ownership: "Owns locate/focus semantics; Wraps Windows window enumeration",
     permissions: ["Window enumeration", "Window focus"],
     dependencies: ["Window Provider", "Kernel Operator"],
@@ -127,6 +131,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     id: "window-state",
     domain: "Windows",
     summary: "Maximize, minimize, restore, snap, or move windows",
+    purpose: "Change how a window sits on your desktop",
     verbs: ["maximize", "maximise", "minimize", "minimise", "restore", "snap", "center"],
     aliases: ["full size", "unminimize"],
     objects: ["Cursor", "Chrome", "this window"],
@@ -146,7 +151,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     similar: ["focus-window"],
     alternatives: ["focus-window"],
     discoverability: "Name a window and a change — maximize, snap, or other monitor.",
-    documentation: "Window state changes apply only to matching open windows.",
+    documentation: "Maximize, snap, restore, or move only windows that actually match.",
     ownership: "Owns layout verbs; Wraps Windows placement APIs",
     permissions: ["Window move/resize/snap"],
     dependencies: ["Window Provider", "Kernel Operator"],
@@ -159,6 +164,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     id: "browser",
     domain: "Browser",
     summary: "Open websites and place them on the desktop",
+    purpose: "Open the site you need — alone or beside another window",
     verbs: ["open", "visit", "go to"],
     aliases: ["browse", "launch site", "take me to"],
     objects: ["ChatGPT", "YouTube", "GitHub", "Google"],
@@ -177,7 +183,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     similar: ["open-app", "focus-window"],
     alternatives: ["focus-window", "open-app"],
     discoverability: "Ask to open a site, or put a site beside an app.",
-    documentation: "Browser open may compose with Window focus or snap.",
+    documentation: "Open a known site, optionally beside another window on the desktop.",
     ownership: "Owns site→URL product map; Wraps default browser launch",
     permissions: ["Open URLs in default browser", "Compose with window layout"],
     dependencies: ["Browser Provider", "Window Provider", "Kernel Operator"],
@@ -193,6 +199,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     id: "screenshots",
     domain: "Screenshots",
     summary: "Capture the desktop, a window, or a monitor",
+    purpose: "Capture what’s on screen when you ask",
     verbs: ["capture", "take screenshot", "screenshot"],
     aliases: ["snap a picture of"],
     objects: ["desktop", "window", "monitor"],
@@ -207,7 +214,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     similar: ["folders", "clipboard"],
     alternatives: ["folders"],
     discoverability: "Ask to take a screenshot, or to find your screenshots folder.",
-    documentation: "Screenshot capture can compose with copy when you ask.",
+    documentation: "Capture the desktop, a window, or a monitor — and copy when you ask.",
     ownership: "Owns capture intents; Wraps OS screenshot surfaces",
     permissions: ["Capture desktop/window/monitor"],
     dependencies: ["Screenshot Provider", "Kernel Operator"],
@@ -220,6 +227,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     id: "clipboard",
     domain: "Clipboard",
     summary: "Read or write the clipboard when you ask",
+    purpose: "Read or put text on the clipboard when you ask",
     verbs: ["read clipboard", "copy", "paste text"],
     aliases: ["what’s on the clipboard"],
     objects: ["clipboard text"],
@@ -246,6 +254,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     id: "notifications",
     domain: "Notifications",
     summary: "Show or dismiss desktop notifications",
+    purpose: "Show a short desktop notice when you ask",
     verbs: ["notify", "show notification", "dismiss"],
     aliases: ["toast", "alert me"],
     objects: ["notification"],
@@ -272,6 +281,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     id: "voice",
     domain: "Voice",
     summary: "Speak into Conversation with the microphone",
+    purpose: "Speak your request instead of typing — same desktop path after you Send",
     verbs: ["speak", "dictate", "listen"],
     aliases: ["talk", "voice"],
     objects: ["microphone"],
@@ -287,7 +297,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     alternatives: [],
     discoverability: "Use the microphone beside Conversation, then Send.",
     documentation:
-      "Voice is an input device — transcript follows the same Intent path as typing.",
+      "Voice is how you speak into Conversation — after Send, it follows the same path as typing.",
     ownership: "Owns Voice as Conversation input; Wraps WinRT speech (frozen WRAP)",
     permissions: ["Microphone", "Speech privacy"],
     dependencies: ["WinRT speech", "Conversation composer", "Intent Layer"],
@@ -303,6 +313,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     id: "folders",
     domain: "Folders",
     summary: "Open common folders in File Explorer",
+    purpose: "Open Downloads, Pictures, Desktop, or Documents when you ask",
     verbs: ["open", "locate", "show"],
     aliases: ["go to folder", "take me to"],
     objects: ["Pictures", "Documents", "Downloads", "Desktop"],
@@ -353,6 +364,7 @@ export function assertCapabilityGovernance(node: CapabilityNode): string[] {
     }
   }
   for (const key of [
+    "purpose",
     "ownership",
     "failureRecovery",
     "benchmark",
@@ -377,7 +389,14 @@ export type DiscoveryScope =
   | "desktop";
 
 function normalizeDiscoveryText(text: string): string {
-  return text.trim().toLowerCase().replace(/[.!?]+$/g, "");
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[.!?]+$/g, "")
+    .replace(/^(please|can you|could you|would you|i think)\s+/i, "")
+    .replace(/\s+(please|for me|now|thanks|thank you)$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /** Discovery / meta utterances that must answer from the live graph. */
@@ -410,7 +429,10 @@ export function isCapabilityDiscoveryUtterance(text: string): boolean {
     /^(what (can you do|do you do) with (folders?|screenshots?|clipboard|notifications?))$/i.test(
       t,
     ) ||
-    /^(what can('|’)t you do|what can you not do|what are your limits)$/i.test(t)
+    /^(what can('|’)t you do|what can you not do|what are your limits)$/i.test(t) ||
+    /^(what('?s| is) similar|what else can you do|what are my options|what can you help with)$/i.test(
+      t,
+    )
   );
 }
 
@@ -473,8 +495,8 @@ export function describeCapability(id: string): string | null {
     .filter(Boolean)
     .join(", ");
   return [
-    `${node.domain}: ${node.summary}`,
-    `Purpose: ${node.summary}`,
+    `${node.domain}: ${node.purpose}`,
+    `Purpose: ${node.purpose}`,
     `Does: ${node.documentation}`,
     `Arguments: ${node.arguments.join("; ") || "none"}`,
     `Needs: ${node.requirements.join("; ")}`,
@@ -513,7 +535,7 @@ export function generateCapabilityDiscovery(scope: DiscoveryScope = "all"): {
     const example = node.examples[0] ?? node.summary;
     const args = node.arguments[0] ? ` Args — ${node.arguments[0]}.` : "";
     const need = node.requirements[0] ? ` Needs — ${node.requirements[0]}.` : "";
-    return `• ${node.domain}: ${node.summary}. Example — “${example}”.${args}${need}`;
+    return `• ${node.domain}: ${node.purpose}. Example — “${example}”.${args}${need}`;
   });
 
   const cannotLines = nodes.flatMap((node) =>
@@ -524,20 +546,48 @@ export function generateCapabilityDiscovery(scope: DiscoveryScope = "all"): {
     .slice(0, 4)
     .map((node) => `• ${node.domain}: ${node.failureRecovery}`);
 
+  const relatedLines = nodes
+    .map((node) => {
+      const related = node.related
+        .map((id) => getCapabilityById(id)?.domain)
+        .filter(Boolean);
+      const similar = node.similar
+        .map((id) => getCapabilityById(id)?.domain)
+        .filter(Boolean);
+      const alternatives = node.alternatives
+        .map((id) => getCapabilityById(id)?.domain)
+        .filter(Boolean);
+      if (related.length === 0 && similar.length === 0 && alternatives.length === 0) {
+        return null;
+      }
+      const bits = [
+        related.length ? `related — ${[...new Set(related)].join(", ")}` : "",
+        similar.length ? `similar — ${[...new Set(similar)].join(", ")}` : "",
+        alternatives.length
+          ? `alternatives — ${[...new Set(alternatives)].join(", ")}`
+          : "",
+      ].filter(Boolean);
+      return `• ${node.domain}: ${bits.join("; ")}`;
+    })
+    .filter(Boolean)
+    .slice(0, 6);
+
   const why =
-    "I only claim actions the Capability graph declares — I won’t invent apps, folders, or success.";
+    "I only claim desktop work I can actually control — I won’t invent apps, folders, or success.";
 
   const reply = [
     scope === "all"
-      ? "Here’s what I can control on this desktop through Conversation:"
-      : `Here’s what I can control for ${scope}:`,
+      ? "Here’s what I can help you control on this desktop:"
+      : `Here’s what I can help with for ${scope}:`,
     ...canLines,
     cannotLines.length > 0 ? "What I won’t overclaim:" : "",
     ...cannotLines.slice(0, 8),
+    relatedLines.length > 0 ? "Related / similar / alternatives:" : "",
+    ...relatedLines,
     recoveryLines.length > 0 ? "If something doesn’t work:" : "",
     ...recoveryLines,
     `Why: ${why}`,
-    "Say what you want in ordinary words — I’ll plan desktop actions before I run them.",
+    "Tell me what you’re trying to get done — I’ll take the next truthful desktop step.",
   ]
     .filter((line) => line !== "")
     .join("\n");

@@ -75,12 +75,17 @@ function isUnderspecifiedLocate(text: string): boolean {
   );
 }
 
+/** Pronoun / filler locate targets that must never execute as window titles. */
+function isUnboundPronounQuery(query: string): boolean {
+  return /^(it|that|this|something|one)(\s+now)?$/i.test(query.trim());
+}
+
 function resumeAction(): IntentAction {
   return {
     kind: "navigate",
     view: "resume",
     reply:
-      "Opening Continue. I can’t reconstruct an unspoken session — restore only runs after you approve a saved Moment.",
+      "Let’s get your workspace back through Continue — pick a saved Moment to restore. I won’t invent a layout from a vague description.",
   };
 }
 
@@ -89,7 +94,7 @@ function clarifyLocateAction(seed: string): IntentAction {
   return {
     kind: "unknown",
     reply:
-      "What are you looking for — a window, app, site, or folder? Name it and I’ll look; I won’t invent a target.",
+      "You’ve lost something on the desktop — name the window, app, site, or folder and I’ll look. I won’t invent a target. You can also ask what windows are open.",
     suggestion: recovery.suggestion,
   };
 }
@@ -247,14 +252,14 @@ export function resolveGoal(
   } else if (
     (action.kind === "winFocus" &&
       "query" in action &&
-      /^(it|that|this|something|one)$/i.test(action.query)) ||
+      isUnboundPronounQuery(action.query)) ||
     (isUnderspecifiedLocate(text) &&
       !(
         action.kind === "winFocus" &&
         "query" in action &&
         typeof action.query === "string" &&
         action.query.length > 0 &&
-        !/^(it|that|this|something|one)$/i.test(action.query)
+        !isUnboundPronounQuery(action.query)
       ))
   ) {
     // Pronoun / empty locate targets must clarify — never focus “it”.

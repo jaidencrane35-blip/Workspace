@@ -82,7 +82,7 @@ export function resolveSituationGoal(raw: string): IntentAction | null {
       kind: "navigate",
       view: "resume",
       reply:
-        "Opening Continue. I don’t invent a multi-app layout from a vague setup — restore only runs after you approve a saved Moment.",
+        "Let’s get your development setup back through Continue — restore only runs after you approve a saved Moment. I won’t invent a multi-app layout.",
     };
   }
 

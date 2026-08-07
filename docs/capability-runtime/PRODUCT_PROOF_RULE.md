@@ -247,3 +247,16 @@ Harness contents (minimum):
 | Product Proof acceptance | Product Owner experience |
 
 Providers never call each other. Conversation never bypasses the runtime.
+
+---
+
+## Repository Evidence Before Architectural Confidence (permanent — P16.38)
+
+No architectural conclusion may be accepted solely because engineering believes it is complete.
+
+1. Every architectural conclusion must survive **hostile falsification**.
+2. Every cognitive layer must have **measurable evidence** (battery, verifier, or Owner Product Proof).
+3. Product Owner experience outranks engineering confidence.
+4. Gaps must name a single owner: P16 · Track A · P17 · Conversation · Capability Registry · Workspace Context · Desktop Operator · Operating System · Outside Workspace.
+
+Authority detail also: `docs/capability-runtime/product-proof/VOICE_P16_38_PRODUCT_INTELLIGENCE.md`.

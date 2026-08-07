@@ -1,30 +1,30 @@
 # Engineering Milestone Report
-## P16.37 Workspace Context Model & Layer Validation
+## P16.38 Product Intelligence Boundary & Premium Desktop Operator Validation
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.37 Workspace Context Model & Layer Validation |
+| **Execution program** | P16.38 Product Intelligence Boundary & Premium Desktop Operator Validation |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete for program** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Not** | P17 / Voice / alias / grammar / Situation Goal / Goal Resolution expansion |
+| **Not** | P17 / Voice / grammar / Goal Resolution expansion |
 
 ---
 
 ## Summary
 
-Goal Resolution alone was falsified for multi-turn continuity. P16.37 adds a deterministic **Workspace Context Model**:
+Owner findings F12–F14 falsified “Context alone = premium operator.” P16.38:
 
-1. Session referents (app / window / URL / beside) + again / pronoun bind / continuity ? Continue  
-2. Context finalizes continuity; Goal Resolution stays single-turn underspecify  
-3. ?500 contextual multi-turn battery + hostile per-layer suite  
-4. Capability Registry governance fields + validator  
-5. Pipeline stage `workspace_context`  
+1. Registry discovery maturity — purpose + related/similar/alternatives; remove Owner-facing engineering leaks  
+2. Context continuity for Back / Previous (evidence-required only)  
+3. Goal-oriented reply framing for resume / locate  
+4. Product intelligence boundary + gap ownership map  
+5. ?500 hostile product battery + permanent **Repository Evidence Before Architectural Confidence**
 
-Artifact: `docs/capability-runtime/product-proof/VOICE_P16_37_WORKSPACE_CONTEXT.md`
+Artifact: `docs/capability-runtime/product-proof/VOICE_P16_38_PRODUCT_INTELLIGENCE.md`
 
 ## Explicit
 
-- **Workspace Context required?** Yes (evidence-backed multi-turn failures without it)  
-- **Further P16?** Only if Owner proves residual Context/Intent defects  
+- **Genuine operator?** Improved with evidence; Owner Product Proof remains the gate  
+- **Further P16?** Only if Owner proves residual defects  
 - **P17 / Voice reopen?** No  

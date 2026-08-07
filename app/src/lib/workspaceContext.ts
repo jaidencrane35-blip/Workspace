@@ -129,9 +129,9 @@ export function resolveFromWorkspaceContext(raw: string): {
     };
   }
 
-  // Session continuity → Continue (Context owns “still working / bring everything back”)
+  // Session continuity → Continue (Context owns still working / back / previous / resume)
   if (
-    /^(i'?m still working|still working|finish this|finish up|go back)$/i.test(
+    /^(i'?m still working|still working|finish this|finish up|go back|back|previous)$/i.test(
       text,
     ) ||
     /^(bring everything back|continue what i was doing|resume what i was doing)$/i.test(
@@ -144,7 +144,7 @@ export function resolveFromWorkspaceContext(raw: string): {
         kind: "navigate",
         view: "resume",
         reply:
-          "Opening Continue from session context. Restore only runs after you approve a saved Moment — I won’t invent a layout.",
+          "Let’s get you back through Continue — restore only runs after you approve a saved Moment. I won’t invent a layout.",
       },
       evidence,
     };

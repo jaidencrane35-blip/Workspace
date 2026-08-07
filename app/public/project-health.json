@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T11:09:05.064Z",
+  "updatedAt": "2026-08-07T11:21:05.471Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -15,7 +15,7 @@
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "note": "P16.37 Workspace Context Model & Layer Validation. Deterministic Context Model + ≥500 contextual battery + hostile layer suite + registry governance. Voice/aliases/grammar/Situation Goals/Goal Resolution not expanded. Canonical: VOICE_P16_37_WORKSPACE_CONTEXT.md. Do not mark permanently closed. Do not begin P17."
+    "note": "P16.38 Product Intelligence Boundary & Premium Desktop Operator Validation. Registry discovery maturity + Back/Previous continuity + ≥500 product battery + Repository Evidence Before Architectural Confidence. Canonical: VOICE_P16_38_PRODUCT_INTELLIGENCE.md. Do not mark permanently closed. Do not begin P17."
   },
   "completedExecutionPrograms": [
     {
@@ -415,7 +415,7 @@
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16.37 Workspace Context — deterministic Context Model + ≥500 contextual battery; Product Proof pending Owner acceptance (NOT permanently closed)",
+      "P16.38 Product Intelligence — boundary + Registry maturity + ≥500 product battery; Product Proof pending Owner acceptance (NOT permanently closed)",
       "Owner Experience Before Engineering Confidence permanent (P16.21)",
       "Repository Quality Before Milestone Closure permanent (P16.21)",
       "User Adaptation Prohibition permanent (P16.6)",
@@ -437,10 +437,10 @@
     ]
   },
   "currentMilestone": {
-    "id": "workspace-context-p16-37",
-    "title": "P16.37 Workspace Context Model & Layer Validation",
+    "id": "product-intelligence-p16-38",
+    "title": "P16.38 Product Intelligence Boundary & Premium Desktop Operator Validation",
     "status": "engineering_complete_product_proof_pending",
-    "commit": "9a5ebd1"
+    "commit": "pending"
   },
   "acceptedReviews": [
     {
@@ -539,7 +539,7 @@
     {
       "id": "p16-voice-product-proof",
       "track": "B",
-      "summary": "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.37 Workspace Context; not permanently closed)"
+      "summary": "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.38 Product Intelligence; not permanently closed)"
     },
     {
       "id": "capability-providers-p17-plus",
@@ -579,7 +579,7 @@
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16.37 Workspace Context — Product Proof pending Owner acceptance; WinRT WRAP frozen; Voice not reopened; Owner evidence outranks engineering confidence",
+      "P16.38 Product Intelligence — Product Proof pending Owner acceptance; WinRT WRAP frozen; Voice not reopened; Owner evidence outranks engineering confidence",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -735,6 +735,11 @@
         "present": true,
         "wiredInTest": true
       },
+      "verify:product-intelligence": {
+        "script": "scripts/verify-product-intelligence.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
       "verify:dev-environment": {
         "script": "scripts/verify-dev-environment.mjs",
         "present": true,
@@ -818,8 +823,8 @@
   "lastMilestone": {
     "date": "2026-08-07",
     "document": "docs/engineering-milestone-report.md",
-    "title": "P16.37 Workspace Context — awaiting Owner live Product Proof",
-    "reviewBrief": "docs/capability-runtime/product-proof/VOICE_P16_37_WORKSPACE_CONTEXT.md"
+    "title": "P16.38 Product Intelligence — awaiting Owner live Product Proof",
+    "reviewBrief": "docs/capability-runtime/product-proof/VOICE_P16_38_PRODUCT_INTELLIGENCE.md"
   },
   "handoffStatus": "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   "nextRecommendedExecutionProgram": {

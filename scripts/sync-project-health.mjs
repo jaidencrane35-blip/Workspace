@@ -66,6 +66,7 @@ const verifiers = {
   "verify:product-cognition": "scripts/verify-product-cognition.mjs",
   "verify:goal-resolution": "scripts/verify-goal-resolution.mjs",
   "verify:workspace-context": "scripts/verify-workspace-context.mjs",
+  "verify:product-intelligence": "scripts/verify-product-intelligence.mjs",
   "verify:dev-environment": "scripts/verify-dev-environment.mjs",
 };
 
@@ -465,7 +466,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16.37 Workspace Context Model & Layer Validation. Deterministic Context Model + ≥500 contextual battery + hostile layer suite + registry governance. Voice/aliases/grammar/Situation Goals/Goal Resolution not expanded. Canonical: VOICE_P16_37_WORKSPACE_CONTEXT.md. Do not mark permanently closed. Do not begin P17.",
+    note: "P16.38 Product Intelligence Boundary & Premium Desktop Operator Validation. Registry discovery maturity + Back/Previous continuity + ≥500 product battery + Repository Evidence Before Architectural Confidence. Canonical: VOICE_P16_38_PRODUCT_INTELLIGENCE.md. Do not mark permanently closed. Do not begin P17.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -510,7 +511,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16.37 Workspace Context — deterministic Context Model + ≥500 contextual battery; Product Proof pending Owner acceptance (NOT permanently closed)",
+      "P16.38 Product Intelligence — boundary + Registry maturity + ≥500 product battery; Product Proof pending Owner acceptance (NOT permanently closed)",
       "Owner Experience Before Engineering Confidence permanent (P16.21)",
       "Repository Quality Before Milestone Closure permanent (P16.21)",
       "User Adaptation Prohibition permanent (P16.6)",
@@ -532,8 +533,8 @@ const health = {
     ],
   },
   currentMilestone: {
-    id: "workspace-context-p16-37",
-    title: "P16.37 Workspace Context Model & Layer Validation",
+    id: "product-intelligence-p16-38",
+    title: "P16.38 Product Intelligence Boundary & Premium Desktop Operator Validation",
     status: "engineering_complete_product_proof_pending",
     commit: milestoneCommit,
   },
@@ -635,7 +636,7 @@ const health = {
       id: "p16-voice-product-proof",
       track: "B",
       summary:
-        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.37 Workspace Context; not permanently closed)",
+        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.38 Product Intelligence; not permanently closed)",
     },
     {
       id: "capability-providers-p17-plus",
@@ -676,7 +677,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16.37 Workspace Context — Product Proof pending Owner acceptance; WinRT WRAP frozen; Voice not reopened; Owner evidence outranks engineering confidence",
+      "P16.38 Product Intelligence — Product Proof pending Owner acceptance; WinRT WRAP frozen; Voice not reopened; Owner evidence outranks engineering confidence",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -758,9 +759,9 @@ const health = {
     date: "2026-08-07",
     document: "docs/engineering-milestone-report.md",
     title:
-      "P16.37 Workspace Context — awaiting Owner live Product Proof",
+      "P16.38 Product Intelligence — awaiting Owner live Product Proof",
     reviewBrief:
-      "docs/capability-runtime/product-proof/VOICE_P16_37_WORKSPACE_CONTEXT.md",
+      "docs/capability-runtime/product-proof/VOICE_P16_38_PRODUCT_INTELLIGENCE.md",
   },
   handoffStatus: "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   nextRecommendedExecutionProgram: {
