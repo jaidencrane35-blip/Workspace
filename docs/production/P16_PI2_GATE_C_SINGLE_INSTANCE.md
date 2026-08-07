@@ -8,6 +8,7 @@
 | **Not selected** | Updater (Gate B) — not assumed next |
 | **Max layer** | Production / Runtime |
 | **P17** | Not begun |
+| **Commit** | `87dd540` (`v2-dev`) |
 
 ---
 
