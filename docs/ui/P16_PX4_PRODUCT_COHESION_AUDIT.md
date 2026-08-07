@@ -5,7 +5,7 @@
 | **Program** | P16.PX4 — Product Cohesion |
 | **Date** | 2026-08-08 |
 | **Branch** | `v2-dev` |
-| **Commit** | _(stamped on ship)_ |
+| **Commit** | `34ddddb` |
 | **Kind** | Lived-experience cohesion — not polish theatre, not production, not architecture |
 | **Inputs (not rewritten)** | Spec · EES · Interaction Language · Production Experience · Gates |
 | **PQS note** | Heuristic #11 added by Owner direction (minimize steps without reducing agency) |
