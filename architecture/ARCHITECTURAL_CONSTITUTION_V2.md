@@ -2,12 +2,12 @@
 
 | Field | Value |
 | --- | --- |
-| **Status** | Binding for engineering on and after acceptance by Project Owner |
+| **Status** | Subordinate Architecture Standard — not sole architectural authority |
 | **Version** | 2.0 |
 | **Date** | 2026-08-07 |
-| **Authority rank** | Highest **engineering architecture** authority for implementation decisions |
-| **Supersedes** | Conflicting *engineering* guidance in stale phase language, package README exclusions, and informal chat — where they disagree with implementation truth or this Constitution |
-| **Does not repeal** | `docs/00-Constitution/PROJECT-CONSTITUTION.md` product values; accepted ADRs (0001–0008+) and Decision Log entries unless explicitly amended through their processes |
+| **Authority rank** | **Subordinate** to `docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md`. On conflict, the Constitutional Specification wins. |
+| **Supersedes** | Conflicting *engineering* guidance in stale phase language only where it does not conflict with the Constitutional Specification |
+| **Does not repeal** | Workspace Constitutional Specification v2; `docs/00-Constitution/PROJECT-CONSTITUTION.md` product values; accepted ADRs (0001–0008+) and Decision Log entries unless explicitly amended through their processes |
 | **Evidence base** | Implementation; `docs/architecture-knowledge-map.md` and companion maps; `docs/workspace-strategic-review.md`; `docs/replaceability-matrix.md`; `docs/governance-map.md`; V1 baseline `architecture/32_*` |
 | **Amendment** | Requires Project Owner approval, Decision Log / ADR entry, and update of this document in the same change set |
 
@@ -18,11 +18,12 @@
 This Constitution exists so that Workspace cannot lose itself to feature accumulation, tool-first development, external platforms, or multiple truths.
 
 **Implementation is the highest authority for what the system currently does.**  
-**This Constitution is the highest authority for what the system is allowed to become.**
+**The Workspace Constitutional Specification v2 is the highest authority for what the system is allowed to become.**  
+**This document is a subordinate Architecture Standard.** It MAY guide engineering detail only where it does not conflict with the Constitutional Specification.
 
 When documentation conflicts with implementation, record the discrepancy and correct documentation — do not silently invent a third truth.
 
-When a proposal conflicts with this Constitution, the proposal loses unless this Constitution is formally amended.
+When a proposal conflicts with the Constitutional Specification, the proposal loses unless that Specification is formally amended.
 
 ---
 

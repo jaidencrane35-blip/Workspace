@@ -96,8 +96,51 @@ for (const [name, meta] of Object.entries(verifiers)) {
   }
 }
 
-if (!fs.existsSync(path.join(root, "architecture/ARCHITECTURAL_CONSTITUTION_V2.md"))) {
-  fail("constitution document missing");
+const constitutionalSpec =
+  "docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md";
+if (!fs.existsSync(path.join(root, constitutionalSpec))) {
+  fail(`constitutional specification missing: ${constitutionalSpec}`);
+}
+if (health.constitution?.document !== constitutionalSpec) {
+  fail(
+    `constitution.document must be ${constitutionalSpec} (got ${health.constitution?.document})`,
+  );
+}
+if (
+  !fs.existsSync(path.join(root, "architecture/ARCHITECTURAL_CONSTITUTION_V2.md"))
+) {
+  fail("subordinate engineering constitution missing");
+}
+if (
+  !fs.existsSync(
+    path.join(root, "docs/00-Constitution/ARCHITECTURE_AUTHORITY_HIERARCHY.md"),
+  )
+) {
+  fail("architecture authority hierarchy missing");
+}
+if (
+  !fs.existsSync(
+    path.join(root, "docs/00-Constitution/CONSTITUTIONAL_COMPLIANCE_CHECKLIST.md"),
+  )
+) {
+  fail("constitutional compliance checklist missing");
+}
+if (
+  !fs.existsSync(
+    path.join(root, "docs/00-Constitution/CONSTITUTIONAL_ALIGNMENT_AUDIT.md"),
+  )
+) {
+  fail("constitutional alignment audit missing");
+}
+if (
+  !fs.existsSync(
+    path.join(
+      root,
+      "docs/00-Constitution/WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md",
+    ),
+  )
+) {
+  fail("engineering execution standard missing");
 }
 
 if (!fs.existsSync(path.join(root, "docs/engineering-milestone-report.md"))) {

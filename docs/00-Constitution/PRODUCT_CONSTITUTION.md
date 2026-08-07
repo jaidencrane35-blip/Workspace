@@ -6,8 +6,8 @@
 | **Version** | 0.1 |
 | **Date** | 2026-08-07 |
 | **Owner** | Project Owner |
-| **Relationship** | Companion to `PROJECT-CONSTITUTION.md` (values/governance) and subordinate to `architecture/ARCHITECTURAL_CONSTITUTION_V2.md` for engineering architecture |
-| **Does not repeal** | Architectural Constitution V2; Constitutional Execution Protocol; AI permission sequence |
+| **Relationship** | Companion to `PROJECT-CONSTITUTION.md` (values/governance). For architecture, subordinate to `WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md` (highest). `architecture/ARCHITECTURAL_CONSTITUTION_V2.md` is also subordinate to that Spec. |
+| **Does not repeal** | Workspace Constitutional Specification v2; Constitutional Execution Protocol; AI permission sequence |
 | **Amendment** | Project Owner approval + Decision Log entry |
 
 ---
@@ -16,9 +16,9 @@
 
 This Product Constitution defines **how Workspace should feel and be discovered**.
 
-The Architectural Constitution defines **what Workspace may become structurally** (one pipeline, one permission model, one OS authority, honesty, local-first, no ambient capture by default).
+The **Workspace Constitutional Specification v2** defines **what Workspace may become structurally** (information ownership, authority, transformation chain, honesty, local trust).
 
-When experience ambition and architectural law appear to conflict, **architectural law wins until this document and Architectural Constitution V2 are formally reconciled**. Product identity may evolve in presentation; it may not silently disable trust machinery.
+When experience ambition and architectural law appear to conflict, **the Constitutional Specification wins**. Product identity may evolve in presentation; it may not silently disable trust machinery.
 
 ---
 
@@ -246,7 +246,7 @@ Forbidden by default:
 | --- | --- |
 | `docs/product-proof-refoundation.md` | Superseded as **primary product direction** where it conflicts (e.g. five-tab proof harness as default identity; AI deferred as absolute). Recovery loop remains a core *capability*. |
 | Experience chrome Home/Save/Continue/Check-in/Guide | Becomes **surfaces reachable through conversation and Mode 3 expansion**, not the default home IA |
-| Architectural Constitution V2 | Unchanged; still highest engineering architecture authority |
+| Architectural Constitution V2 | Subordinate Architecture Standard — Workspace Constitutional Specification v2 is sole architectural authority |
 
 ---
 

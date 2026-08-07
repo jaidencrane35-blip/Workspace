@@ -7,8 +7,10 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.39 Product Operator Intelligence Validation (awaiting Owner live Product Proof) |
-| **Rule** | Ignore prior chat history. Reassess repository truth before any implementation. |
+| **Latest program** | Constitutional Governance framework complete — P16 Product Proof still pending |
+| **Rule** | Spec v2 = sole architectural authority. Execution Standard v1 = how all programs run. Classify work, max layer, lowest-layer invariant, compliance checklist. Do not reopen Spec without a Review Trigger. |
+
+**Milestone:** Workspace has completed its Constitutional Governance phase. The product now operates under the Workspace Constitutional Specification v2 and the Engineering Execution Standard v1. Future engineering is expected to occur within this framework. Constitutional work is closed unless a named constitutional review trigger is satisfied.
 
 **Start here before any execution program.**
 
@@ -57,12 +59,16 @@ Conversation
 
 | Authority | Document |
 | --- | --- |
-| Architectural Constitution | `architecture/ARCHITECTURAL_CONSTITUTION_V2.md` (**v2.0**) |
-| Product Constitution | `docs/00-Constitution/PRODUCT_CONSTITUTION.md` |
-| Execution protocol | `.cursor/rules/constitutional-execution-protocol.mdc` — P16.30 reopen after P16.28 exit falsified by F9–F11; Owner live review |
+| **Workspace Constitutional Specification v2** | `docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md` — **sole architectural authority** |
+| **Engineering Execution Standard v1** | `docs/00-Constitution/WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md` — how programs execute |
+| Authority hierarchy | `docs/00-Constitution/ARCHITECTURE_AUTHORITY_HIERARCHY.md` |
+| Compliance checklist | `docs/00-Constitution/CONSTITUTIONAL_COMPLIANCE_CHECKLIST.md` |
+| Architectural Constitution (subordinate) | `architecture/ARCHITECTURAL_CONSTITUTION_V2.md` — MUST NOT override Spec |
+| Product Constitution | `docs/00-Constitution/PRODUCT_CONSTITUTION.md` — experience law; subordinate for architecture |
+| Execution protocol | `.cursor/rules/constitutional-execution-protocol.mdc` — governance under Spec |
 | Machine state | `docs/project-health.json` (synced to `app/public/project-health.json`) |
-| Product Gravity | `docs/ui/PRODUCT_GRAVITY_RULE.md` |
-| Product Proof | `docs/capability-runtime/PRODUCT_PROOF_RULE.md` |
+| Product Gravity | `docs/ui/PRODUCT_GRAVITY_RULE.md` — principle under Spec |
+| Product Proof | `docs/capability-runtime/PRODUCT_PROOF_RULE.md` — governance under Spec |
 | User Adaptation Prohibition | Permanent (P16.6) — same Product Proof authority |
 | Production Before Expansion | Permanent (P16.15) — same Product Proof authority |
 | Evidence Before Modification | Permanent (P16.16) — same Product Proof authority |
@@ -178,18 +184,21 @@ Catalogue: `docs/capability-runtime/CAPABILITY_DOMAIN_CATALOGUE.md`.
 
 ## 11. Frozen architectural boundaries
 
-Do not redesign without a new constitutional program:
+**Canonical:** `docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md`.
 
-1. Conversation → Intent → Kernel Operator → Runtime → Providers → OS  
-2. UI Architecture Spec (P8)  
-3. Product Gravity / Presentation purity  
-4. Provider non-orchestration (no provider-to-provider calls)  
-5. Voice as input device (never owns desktop orchestration)  
-6. Capability Independence Rule  
-7. User Adaptation Prohibition  
-8. Production Before Expansion  
-9. Evidence Before Modification / Root Cause Before Rewrite  
-10. Production Quality Includes Repository Quality / Evidence Before Completion  
+Do not redesign constitutional concepts unless a named review trigger is satisfied. Implementation mapping (non-exhaustive):
+
+1. Constitutional Transformation Chain: Signal → Meaning → Plan → [Authority] → Effect → Fact → Experience  
+2. Conversation → Intent → Kernel Operator → Runtime → Providers → OS (current realization)  
+3. UI Architecture Spec (P8)  
+4. Product Gravity / Presentation purity  
+5. Provider non-orchestration (no provider-to-provider calls)  
+6. Voice as Input (never owns Effects)  
+7. Capability Independence Rule  
+8. User Adaptation Prohibition  
+9. Production Before Expansion  
+10. Evidence Before Modification / Root Cause Before Rewrite  
+11. Constitutional Closure — evolution within Spec only 
 
 ---
 

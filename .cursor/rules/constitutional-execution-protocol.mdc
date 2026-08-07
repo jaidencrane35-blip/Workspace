@@ -206,17 +206,17 @@ Future Track B providers plug into a gravity-stable conversational surface; they
 
 ## Authorities (read before engineering decisions)
 
-1. `architecture/ARCHITECTURAL_CONSTITUTION_V2.md` (highest)
-2. `docs/project-health.json` (machine-readable engineering state)
-3. `docs/engineering-milestone-report.md`
-4. `docs/constitutional-engineering-backlog.md`
-5. `docs/constitutional-gap-analysis.md`
-6. `docs/replaceability-matrix.md`
-7. `docs/workspace-strategic-review.md`
-8. `docs/architecture-knowledge-map.md`
-9. Remaining engineering maps
+1. `docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md` (**sole architectural authority**)
+2. `docs/00-Constitution/WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md` (**how every program executes**)
+3. `docs/00-Constitution/ARCHITECTURE_AUTHORITY_HIERARCHY.md` + `CONSTITUTIONAL_COMPLIANCE_CHECKLIST.md`
+4. `docs/project-health.json` (machine-readable engineering state)
+5. `docs/project/ENGINEERING_HANDOFF.md`
+6. `docs/engineering-milestone-report.md`
+7. `architecture/ARCHITECTURAL_CONSTITUTION_V2.md` (subordinate; Spec wins on conflict)
+8. Product Proof Rule and capability standards (governance under Spec)
 
-Implementation truth overrides stale docs. Constitution overrides implementation direction.
+Assume Spec v2 is authoritative. Execute under Execution Standard v1 (classify, max layer, lowest-layer invariant). Do not modify constitutional concepts unless a named review trigger is satisfied.
+Implementation truth overrides stale docs. Spec overrides conflicting architectural claims.
 `docs/project-health.json` must be updated by every completed execution program (`pnpm sync:project-health`).
 
 ## Session lifecycle (exact order)

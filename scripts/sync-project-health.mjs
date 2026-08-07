@@ -31,7 +31,9 @@ function readText(rel) {
 }
 
 const packageJson = JSON.parse(readText("package.json"));
-const constitution = readText("architecture/ARCHITECTURAL_CONSTITUTION_V2.md");
+const constitutionalSpecPath =
+  "docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md";
+const constitution = readText(constitutionalSpecPath);
 const constitutionVersion =
   constitution.match(/\|\s*\*\*Version\*\*\s*\|\s*([^|]+)\|/)?.[1]?.trim() ??
   "unknown";
@@ -378,6 +380,16 @@ const completedPrograms = [
       "P15_PERMANENTLY_CLOSED_P16_ELIGIBLE",
     ],
   },
+  {
+    id: "constitutional-specification-p16-a3",
+    backlogRef: "P16.A3 Codify Workspace Constitutional Specification v2",
+    completed: "2026-08-07",
+    artifacts: [
+      "docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md",
+      "docs/00-Constitution/ARCHITECTURE_AUTHORITY_HIERARCHY.md",
+      "docs/project/ENGINEERING_HANDOFF.md",
+    ],
+  },
 ];
 
 const remainingBacklog = [
@@ -386,7 +398,8 @@ const remainingBacklog = [
     phase: "A",
     title: "Documentation authority convergence",
     gap: "G3",
-    status: "backlog",
+    status: "partial",
+    note: "Canonical Spec + hierarchy codified (P16.A3); historical archive/cleanup remains Track A",
   },
   {
     id: "workspace-state-naming",
@@ -454,8 +467,12 @@ const health = {
   schemaVersion: 1,
   updatedAt: new Date().toISOString(),
   constitution: {
-    document: "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
+    document: constitutionalSpecPath,
     version: constitutionVersion,
+    subordinateEngineeringConstitution:
+      "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
+    authorityHierarchy:
+      "docs/00-Constitution/ARCHITECTURE_AUTHORITY_HIERARCHY.md",
   },
   engineeringMode: "constitutional-execution",
   protocol: {
@@ -467,7 +484,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16.39 Product Operator Intelligence Validation. Situation Goals own operator activity states + ≥750 battery + State vs Goal ownership proof. Context/Goal Resolution/Registry not expanded. Canonical: VOICE_P16_39_OPERATOR_INTELLIGENCE.md. Do not mark permanently closed. Do not begin P17.",
+    note: "Meta-architecture complete: Spec v2.1 + Engineering Execution Standard v1. Constitutional Governance phase. Do not reopen Spec without Review Trigger. Execute under Execution Standard (classify, max layer, lowest layer). P16 Product Proof still pending. Do not begin P17.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -512,7 +529,11 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16.39 Operator Intelligence — Situation Goals activity states + ≥750 battery; Product Proof pending Owner acceptance (NOT permanently closed)",
+      "Engineering Execution Standard v1 — meta-architecture complete",
+      "A3.V repository constitutionally aligned — governance-first engineering phase",
+      "A3.F Workspace Constitutional Specification v2.1 frozen — no further Spec work without Review Trigger",
+      "P16.A3 codify superseded by A3.F final review",
+      "P16.39 Operator Intelligence — Product Proof pending Owner acceptance (NOT permanently closed)",
       "Owner Experience Before Engineering Confidence permanent (P16.21)",
       "Repository Quality Before Milestone Closure permanent (P16.21)",
       "User Adaptation Prohibition permanent (P16.6)",
@@ -750,7 +771,7 @@ const health = {
     ],
     remaining: [
       "Manual domain.ts outside Product Proof",
-      "Doc authority convergence pending",
+      "Doc authority: Spec+hierarchy canonical (P16.A3); historical archive remains Track A",
       "WorkspaceState naming collision",
       "No AgentToolGate / AuditIntegrity yet",
       "Tray / deeper native polish remaining (Track A debt)",
@@ -760,16 +781,16 @@ const health = {
     date: "2026-08-07",
     document: "docs/engineering-milestone-report.md",
     title:
-      "P16.39 Operator Intelligence — awaiting Owner live Product Proof",
+      "Engineering Execution Standard v1 — meta-architecture complete; P16 Product Proof still pending",
     reviewBrief:
-      "docs/capability-runtime/product-proof/VOICE_P16_39_OPERATOR_INTELLIGENCE.md",
+      "docs/00-Constitution/WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md",
   },
   handoffStatus: "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   nextRecommendedExecutionProgram: {
     id: "file-provider-p17",
     title: "P17 File Provider",
     blockedUntil: "P16 Owner Product Proof acceptance",
-    note: "Do not begin P17 until P16 is permanently closed by Owner acceptance. Follow Provider Acceptance Standard + Capability Independence Rule.",
+    note: "Do not begin P17 until P16 is permanently closed by Owner acceptance. Implement under Workspace Constitutional Specification v2. Do not modify constitutional concepts without a review trigger.",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",

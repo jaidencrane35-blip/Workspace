@@ -2,13 +2,14 @@
 
 ## Start here
 
-Before any implementation work, read the canonical engineering handoff:
+Before any implementation work:
 
-**[`docs/project/ENGINEERING_HANDOFF.md`](docs/project/ENGINEERING_HANDOFF.md)**
+1. Assume **[`docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md`](docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md)** is the sole architectural authority.
+2. Execute under **[`docs/00-Constitution/WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md`](docs/00-Constitution/WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md)** — classify work, declare max layer, lowest-layer invariant, pre-flight.
+3. Read the engineering handoff: **[`docs/project/ENGINEERING_HANDOFF.md`](docs/project/ENGINEERING_HANDOFF.md)**
+4. Reassess `docs/project-health.json`.
 
-Then reassess machine state in `docs/project-health.json`. Treat repository documentation as authoritative over chat history.
-
-Current handoff posture (see handoff + health for truth): **P16.39 Operator Intelligence — engineering complete for this program; Product Proof pending Owner acceptance. Owner evidence outranks engineering confidence. Canonical: docs/capability-runtime/product-proof/VOICE_P16_39_OPERATOR_INTELLIGENCE.md. Do not begin P17. Do not mark P16 permanently closed.**
+Current handoff posture: **Meta-architecture complete. Spec v2.1 + Execution Standard v1. Constitutional Governance phase. P16 Product Proof still pending. Do not begin P17. Do not reopen Spec without a Review Trigger.**
 
 ## Cursor Cloud specific instructions
 
