@@ -48,6 +48,16 @@ if (!voiceRs.includes("listen_fail_recover") || !voiceRs.includes("engine_reset"
 if (!voiceRs.includes("listen_idle_keep_engine")) {
   fail("voice port must keep engine on no_speech/cancelled (P16.14)");
 }
+if (!voiceRs.includes("mic_unavailable_soft")) {
+  fail("voice port must soft-recover microphone_unavailable without sticky deny (P16.18)");
+}
+// Must not sticky-cache ConfirmedDenied on microphone_unavailable path.
+if (
+  /microphone_unavailable[\s\S]{0,240}ConfirmedDenied/.test(voiceRs) &&
+  !voiceRs.includes("mic_unavailable_soft")
+) {
+  fail("microphone_unavailable must not set ConfirmedDenied (P16.18)");
+}
 if (!voiceRs.includes("warm_lock")) {
   fail("voice port must serialize warm_up (startup + UI contention)");
 }
@@ -187,6 +197,32 @@ if (guide.includes("markSettingsGuidanceOffered") || guide.includes("wasSettings
 }
 if (voiceRs.includes("SetEndSilenceTimeout")) {
   fail("RecognizeAsync EndSilenceTimeout residue must remain removed (P16.17)");
+}
+// SystemVoicePort listen path must soft-recover mic failures and serialize warm.
+if (!voiceRs.includes("mic_unavailable_soft")) {
+  fail("listen recovery must soft-handle microphone_unavailable (P16.18)");
+}
+if (
+  !voiceRs.includes("Serialize warm with startup/UI warm") ||
+  !voiceRs.includes("self.warm_lock.lock()")
+) {
+  fail("SystemVoicePort listen must take warm_lock before warm (P16.18)");
+}
+// Settings guidance must not trigger on transient microphone_unavailable.
+if (
+  /microphone_unavailable[\s\S]{0,120}notePermissionDenied/.test(micUi)
+) {
+  fail("mic UI must not treat microphone_unavailable as Settings deny (P16.18)");
+}
+const failureMatrix = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_PRODUCTION_FAILURE_MATRIX.md",
+);
+if (!fs.existsSync(failureMatrix)) {
+  fail("missing VOICE_PRODUCTION_FAILURE_MATRIX.md (P16.18 artifact)");
+}
+if (!matrix.includes("R13") || !matrix.includes("mic_unavailable_soft")) {
+  fail("regression matrix must cover P16.18 sticky-deny fix (R13)");
 }
 
 console.log("verify-voice-regression: ok");

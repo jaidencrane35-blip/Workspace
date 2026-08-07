@@ -200,7 +200,7 @@ export function VoiceMicButton({
         return;
       }
       setPhase("error");
-      // Poison failures reset the native engine — clear frontend warm cache.
+      // Poison / soft mic failures reset the native engine — clear frontend warm cache.
       if (
         result.status === "recognition_failed" ||
         result.status === "recognition_unavailable" ||
@@ -209,10 +209,9 @@ export function VoiceMicButton({
       ) {
         setWarmed(false);
       }
-      if (
-        result.status === "permission_denied" ||
-        result.status === "microphone_unavailable"
-      ) {
+      // P16.18: only true permission_denied drives Settings guidance.
+      // Transient microphone_unavailable must not clear grant or open Settings.
+      if (result.status === "permission_denied") {
         const speechPrivacy = result.message.toLowerCase().includes("speech privacy");
         const { announce, message } = notePermissionDenied(
           speechPrivacy ? "speech" : "microphone",
@@ -220,6 +219,8 @@ export function VoiceMicButton({
         setDeniedUi(true);
         if (announce) {
           onVoiceMessage(message);
+        } else {
+          onVoiceMessage(result.message);
         }
       } else {
         onVoiceMessage(result.message);

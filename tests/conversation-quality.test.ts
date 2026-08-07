@@ -119,6 +119,13 @@ describe("conversation quality (P16.6)", () => {
       kind: "browserOpen",
       url: "https://chatgpt.com",
     });
+    expect(resolveIntent("Open Chrome browser.")).toMatchObject({
+      kind: "appOpen",
+      query: "Google Chrome",
+    });
+    expect(resolveIntent("Launch browser.")).toMatchObject({
+      kind: "browserOpen",
+    });
   });
 
   it("does not send casual how-to chat into Guide", () => {

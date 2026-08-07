@@ -523,6 +523,9 @@ function canonicalizeOpenTarget(value: string): string {
   t = t.replace(/\s+on\s+(a\s+)?new\s+tab$/i, "");
   t = t.replace(/^(a\s+|the\s+)?new\s+/i, "");
   t = t.replace(/\s+tab$/i, "");
+  // “Chrome browser” / “Edge app” — desktop surface words, not executables (P16.18).
+  t = t.replace(/\s+(web\s+)?browsers?$/i, "");
+  t = t.replace(/\s+apps?$/i, "");
   t = stripOpenDeterminers(t);
   return t.trim();
 }
@@ -1703,9 +1706,18 @@ export function resolveIntent(raw: string): IntentAction {
   if (appLaunchExplicit?.[1]) {
     const rawQuery = stripTrailingPunctuation(appLaunchExplicit[1]);
     const query = expandSemanticAlias(rawQuery) || rawQuery;
+    // Bare “launch/start browser” — never invent browser.exe.
+    if (/^(a\s+|my\s+|the\s+|another\s+|a\s+new\s+|new\s+)?browsers?$/i.test(query)) {
+      return {
+        kind: "browserOpen",
+        url: "https://www.google.com",
+        reply: "Opening your browser.",
+      };
+    }
     // Site abbreviations must never become executable launches (User Adaptation).
     if (resolveSiteAlias(rawQuery) || resolveSiteAlias(query)) {
-      const site = resolveOpenWebsiteTarget(rawQuery);
+      const site =
+        resolveOpenWebsiteTarget(rawQuery) ?? resolveOpenWebsiteTarget(query);
       if (site) {
         return site;
       }

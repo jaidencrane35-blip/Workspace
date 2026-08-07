@@ -65,7 +65,10 @@
     "evidenceBeforeCompletion": true,
     "repositoryHealthBeforeMilestoneClosure": true,
     "noDeadVoiceTestInstallHook": true,
-    "noRecognizeAsyncEndSilenceTimeout": true
+    "noRecognizeAsyncEndSilenceTimeout": true,
+    "softMicUnavailableNoStickyDeny": true,
+    "listenWarmSerialized": true,
+    "settingsGuidanceOnlyOnPermissionDenied": true
   },
   "uiPhases": [
     "idle",

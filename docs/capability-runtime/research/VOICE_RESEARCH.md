@@ -379,6 +379,19 @@ Repository-wide `workspace-kernel` unused-item warnings are **DOCUMENT**ed Track
 
 Principles adopted: **Production Quality Includes Repository Quality**, **Evidence Before Completion**, **Repository Health Before Milestone Closure**.
 
+### P16.18 Production Acceptance Investigation
+
+Owner findings treated as repository truth. Engineering vs Owner disagreement audit:
+
+| Finding | Root cause | Fix |
+| --- | --- | --- |
+| Mic unavailable after success | Sticky `ConfirmedDenied` on transient `MicrophoneUnavailable` | Soft recover; sticky only on true `permission_denied` |
+| Long Ready | Listen warm raced startup warm (no lock) | `warm_lock` on listen warm |
+| Permission confusion | UI mapped soft mic fail → Settings deny | Settings only on `permission_denied` |
+| Browser → executable | “Chrome browser” / “launch browser” fallthrough | Canonicalize + bare browser open |
+
+Matrix: `VOICE_PRODUCTION_FAILURE_MATRIX.md`. **WinRT remains WRAP.**
+
 ---
 
 ## Explicit non-goals

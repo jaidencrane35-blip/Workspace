@@ -1,35 +1,23 @@
 # Voice Input — Product Proof
-## P16 / P16.17 — Owner checklist (Production Readiness Audit)
+## P16 / P16.18 — Owner checklist (Acceptance Investigation)
 
 | Field | Value |
 | --- | --- |
-| **Program** | P16 Voice Input (+ P16.17 Production Readiness Audit) |
+| **Program** | P16 Voice Input (+ P16.18 Production Acceptance Investigation) |
 | **Status** | **Pending live Product Owner acceptance** (**not** Product Complete) |
 | **Launch** | Engineering leaves Workspace running **exactly once** for this review |
 
 ---
 
-## Please test (Workspace is already open — leave it running)
+## Please stress these Owner-reported paths
 
-### Voice reliability
-1. Click mic → bright Ready → speak immediately (first words kept)  
-2. Long turn with natural pauses; Stop via mic  
-3. Quiet cancel / no speech — next listen still quick  
-4. Several successful sessions — no “couldn’t listen” after success  
-5. No freeze; no fake Ready if listening cannot start  
-6. Mic feels ready after first warm  
+1. Several successful listens, then another — must **not** become “unavailable” / Settings spam  
+2. Click mic after prior success — Ready should stay quick (no multi-second hang)  
+3. Speak immediately on Ready — first words kept  
+4. “Open Chrome browser” / “Launch browser” / “Open GPT” — browser/desktop, never inventing `.exe`  
+5. Permission denied only when Windows truly denies — not after a flaky listen  
 
-### Permission
-1. Denied: one explanation; Settings only on mic click  
-2. Allow → return → ready; later launches never spam Settings  
-
-### Conversation
-- Open GPT / Launch GPT / Open Edge / Open another browser  
-- Open YouTube beside Cursor / Bring Chrome forward  
-- Take a screenshot / Capture this window / Can you hear me?  
-
-### Visual
-Readable glass; clear Ready / Listening / Processing / Error; speaking indicator
+Also re-check: long pause dictation, cancel, screenshot, Can you hear me?
 
 When finished, **close Workspace normally**. Engineering will **not** relaunch.
 

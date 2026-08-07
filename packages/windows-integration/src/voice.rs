@@ -67,20 +67,29 @@ pub fn classify_speech_failure(code: u32, detail: &str) -> VoiceListenOutcome {
             message: "Speech recognition isn’t set up for this language. Check Windows speech settings and try again.".into(),
         };
     }
+    // True OS deny / privacy → permission_denied (may become sticky ConfirmedDenied).
     if code == 0x8007_0005
         || lower.contains("access is denied")
         || lower.contains("privacy-microphone")
         || (lower.contains("microphone")
-            && (lower.contains("denied")
-                || lower.contains("not allowed")
-                || lower.contains("unavailable")
-                || lower.contains("access")))
+            && (lower.contains("denied") || lower.contains("not allowed")))
+    {
+        return VoiceListenOutcome {
+            ok: false,
+            transcript: None,
+            status: "permission_denied".into(),
+            message: MICROPHONE_PERMISSION_MESSAGE.into(),
+        };
+    }
+    // Transient device busy / unavailable — never sticky-deny (P16.18 Owner finding).
+    if lower.contains("microphone")
+        && (lower.contains("unavailable") || lower.contains("access"))
     {
         return VoiceListenOutcome {
             ok: false,
             transcript: None,
             status: "microphone_unavailable".into(),
-            message: MICROPHONE_PERMISSION_MESSAGE.into(),
+            message: "I couldn’t reach the microphone just now. Try again — if it keeps failing, click the mic for Settings help.".into(),
         };
     }
     VoiceListenOutcome {
@@ -477,8 +486,8 @@ impl VoicePort for SystemVoicePort {
         self.cancel_requested.store(false, Ordering::SeqCst);
         #[cfg(windows)]
         {
-            // Never hard-block listen on MediaCapture cache.
-            // ConfirmedDenied only after SpeechRecognizer MicrophoneUnavailable.
+            // ConfirmedDenied only after true permission_denied (privacy / access denied).
+            // Transient MicrophoneUnavailable must never sticky-block later listens (P16.18).
             if matches!(
                 self.mic_access.lock().ok().and_then(|g| *g),
                 Some(MicAccess::ConfirmedDenied)
@@ -490,6 +499,20 @@ impl VoicePort for SystemVoicePort {
                     message: MICROPHONE_PERMISSION_MESSAGE.into(),
                 });
             }
+            // Serialize warm with startup/UI warm — listen previously raced CompileConstraints.
+            {
+                let _warm = self.warm_lock.lock().map_err(|_| {
+                    WindowsIntegrationError::VoiceFailed("voice warm lock poisoned".into())
+                })?;
+                if let Err(error) = winrt_warm_up(&self.engine, &self.warmed) {
+                    return Ok(VoiceListenOutcome {
+                        ok: false,
+                        transcript: None,
+                        status: "recognition_unavailable".into(),
+                        message: sanitize_setup_message(&error.to_string()),
+                    });
+                }
+            }
             let outcome = winrt_listen_continuous_when_ready(
                 &self.engine,
                 &self.warmed,
@@ -499,8 +522,6 @@ impl VoicePort for SystemVoicePort {
                 on_sound_started,
             )?;
             // P16.14: never reset the engine on idle outcomes (no_speech / cancelled).
-            // P16.13 reset-on-any-failure forced cold recompile every quiet click →
-            // latency + “I couldn’t listen just now” after previously working runs.
             if outcome.ok {
                 if let Ok(mut guard) = self.mic_access.lock() {
                     *guard = Some(MicAccess::Allowed);
@@ -514,7 +535,13 @@ impl VoicePort for SystemVoicePort {
                     outcome.status
                 );
             } else if outcome.status == "microphone_unavailable" {
-                log::warn!("voice.lifecycle: listen_fail_recover status=microphone_unavailable");
+                // Soft recover — reset poisoned engine, never ConfirmedDenied.
+                log::warn!(
+                    "voice.lifecycle: mic_unavailable_soft — reset engine, not sticky-deny"
+                );
+                reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
+            } else if outcome.status == "permission_denied" {
+                log::warn!("voice.lifecycle: listen_fail_recover status=permission_denied");
                 if let Ok(mut guard) = self.mic_access.lock() {
                     *guard = Some(MicAccess::ConfirmedDenied);
                 }
@@ -842,8 +869,9 @@ fn winrt_listen_continuous_when_ready(
 
     const MAX_WALL: Duration = Duration::from_secs(5 * 60);
     let t0 = Instant::now();
+    // Warm is performed under warm_lock by SystemVoicePort before this call.
+    // Cheap no-op when already compiled; safe if caller already warmed.
     log::info!("voice.lifecycle: stage=click_to_warm_begin");
-
     if let Err(error) = winrt_warm_up(engine, warmed) {
         log::warn!("voice.lifecycle: stage=warm_failed +{:?}", t0.elapsed());
         return Ok(VoiceListenOutcome {
@@ -1172,11 +1200,12 @@ fn winrt_listen_continuous_when_ready(
         if let Some(status) = finished_status {
             match status {
                 SpeechRecognitionResultStatus::MicrophoneUnavailable => {
+                    // Often transient after warm contention — soft fail, not Settings spam.
                     hard_fail = Some(VoiceListenOutcome {
                         ok: false,
                         transcript: None,
                         status: "microphone_unavailable".into(),
-                        message: MICROPHONE_PERMISSION_MESSAGE.into(),
+                        message: "I couldn’t reach the microphone just now. Try again — if it keeps failing, click the mic for Settings help.".into(),
                     });
                     break;
                 }
@@ -1343,6 +1372,19 @@ mod tests {
         assert!(!outcome.message.contains("0x"));
         assert!(!outcome.message.contains("HRESULT"));
         assert!(!outcome.message.contains("recognize:"));
+    }
+
+    #[test]
+    fn true_mic_access_denied_is_permission_denied() {
+        let outcome = classify_speech_failure(0x8007_0005, "Access is denied.");
+        assert_eq!(outcome.status, "permission_denied");
+    }
+
+    #[test]
+    fn transient_mic_unavailable_is_not_permission_denied() {
+        let outcome = classify_speech_failure(0, "The microphone is unavailable");
+        assert_eq!(outcome.status, "microphone_unavailable");
+        assert!(!outcome.message.to_ascii_lowercase().contains("settings so you can allow"));
     }
 
     #[test]

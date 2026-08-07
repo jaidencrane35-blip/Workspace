@@ -1,9 +1,9 @@
 # Engineering Milestone Report
-## P16.17 Production Readiness Audit & Final Product Completion
+## P16.18 Production Acceptance Investigation & Architectural Falsification
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.17 Production Readiness Audit & Final Product Completion |
+| **Execution program** | P16.18 Production Acceptance Investigation & Architectural Falsification |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
@@ -11,24 +11,25 @@
 
 ---
 
-## Falsification summary
+## Disagreement audit (summary)
 
-Attempted to prove Voice unfinished. Voice-owned dead code and RecognizeAsync residue removed. Capturing honesty (R11) retained. No new reproducible Voice runtime defect found.
+Engineering’s “no defects” claim was falsified against Owner observations.
 
-## Repository quality
+| Owner finding | Reproduced | Disposition |
+| --- | --- | --- |
+| Mic unavailable after success | YES | FIX sticky deny |
+| Long Ready | YES | FIX warm_lock on listen |
+| Crashes | PARTIAL | DOCUMENT WinRT residual |
+| First-word inconsistency | YES (via late Ready) | FIX via warm race |
+| NL inconsistency | PARTIAL | FIX browser phrasing |
+| Browser ? executable | YES | FIX canonicalize |
+| Permission confusion | YES | FIX UI Settings gate |
+| Premature completion claims | YES | DOCUMENT blind spot |
 
-| Surface | Result |
-| --- | --- |
-| Voice Rust / IPC / TS | Clean of avoidable dead_code after P16.17 |
-| Kernel unused warnings | Documented Track A — not Voice-owned |
-| Audit artifact | `docs/capability-runtime/product-proof/VOICE_PRODUCTION_READINESS_AUDIT.md` |
-
-## Principles
-
-Production Quality Includes Repository Quality · Evidence Before Completion · Repository Health Before Milestone Closure (permanent).
+Artifact: `docs/capability-runtime/product-proof/VOICE_PRODUCTION_FAILURE_MATRIX.md`.
 
 ## Explicit
 
-- **P16 Product Complete:** **No — Owner only**  
+- **Recommend Owner acceptance review:** Yes — engineering blockers for F1/F2/F6/F7 addressed  
+- **P16 permanently closed:** **No**  
 - **P17:** Not begun  
-- **Voice-owned reproducible defects remaining:** None identified  

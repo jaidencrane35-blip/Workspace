@@ -1,7 +1,9 @@
 # Voice Input — Regression Matrix
-## P16.17 Production Readiness Audit
+## P16.18 Production Acceptance Investigation
 
 Engineering verification only. Does **not** equal Owner Product Complete.
+
+See also: `VOICE_PRODUCTION_FAILURE_MATRIX.md`.
 
 | ID | Failure (Owner / measured) | Root cause | Permanent guard | Verifier / test |
 | --- | --- | --- | --- | --- |
@@ -17,6 +19,9 @@ Engineering verification only. Does **not** equal Owner Product Complete.
 | R10 | Repeated warm IPC on click | Extra `warmUpVoice` before listen | Mount warm only; listen warms cheaply | `noListenPathWarmGate` |
 | R11 | Ready UI without capture (first-word) | `capturing_wait_timeout` still emitted Ready | Fail listen if Capturing never confirmed; log `capturing_contract_failed` | `verify-voice-regression` P16.16 |
 | R12 | Declared complete with Voice dead code | Noop test install + deprecated permission helpers | REMOVE dead Voice helpers; repository-quality principles | `VOICE_PRODUCTION_READINESS_AUDIT.md` |
+| R13 | Mic unavailable after success | Sticky `ConfirmedDenied` on transient `MicrophoneUnavailable` | Soft recover; sticky only on `permission_denied` | `mic_unavailable_soft` |
+| R14 | Long Ready / warm race | Listen warm without `warm_lock` | Serialize listen warm under `warm_lock` | listen path + `warm_lock` |
+| R15 | Browser phrasing → exe | “Chrome browser” / “launch browser” fallthrough | Canonicalize + bare browser → `browserOpen` | conversation-quality tests |
 
 ### Engineering stress (non-Owner)
 
