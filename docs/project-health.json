@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T10:16:55.114Z",
+  "updatedAt": "2026-08-07T10:26:35.127Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -15,7 +15,7 @@
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "note": "P16.32 Evidence-Driven Product Completion & Trust Validation. Owner evidence overrides engineering confidence. Hostile NL suite + exe invent refusal + registry discovery. Canonical: VOICE_P16_32_TRUST_VALIDATION.md. Do not mark permanently closed. Do not begin P17."
+    "note": "P16.33 Cognitive Capability, Desktop Semantics & Production Benchmark Validation. Voice not reopened. Registry self-description + cognitive locate/beside/monitor reasoning. Canonical: VOICE_P16_33_COGNITIVE_DESKTOP.md. Do not mark permanently closed. Do not begin P17."
   },
   "completedExecutionPrograms": [
     {
@@ -415,7 +415,7 @@
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16.32 Trust Validation — hostile NL evidence + no invented .exe + registry discovery; Product Proof pending Owner acceptance (NOT permanently closed)",
+      "P16.33 Cognitive Desktop — registry can/cannot/why + cognitive NL reasoning; Product Proof pending Owner acceptance (NOT permanently closed)",
       "Owner Experience Before Engineering Confidence permanent (P16.21)",
       "Repository Quality Before Milestone Closure permanent (P16.21)",
       "User Adaptation Prohibition permanent (P16.6)",
@@ -437,10 +437,10 @@
     ]
   },
   "currentMilestone": {
-    "id": "evidence-driven-trust-validation-p16-32",
-    "title": "P16.32 Evidence-Driven Product Completion & Trust Validation",
+    "id": "cognitive-desktop-p16-33",
+    "title": "P16.33 Cognitive Capability, Desktop Semantics & Production Benchmark Validation",
     "status": "engineering_complete_product_proof_pending",
-    "commit": "36da579"
+    "commit": "pending"
   },
   "acceptedReviews": [
     {
@@ -539,7 +539,7 @@
     {
       "id": "p16-voice-product-proof",
       "track": "B",
-      "summary": "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.32 Trust Validation; not permanently closed)"
+      "summary": "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.33 Cognitive Desktop; not permanently closed)"
     },
     {
       "id": "capability-providers-p17-plus",
@@ -579,7 +579,7 @@
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16.32 Trust Validation — Product Proof pending Owner acceptance; WinRT WRAP frozen; Owner evidence outranks engineering confidence",
+      "P16.33 Cognitive Desktop — Product Proof pending Owner acceptance; WinRT WRAP frozen; Voice not reopened; Owner evidence outranks engineering confidence",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -710,6 +710,11 @@
         "present": true,
         "wiredInTest": true
       },
+      "verify:cognitive-desktop": {
+        "script": "scripts/verify-cognitive-desktop.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
       "verify:dev-environment": {
         "script": "scripts/verify-dev-environment.mjs",
         "present": true,
@@ -793,8 +798,8 @@
   "lastMilestone": {
     "date": "2026-08-07",
     "document": "docs/engineering-milestone-report.md",
-    "title": "P16.32 Evidence-Driven Trust Validation — awaiting Owner live Product Proof",
-    "reviewBrief": "docs/capability-runtime/product-proof/VOICE_P16_32_TRUST_VALIDATION.md"
+    "title": "P16.33 Cognitive Desktop — awaiting Owner live Product Proof",
+    "reviewBrief": "docs/capability-runtime/product-proof/VOICE_P16_33_COGNITIVE_DESKTOP.md"
   },
   "handoffStatus": "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   "nextRecommendedExecutionProgram": {

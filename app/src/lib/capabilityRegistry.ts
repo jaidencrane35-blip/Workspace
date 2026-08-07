@@ -36,7 +36,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     modifiers: ["to the front", "full size", "beside"],
     requirements: ["Windows can find or launch the app"],
     limitations: [
-      "Unknown app names are not invented as .exe files",
+      "Unknown app names are never invented as programs",
       "Store / Settings use Windows protocol handlers",
     ],
     examples: [
@@ -195,6 +195,9 @@ export function isCapabilityDiscoveryUtterance(text: string): boolean {
     /^(show( me)?( your)? capabilities|list (your )?capabilities|list desktop (actions|commands)|what are your capabilities|capabilities)$/i.test(
       t,
     ) ||
+    /^(show me everything you can control|what can you control|everything you can control)$/i.test(
+      t,
+    ) ||
     /^(what (desktop )?tasks can you perform|what can you do on (the )?desktop|desktop (help|capabilities)|help with (the )?desktop)$/i.test(
       t,
     ) ||
@@ -206,7 +209,8 @@ export function isCapabilityDiscoveryUtterance(text: string): boolean {
     ) ||
     /^(what (can you do|do you do) with (folders?|screenshots?|clipboard|notifications?))$/i.test(
       t,
-    )
+    ) ||
+    /^(what can('|’)t you do|what can you not do|what are your limits)$/i.test(t)
   );
 }
 
@@ -248,7 +252,7 @@ function nodesForScope(scope: DiscoveryScope): CapabilityNode[] {
 
 /**
  * Generate a Conversation reply from the live capability graph only.
- * Examples / suggestions are taken from node.examples — never a separate hard-coded list.
+ * Self-describing: can / cannot / requirements / examples — never a separate hard-coded catalogue.
  */
 export function generateCapabilityDiscovery(scope: DiscoveryScope = "all"): {
   reply: string;
@@ -258,28 +262,38 @@ export function generateCapabilityDiscovery(scope: DiscoveryScope = "all"): {
   if (nodes.length === 0) {
     return {
       reply: "I don’t have a matching capability to describe for that yet.",
-      suggestion: "Ask “what can you do?” for the full desktop list.",
+      suggestion:
+        nodesForScope("all")[0]?.examples[0]
+          ? `Try “${nodesForScope("all")[0]!.examples[0]}”.`
+          : "Ask for a desktop action in ordinary words.",
     };
   }
 
-  const header =
-    scope === "all"
-      ? "Here’s what I can do on this desktop through Conversation:"
-      : `Here’s what I can do for ${scope}:`;
-
-  const lines = nodes.map((node) => {
+  const canLines = nodes.map((node) => {
     const example = node.examples[0] ?? node.summary;
-    const limit = node.limitations[0]
-      ? ` Limit — ${node.limitations[0]}.`
-      : "";
-    return `• ${node.domain}: ${node.summary}. Example — “${example}”.${limit}`;
+    const need = node.requirements[0] ? ` Needs — ${node.requirements[0]}.` : "";
+    return `• ${node.domain}: ${node.summary}. Example — “${example}”.${need}`;
   });
 
+  const cannotLines = nodes.flatMap((node) =>
+    node.limitations.map((limit) => `• ${node.domain}: ${limit}`),
+  );
+
+  const why =
+    "I only claim actions the Capability graph declares — I won’t invent apps, folders, or success.";
+
   const reply = [
-    header,
-    ...lines,
+    scope === "all"
+      ? "Here’s what I can control on this desktop through Conversation:"
+      : `Here’s what I can control for ${scope}:`,
+    ...canLines,
+    cannotLines.length > 0 ? "What I won’t overclaim:" : "",
+    ...cannotLines.slice(0, 8),
+    `Why: ${why}`,
     "Say what you want in ordinary words — I’ll turn it into desktop actions.",
-  ].join("\n");
+  ]
+    .filter((line) => line !== "")
+    .join("\n");
 
   const examples = nodes.flatMap((n) => n.examples).slice(0, 4);
   const suggestion =
@@ -311,4 +325,26 @@ export function suggestNearbyCapabilities(seed: string, limit = 3): string {
     return CAPABILITY_GRAPH.flatMap((n) => n.examples).slice(0, limit).join("”, “");
   }
   return unique.join("”, “");
+}
+
+/** Truthful recovery reply built only from registry limitations + nearby examples. */
+export function generateRecoveryGuidance(seed: string): {
+  reply: string;
+  suggestion: string;
+} {
+  const nearby = suggestNearbyCapabilities(seed, 3);
+  const limits = CAPABILITY_GRAPH.flatMap((n) =>
+    n.limitations.slice(0, 1).map((l) => `${n.domain}: ${l}`),
+  ).slice(0, 3);
+  const reply = [
+    `I can’t do that exactly as asked — and I won’t invent a desktop action.`,
+    limits.length > 0 ? `Related limits: ${limits.join("; ")}.` : "",
+    nearby ? `Closest things I can try: “${nearby}”.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return {
+    reply,
+    suggestion: nearby ? `Try “${nearby}”.` : "Ask “what can you do?”",
+  };
 }

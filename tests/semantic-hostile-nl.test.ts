@@ -183,6 +183,7 @@ describe("P16.32 hostile NL semantic validation", () => {
   it("generates capability discovery only from the live registry", () => {
     const discovery = generateCapabilityDiscovery("all");
     expect(discovery.reply).toMatch(/Applications|Windows|Browser/);
+    expect(discovery.reply).toMatch(/won’t overclaim|won't overclaim|Why:/i);
     expect(discovery.reply).not.toMatch(/Provider|Registry|Kernel|WinRT/);
     const scoped = generateCapabilityDiscovery("windows");
     expect(scoped.reply.toLowerCase()).toMatch(/window/);

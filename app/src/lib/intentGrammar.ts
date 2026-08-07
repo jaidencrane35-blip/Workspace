@@ -265,6 +265,22 @@ export function parseDesktopIntent(raw: string): DesktopIntent | null {
     };
   }
 
+  // Open / put / place / I want X beside|next to|alongside Y — before bare “I want X”
+  const beside = text.match(
+    /^(?:open|launch|put|place|i\s+want)\s+(.+?)\s+(?:beside|next\s+to|alongside)\s+(.+)$/i,
+  );
+  if (beside?.[1] && beside[2]) {
+    return {
+      action: "open",
+      target: beside[1].trim(),
+      modifier: "beside",
+      object: "",
+      context: "unknown",
+      confidence: 0.9,
+      secondaryTarget: beside[2].trim(),
+    };
+  }
+
   // Goal phrasing for desktop entities only — do not steal “show me a notification / windows”.
   const goal = text.match(
     /^(?:take\s+me\s+to|go\s+to|i\s+want)\s+(.+)$/i,
@@ -274,7 +290,8 @@ export function parseDesktopIntent(raw: string): DesktopIntent | null {
     if (
       !/\b(notification|windows?|screenshot|clipboard|capabilities|guide)\b/i.test(
         target,
-      )
+      ) &&
+      !/\b(beside|next\s+to|alongside)\b/i.test(target)
     ) {
       return {
         action: "open",
@@ -305,20 +322,6 @@ export function parseDesktopIntent(raw: string): DesktopIntent | null {
         confidence: 0.9,
       };
     }
-  }
-
-  // Open X beside Y
-  const beside = text.match(/^(?:open|launch)\s+(.+?)\s+beside\s+(.+)$/i);
-  if (beside?.[1] && beside[2]) {
-    return {
-      action: "open",
-      target: beside[1].trim(),
-      modifier: "beside",
-      object: "",
-      context: "unknown",
-      confidence: 0.9,
-      secondaryTarget: beside[2].trim(),
-    };
   }
 
   // Open / launch / start X (simple) — Semantic Engine resolves entity

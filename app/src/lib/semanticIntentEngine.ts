@@ -10,6 +10,7 @@
 
 import {
   generateCapabilityDiscovery,
+  generateRecoveryGuidance,
   isCapabilityDiscoveryUtterance,
   resolveDiscoveryScope,
 } from "./capabilityRegistry";
@@ -123,6 +124,24 @@ const KNOWN_ENTITIES: Array<{
     },
   },
   {
+    keys: [
+      "browser",
+      "my browser",
+      "the browser",
+      "current browser",
+      "latest browser",
+      "recent browser",
+    ],
+    entity: {
+      kind: "browser",
+      value: "Google Chrome",
+      label: "your browser",
+      focusQuery: "Chrome",
+      openQuery: "Google Chrome",
+      context: "browser",
+    },
+  },
+  {
     keys: ["chrome", "google chrome"],
     entity: {
       kind: "browser",
@@ -202,26 +221,36 @@ const KNOWN_ENTITIES: Array<{
 ];
 
 export function resolveDesktopEntity(raw: string): DesktopEntity | null {
-  const key = normalizeKey(raw)
-    .replace(/^(the|my|a|an)\s+/i, "")
-    .replace(/\s+(app|application|window|program|browser|tab)$/i, "")
-    .trim();
-  if (!key) {
-    return null;
-  }
-  for (const entry of KNOWN_ENTITIES) {
-    if (entry.keys.includes(key)) {
-      return entry.entity;
+  const normalized = normalizeKey(raw);
+  const candidates = [
+    normalized,
+    normalized.replace(/^(the|my|a|an)\s+/i, "").trim(),
+    normalized
+      .replace(/^(the|my|a|an)\s+/i, "")
+      .replace(/\s+(app|application|window|program|tab)$/i, "")
+      .trim(),
+    // “Chrome browser” → chrome; never erase bare “browser”
+    normalized
+      .replace(/^(the|my|a|an)\s+/i, "")
+      .replace(/\s+(web\s+)?browsers?$/i, "")
+      .trim(),
+  ].filter((k) => k.length > 0);
+
+  for (const key of [...new Set(candidates)]) {
+    for (const entry of KNOWN_ENTITIES) {
+      if (entry.keys.includes(key)) {
+        return entry.entity;
+      }
     }
-  }
-  const shell = resolveShellFolder(key);
-  if (shell) {
-    return {
-      kind: "shell",
-      value: shell,
-      label: raw.trim(),
-      context: "folder",
-    };
+    const shell = resolveShellFolder(key);
+    if (shell) {
+      return {
+        kind: "shell",
+        value: shell,
+        label: raw.trim(),
+        context: "folder",
+      };
+    }
   }
   return null;
 }
@@ -361,12 +390,22 @@ function reasonFromGrammar(grammar: DesktopIntent): IntentAction | null {
   }
 
   if (grammar.modifier === "beside" && grammar.secondaryTarget) {
+    const besideLabel = resolveWindowQuery(grammar.secondaryTarget);
     if (entity?.kind === "site") {
       return {
         kind: "browserOpenBeside",
         url: entity.value,
-        beside: resolveWindowQuery(grammar.secondaryTarget),
-        reply: `Opening ${entity.label} beside “${resolveWindowQuery(grammar.secondaryTarget)}”.`,
+        beside: besideLabel,
+        reply: `Opening ${entity.label} beside “${besideLabel}”.`,
+      };
+    }
+    if (entity?.kind === "browser") {
+      // Browser surface beside a window — open a blank search page, then compose layout.
+      return {
+        kind: "browserOpenBeside",
+        url: "https://www.google.com",
+        beside: besideLabel,
+        reply: `Opening ${entity.label} beside “${besideLabel}”.`,
       };
     }
   }
@@ -423,11 +462,132 @@ function reasonFromGrammar(grammar: DesktopIntent): IntentAction | null {
         reply: `Opening ${entity.label}.`,
       };
     }
-    if (entity.kind === "browser" || entity.kind === "application") {
+    if (entity.kind === "browser") {
+      // Generic “my browser” → browser surface. Named Chrome/Edge/Firefox → app launch.
+      const genericBrowser = /your browser/i.test(entity.label);
+      if (genericBrowser) {
+        return {
+          kind: "browserOpen",
+          url: "https://www.google.com",
+          reply: `Opening ${entity.label}.`,
+        };
+      }
       return {
         kind: "appOpen",
         query: entity.openQuery ?? entity.value,
         reply: `Opening “${entity.label}”.`,
+      };
+    }
+    if (entity.kind === "application") {
+      return {
+        kind: "appOpen",
+        query: entity.openQuery ?? entity.value,
+        reply: `Opening “${entity.label}”.`,
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Cognitive desktop reasoning (P16.33) — intent from ordinary phrasing,
+ * not alias tables. Deterministic structural patterns over entities.
+ */
+function reasonCognitiveDesktop(text: string): IntentAction | null {
+  // Enumerate open windows
+  if (
+    /^(what|which)\s+windows?\s+(are\s+)?(open|running)|list\s+(my\s+|the\s+|open\s+)?windows?$|show\s+(me\s+)?(all\s+)?(open\s+)?windows?$/i.test(
+      text,
+    )
+  ) {
+    return {
+      kind: "winEnumerate",
+      reply: "Here’s what windows I can see right now.",
+    };
+  }
+
+  // Other / second / next monitor (commodity: monitor 2 — primary is usually 1)
+  const otherMonitor = text.match(
+    /^(?:put|move|send)\s+(.+?)\s+(?:on|to)\s+(?:the\s+)?(other|second|next)\s+monitor$/i,
+  );
+  if (otherMonitor?.[1]) {
+    const query = resolveWindowQuery(otherMonitor[1]);
+    return {
+      kind: "winMoveMonitor",
+      query,
+      monitorIndex: 2,
+      reply: `Moving “${query}” to the other monitor (monitor 2). Say a monitor number if that’s wrong.`,
+    };
+  }
+
+  // Screenshots folder (honest: Pictures is the usual landing place)
+  if (
+    /^(show|open|find|locate)\s+(me\s+)?(the\s+)?folder\s+with\s+screenshots?$/i.test(
+      text,
+    ) ||
+    /^(show|open|find|locate)\s+(my\s+)?screenshots?(?:\s+folder)?$/i.test(text)
+  ) {
+    return {
+      kind: "appLaunch",
+      query: "shell:My Pictures",
+      reply:
+        "Opening Pictures — that’s where screenshots usually land on this PC. I can’t filter by date from Conversation yet.",
+    };
+  }
+
+  // Pictures/photos from yesterday — open folder; truthful about no date filter
+  if (
+    /^(open|show|find|locate)\s+(the\s+|my\s+)?(pictures|photos|images)(?:\s+from\s+yesterday)?$/i.test(
+      text,
+    )
+  ) {
+    return {
+      kind: "appLaunch",
+      query: "shell:My Pictures",
+      reply:
+        "Opening Pictures. I can’t filter to yesterday from Conversation yet — browse there for recent photos.",
+    };
+  }
+
+  // Resume / locate / bring-back / “I’ve got X somewhere” / “where did X go”
+  const locateCognitive = text.match(
+    /^(?:i'?m\s+|i\s+am\s+)?(?:i'?ve\s+got|i\s+have|where(?:'?s|\s+is|\s+did)|find|looking\s+for|trying\s+to\s+find|bring\s+back|get\s+back\s+to|i\s+was\s+just\s+using)\s+(?:my\s+)?(.+?)(?:\s+somewhere|\s+go(?:ne)?|\s+open)?$/i,
+  );
+  if (locateCognitive?.[1]) {
+    let target = locateCognitive[1]
+      .replace(/\s+(somewhere|go|gone|open)$/i, "")
+      .trim();
+    // Keep “my browser” / “the browser” as a desktop entity key.
+    if (!/^(the|my|a|an)\s+browsers?$/i.test(target)) {
+      target = target.replace(/^(the|my|a|an)\s+/i, "").trim();
+    }
+    if (
+      target &&
+      !/\b(notification|capabilities|screenshot|clipboard)\b/i.test(target)
+    ) {
+      const entity = resolveDesktopEntity(target);
+      if (entity) {
+        if (entity.kind === "shell") {
+          return {
+            kind: "appLaunch",
+            query: entity.value,
+            reply: `Opening ${entity.label}.`,
+          };
+        }
+        const query = resolveWindowQuery(target);
+        return {
+          kind: "winFocus",
+          query,
+          reply: `Looking for “${entity.label}”.`,
+        };
+      }
+      // Unknown entity — truthful registry recovery (never invent)
+      const recovery = generateRecoveryGuidance(target);
+      return {
+        kind: "unknown",
+        reply: recovery.reply,
+        suggestion: recovery.suggestion,
       };
     }
   }
@@ -452,6 +612,11 @@ export function resolveSemanticIntent(raw: string): IntentAction | null {
       reply: discovery.reply,
       suggestion: discovery.suggestion,
     };
+  }
+
+  const cognitive = reasonCognitiveDesktop(text);
+  if (cognitive) {
+    return cognitive;
   }
 
   const grammar =

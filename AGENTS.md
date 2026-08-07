@@ -8,7 +8,7 @@ Before any implementation work, read the canonical engineering handoff:
 
 Then reassess machine state in `docs/project-health.json`. Treat repository documentation as authoritative over chat history.
 
-Current handoff posture (see handoff + health for truth): **P16.32 Evidence-Driven Trust Validation — engineering complete for this program; Product Proof pending Owner acceptance. Owner evidence outranks engineering confidence. Canonical: docs/capability-runtime/product-proof/VOICE_P16_32_TRUST_VALIDATION.md. Do not begin P17. Do not mark P16 permanently closed.**
+Current handoff posture (see handoff + health for truth): **P16.33 Cognitive Desktop — engineering complete for this program; Product Proof pending Owner acceptance. Owner evidence outranks engineering confidence. Canonical: docs/capability-runtime/product-proof/VOICE_P16_33_COGNITIVE_DESKTOP.md. Do not begin P17. Do not mark P16 permanently closed.**
 
 ## Cursor Cloud specific instructions
 

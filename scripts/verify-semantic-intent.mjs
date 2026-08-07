@@ -20,7 +20,9 @@ const required = [
   "app/src/lib/intentPipeline.ts",
   "docs/capability-runtime/product-proof/VOICE_P16_31_SEMANTIC_INTENT.md",
   "docs/capability-runtime/product-proof/VOICE_P16_32_TRUST_VALIDATION.md",
+  "docs/capability-runtime/product-proof/VOICE_P16_33_COGNITIVE_DESKTOP.md",
   "tests/semantic-hostile-nl.test.ts",
+  "tests/cognitive-desktop-nl.test.ts",
 ];
 
 for (const rel of required) {
@@ -52,6 +54,9 @@ const plan = fs.readFileSync(
 
 if (!engine.includes("resolveSemanticIntent")) {
   fail("semantic engine must export resolveSemanticIntent");
+}
+if (!engine.includes("reasonCognitiveDesktop")) {
+  fail("semantic engine must include cognitive desktop reasoning (P16.33)");
 }
 if (!engine.includes("resolveDesktopEntity")) {
   fail("semantic engine must resolve desktop entities");

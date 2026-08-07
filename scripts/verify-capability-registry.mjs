@@ -24,6 +24,7 @@ for (const token of [
   "limitations",
   "documentation",
   "generateCapabilityDiscovery",
+  "generateRecoveryGuidance",
   "isCapabilityDiscoveryUtterance",
   "suggestNearbyCapabilities",
   "resolveDiscoveryScope",
@@ -36,6 +37,12 @@ for (const token of [
 // Discovery generation must pull examples from nodes — not a separate hard-coded catalogue.
 if (!registry.includes("node.examples")) {
   fail("discovery must generate examples from CAPABILITY_GRAPH nodes");
+}
+if (!registry.includes("node.limitations") || !registry.includes("node.requirements")) {
+  fail("discovery must self-describe limitations and requirements from the graph");
+}
+if (!registry.includes("won’t overclaim") && !registry.includes("won't overclaim")) {
+  fail("discovery must include can/cannot self-description");
 }
 
 const engine = fs.readFileSync(

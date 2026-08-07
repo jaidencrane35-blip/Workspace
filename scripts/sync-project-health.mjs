@@ -61,6 +61,7 @@ const verifiers = {
   "verify:conversation-quality": "scripts/verify-conversation-quality.mjs",
   "verify:semantic-intent": "scripts/verify-semantic-intent.mjs",
   "verify:capability-registry": "scripts/verify-capability-registry.mjs",
+  "verify:cognitive-desktop": "scripts/verify-cognitive-desktop.mjs",
   "verify:dev-environment": "scripts/verify-dev-environment.mjs",
 };
 
@@ -460,7 +461,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16.32 Evidence-Driven Product Completion & Trust Validation. Owner evidence overrides engineering confidence. Hostile NL suite + exe invent refusal + registry discovery. Canonical: VOICE_P16_32_TRUST_VALIDATION.md. Do not mark permanently closed. Do not begin P17.",
+    note: "P16.33 Cognitive Capability, Desktop Semantics & Production Benchmark Validation. Voice not reopened. Registry self-description + cognitive locate/beside/monitor reasoning. Canonical: VOICE_P16_33_COGNITIVE_DESKTOP.md. Do not mark permanently closed. Do not begin P17.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -505,7 +506,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16.32 Trust Validation — hostile NL evidence + no invented .exe + registry discovery; Product Proof pending Owner acceptance (NOT permanently closed)",
+      "P16.33 Cognitive Desktop — registry can/cannot/why + cognitive NL reasoning; Product Proof pending Owner acceptance (NOT permanently closed)",
       "Owner Experience Before Engineering Confidence permanent (P16.21)",
       "Repository Quality Before Milestone Closure permanent (P16.21)",
       "User Adaptation Prohibition permanent (P16.6)",
@@ -527,8 +528,8 @@ const health = {
     ],
   },
   currentMilestone: {
-    id: "evidence-driven-trust-validation-p16-32",
-    title: "P16.32 Evidence-Driven Product Completion & Trust Validation",
+    id: "cognitive-desktop-p16-33",
+    title: "P16.33 Cognitive Capability, Desktop Semantics & Production Benchmark Validation",
     status: "engineering_complete_product_proof_pending",
     commit: milestoneCommit,
   },
@@ -630,7 +631,7 @@ const health = {
       id: "p16-voice-product-proof",
       track: "B",
       summary:
-        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.32 Trust Validation; not permanently closed)",
+        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.33 Cognitive Desktop; not permanently closed)",
     },
     {
       id: "capability-providers-p17-plus",
@@ -671,7 +672,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16.32 Trust Validation — Product Proof pending Owner acceptance; WinRT WRAP frozen; Owner evidence outranks engineering confidence",
+      "P16.33 Cognitive Desktop — Product Proof pending Owner acceptance; WinRT WRAP frozen; Voice not reopened; Owner evidence outranks engineering confidence",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -753,9 +754,9 @@ const health = {
     date: "2026-08-07",
     document: "docs/engineering-milestone-report.md",
     title:
-      "P16.32 Evidence-Driven Trust Validation — awaiting Owner live Product Proof",
+      "P16.33 Cognitive Desktop — awaiting Owner live Product Proof",
     reviewBrief:
-      "docs/capability-runtime/product-proof/VOICE_P16_32_TRUST_VALIDATION.md",
+      "docs/capability-runtime/product-proof/VOICE_P16_33_COGNITIVE_DESKTOP.md",
   },
   handoffStatus: "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   nextRecommendedExecutionProgram: {
