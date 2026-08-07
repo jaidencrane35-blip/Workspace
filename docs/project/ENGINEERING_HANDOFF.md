@@ -7,7 +7,7 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.25 Final Owner Readiness Investigation (awaiting Owner) |
+| **Latest program** | P16.26 Final Live Product Proof Preparation (awaiting Owner) |
 | **Rule** | Ignore prior chat history. Reassess repository truth before any implementation. |
 
 **Start here before any execution program.**
@@ -59,7 +59,7 @@ Conversation
 | --- | --- |
 | Architectural Constitution | `architecture/ARCHITECTURAL_CONSTITUTION_V2.md` (**v2.0**) |
 | Product Constitution | `docs/00-Constitution/PRODUCT_CONSTITUTION.md` |
-| Execution protocol | `.cursor/rules/constitutional-execution-protocol.mdc` (**v1.19**) — P16.25 final Owner readiness investigation |
+| Execution protocol | `.cursor/rules/constitutional-execution-protocol.mdc` (**v1.19**) — P16.26 final live Product Proof package |
 | Machine state | `docs/project-health.json` (synced to `app/public/project-health.json`) |
 | Product Gravity | `docs/ui/PRODUCT_GRAVITY_RULE.md` |
 | Product Proof | `docs/capability-runtime/PRODUCT_PROOF_RULE.md` |
@@ -108,7 +108,7 @@ One execution program
 
 Authoritative rolling list: `docs/capability-runtime/FIVE_PROGRAM_ROADMAP.md`.
 
-| Now | P16 Voice Input — Engineering Complete (through **P16.25** Final Owner Readiness Investigation); Product Proof pending Owner |
+| Now | P16 Voice Input — Engineering Complete (through **P16.26** Final Live Product Proof Preparation); Product Proof pending Owner |
 | Next (after P16 acceptance) | **P17 File Provider** |
 | Then | P18 Terminal · P19 Memory · P20 Automation · P21 Workspace Intelligence |
 
@@ -144,7 +144,7 @@ Do not reopen except bugfixes:
 | Notifications | Closed (P13) | |
 | Browser | Closed (P14) | |
 | Screenshots | Closed (P15) | |
-| **Voice Input** | **Engineering Complete** (P16.25) | Conversation input device — **Product Proof pending Owner**; live timings via `WORKSPACE_VOICE_PRODUCT_PROOF=1` |
+| **Voice Input** | **Engineering Complete** (P16.26) | Conversation input device — **Product Proof pending Owner**; checklist `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md` |
 | File | Not started | **P17** (blocked) |
 | Terminal / Memory / Automation | Roadmap | P18+ |
 
@@ -169,9 +169,10 @@ Catalogue: `docs/capability-runtime/CAPABILITY_DOMAIN_CATALOGUE.md`.
 - Runtime hosts providers; Intent enters via Kernel Operator.
 - Verifiers: `pnpm verify:capability-runtime-foundation`, provider-specific `pnpm verify:*-provider`, `pnpm verify:voice-input`, `pnpm verify:conversation-quality`, `pnpm verify:product-proof-harness`.
 - Index: `docs/capability-runtime/00_INDEX.md`.
-- Voice Owner readiness brief: `docs/capability-runtime/product-proof/VOICE_FINAL_OWNER_READINESS_INVESTIGATION.md`.
-- Voice final live Proof brief: `docs/capability-runtime/product-proof/VOICE_FINAL_LIVE_PRODUCT_PROOF.md`.
-- Voice live instrumentation: `docs/capability-runtime/product-proof/VOICE_LIVE_INSTRUMENTATION.md`.
+- **Voice live Product Proof package (canonical):** `docs/capability-runtime/product-proof/VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`
+- Voice findings traceability: `docs/capability-runtime/product-proof/VOICE_OWNER_FINDINGS_TRACEABILITY.md`
+- Voice Owner readiness brief: `docs/capability-runtime/product-proof/VOICE_FINAL_OWNER_READINESS_INVESTIGATION.md`
+- Voice live instrumentation: `docs/capability-runtime/product-proof/VOICE_LIVE_INSTRUMENTATION.md`
 
 ---
 
@@ -213,9 +214,9 @@ Do not redesign without a new constitutional program:
 | Harness / verifiers for Voice + conversation quality | Green (engineering) — do not treat as Owner acceptance |
 | P10–P15 Product Proof | Accepted / closed |
 
-Voice remediations through P16.25 (final Owner readiness investigation) do **not** equal permanent closure.  
+Voice remediations through P16.26 (final live Product Proof preparation) do **not** equal permanent closure.  
 **Do not launch Workspace until the Product Owner requests it.**  
-For live Product Proof: `WORKSPACE_VOICE_PRODUCT_PROOF=1` (removable after P16 closes).  
+For live Product Proof: follow `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md` with `WORKSPACE_VOICE_PRODUCT_PROOF=1`.  
 After Owner closes Workspace: cleanup only — **never relaunch**.
 
 ---
@@ -228,9 +229,9 @@ After Owner closes Workspace: cleanup only — **never relaunch**.
 
 ## 15. Latest commit
 
-| Tip | Use `git log -1 --oneline` on `v2-dev` after P16.25 push |
+| Tip | Use `git log -1 --oneline` on `v2-dev` after P16.26 push |
 | --- | --- |
-| Prior Voice engineering | `e4d7dd6` (P16.24) · `008f110` (P16.23) |
+| Prior Voice engineering | `42263bf` (P16.25) · `e4d7dd6` (P16.24) |
 
 ---
 

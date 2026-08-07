@@ -293,6 +293,9 @@ if (
 ) {
   fail("regression matrix must cover P16.25 Owner-readiness falsification (R32–R35)");
 }
+if (!matrix.includes("R36") || !matrix.includes("callback teardown")) {
+  fail("regression matrix must cover P16.26 bridge callback teardown (R36)");
+}
 const finalLive = path.join(
   root,
   "docs/capability-runtime/product-proof/VOICE_FINAL_LIVE_PRODUCT_PROOF.md",
@@ -307,11 +310,54 @@ const ownerReady = path.join(
 if (!fs.existsSync(ownerReady)) {
   fail("missing VOICE_FINAL_OWNER_READINESS_INVESTIGATION.md (P16.25 artifact)");
 }
+const livePackage = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md",
+);
+if (!fs.existsSync(livePackage)) {
+  fail("missing VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md (P16.26 canonical Owner checklist)");
+}
+const traceability = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_OWNER_FINDINGS_TRACEABILITY.md",
+);
+if (!fs.existsSync(traceability)) {
+  fail("missing VOICE_OWNER_FINDINGS_TRACEABILITY.md (P16.26 traceability)");
+}
+const prep = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_FINAL_LIVE_PRODUCT_PROOF_PREPARATION.md",
+);
+if (!fs.existsSync(prep)) {
+  fail("missing VOICE_FINAL_LIVE_PRODUCT_PROOF_PREPARATION.md (P16.26 artifact)");
+}
+const packageBody = fs.readFileSync(livePackage, "utf8");
+for (const section of [
+  "Voice readiness",
+  "Permission behaviour",
+  "Natural language",
+  "Long dictation",
+  "Sleep / resume",
+  "USB",
+  "Acceptance",
+  "Regression",
+]) {
+  if (!packageBody.toLowerCase().includes(section.toLowerCase())) {
+    fail(`live Product Proof package must cover "${section}" (P16.26)`);
+  }
+}
+const proofRule = fs.readFileSync(
+  path.join(root, "docs/capability-runtime/PRODUCT_PROOF_RULE.md"),
+  "utf8",
+);
+if (!proofRule.includes("PRODUCT_GRAVITY_RULE")) {
+  fail("Product Proof Rule must cross-reference Product Gravity (P16.26)");
+}
 if (!micUi.includes("softMicDenyCountRef.current = 0")) {
   fail("soft mic deny count must reset on Settings open/return (P16.25)");
 }
 if (!bridge.includes("setTimeout") || !bridge.includes("readyCallbacks.delete")) {
-  fail("bridge must defer Ready/Listening callback teardown (P16.25)");
+  fail("bridge must defer Ready/Listening callback teardown (P16.25/R36)");
 }
 if (!guide.includes("voicePermissionSetMessage")) {
   fail("permissionGuidance must not claim Voice ready at Idle (P16.24)");

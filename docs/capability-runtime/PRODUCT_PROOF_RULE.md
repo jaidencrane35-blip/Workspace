@@ -23,6 +23,12 @@ A provider is **not Product Complete** until all of the following are true:
 
 Infrastructure alone is insufficient.
 
+### Related permanent authority — Product Gravity
+
+Conversation is the product. Desktop operation is the capability. Trust is the outcome.  
+Full rule: `docs/ui/PRODUCT_GRAVITY_RULE.md` (also in the Constitutional Execution Protocol).  
+Product Proof never treats utility chrome or provider terminology as success criteria.
+
 ---
 
 ## Natural Language Robustness Rule (permanent — P14.5)

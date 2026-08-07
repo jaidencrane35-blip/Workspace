@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T09:00:23.291Z",
+  "updatedAt": "2026-08-07T09:06:40.810Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -15,7 +15,7 @@
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "note": "P16 Engineering Complete (incl. P16.25 Final Owner Readiness Investigation — R32–R35 hostile falsification fixes; WORKSPACE_VOICE_PRODUCT_PROOF=1 for live timings). Product Complete is Owner-only. Do not launch until Owner requests. After Owner closes Workspace: cleanup only, never relaunch. Do not mark permanently closed. Do not begin P17."
+    "note": "P16 Engineering Complete (incl. P16.26 Final Live Product Proof Preparation — canonical Owner checklist VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md; WORKSPACE_VOICE_PRODUCT_PROOF=1 for live timings). Product Complete is Owner-only. Do not launch until Owner requests. After Owner closes Workspace: cleanup only, never relaunch. Do not mark permanently closed. Do not begin P17."
   },
   "completedExecutionPrograms": [
     {
@@ -415,7 +415,7 @@
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16 Voice Input Engineering Complete (incl. P16.25 Final Owner Readiness Investigation) — Product Proof pending Owner acceptance (NOT permanently closed)",
+      "P16 Voice Input Engineering Complete (incl. P16.26 Final Live Product Proof Preparation) — Product Proof pending Owner acceptance (NOT permanently closed)",
       "Owner Experience Before Engineering Confidence permanent (P16.21)",
       "Repository Quality Before Milestone Closure permanent (P16.21)",
       "User Adaptation Prohibition permanent (P16.6)",
@@ -437,8 +437,8 @@
     ]
   },
   "currentMilestone": {
-    "id": "voice-final-owner-readiness-p16-25",
-    "title": "P16.25 Final Owner Readiness Investigation",
+    "id": "voice-final-live-product-proof-prep-p16-26",
+    "title": "P16.26 Final Live Product Proof Preparation",
     "status": "engineering_complete_product_proof_pending",
     "commit": "pending"
   },
@@ -539,7 +539,7 @@
     {
       "id": "p16-voice-product-proof",
       "track": "B",
-      "summary": "P16 Voice Input — live Product Owner Product Proof pending final acceptance (Engineering Complete incl. P16.25 Final Owner Readiness Investigation; not permanently closed)"
+      "summary": "P16 Voice Input — live Product Owner Product Proof pending final acceptance (Engineering Complete incl. P16.26 Final Live Product Proof Preparation; not permanently closed)"
     },
     {
       "id": "capability-providers-p17-plus",
@@ -579,7 +579,7 @@
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16 Voice Input Engineering Complete (P16.25 Final Owner Readiness Investigation) — Product Proof pending Owner acceptance",
+      "P16 Voice Input Engineering Complete (P16.26 Final Live Product Proof Preparation) — Product Proof pending Owner acceptance",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -783,8 +783,8 @@
   "lastMilestone": {
     "date": "2026-08-07",
     "document": "docs/engineering-milestone-report.md",
-    "title": "P16.25 Final Owner Readiness Investigation — awaiting Owner acceptance",
-    "reviewBrief": "docs/capability-runtime/product-proof/VOICE_FINAL_OWNER_READINESS_INVESTIGATION.md"
+    "title": "P16.26 Final Live Product Proof Preparation — awaiting Owner acceptance",
+    "reviewBrief": "docs/capability-runtime/product-proof/VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md"
   },
   "handoffStatus": "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   "nextRecommendedExecutionProgram": {

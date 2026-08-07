@@ -34,7 +34,7 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 
 | Program | Title | Status |
 | --- | --- | --- |
-| **P16** | Voice Input | **Engineering Complete** (through **P16.18** Acceptance Investigation). Live Product Owner Product Proof **pending final acceptance**. **Not permanently closed.** Production Before Expansion blocks P17. |
+| **P16** | Voice Input | **Engineering Complete** (through **P16.26** Final Live Product Proof Preparation). Canonical checklist: `product-proof/VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`. Live Product Owner Product Proof **pending final acceptance**. **Not permanently closed.** Production Before Expansion blocks P17. |
 
 ---
 

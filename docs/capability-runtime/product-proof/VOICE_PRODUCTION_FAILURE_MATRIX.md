@@ -83,4 +83,9 @@ Engineering falsification of “no remaining defects.” Does **not** equal Owne
 Env-gated timing evidence for Owner Product Proof (`WORKSPACE_VOICE_PRODUCT_PROOF=1`).  
 See `VOICE_LIVE_INSTRUMENTATION.md`.
 
+### P16.26 canonical live package
+
+Definitive Owner checklist: `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`.  
+Finding → fix → regression → evidence: `VOICE_OWNER_FINDINGS_TRACEABILITY.md`.
+
 See also: `VOICE_SHIP_READINESS_FALSIFICATION.md`, `VOICE_OWNER_EXPERIENCE_CLOSURE_GATE.md`.

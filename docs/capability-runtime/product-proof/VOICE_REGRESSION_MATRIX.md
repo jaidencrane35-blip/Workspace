@@ -15,7 +15,7 @@ See also: `VOICE_PRODUCTION_FAILURE_MATRIX.md`, `VOICE_LIFECYCLE_STATE_MACHINE.m
 | R6 | “Couldn’t listen” after success | MediaCapture during warm raced SpeechRecognizer | No MediaCapture in `warm_up` | `verify-voice-regression` |
 | R7 | Cold recompile every quiet click | `engine_reset` on `no_speech` / `cancelled` | Keep engine on idle outcomes | `listen_idle_keep_engine` |
 | R8 | Stale frontend warm skipped re-warm | Frontend `warmed` after native reset | No listen-path warm gate; clear on poison | `VoiceMicButton` + regression |
-| R9 | Ready lag after Capturing | Overlong settle | 20ms settle once Capturing confirmed | proof `settleBeforeReadyMs` |
+| R9 | Ready lag after Capturing | Overlong settle | Was 20ms settle; **superseded by R35** (0ms after Capturing) | proof `settleBeforeReadyMs` · R35 |
 | R10 | Repeated warm IPC on click | Extra `warmUpVoice` before listen | Mount warm only; listen warms cheaply | `noListenPathWarmGate` |
 | R11 | Ready UI without capture (first-word) | `capturing_wait_timeout` still emitted Ready | Fail listen if Capturing never confirmed; log `capturing_contract_failed` | `verify-voice-regression` P16.16 |
 | R12 | Declared complete with Voice dead code | Noop test install + deprecated permission helpers | REMOVE dead Voice helpers; repository-quality principles | `VOICE_PRODUCTION_READINESS_AUDIT.md` |
@@ -42,6 +42,7 @@ See also: `VOICE_PRODUCTION_FAILURE_MATRIX.md`, `VOICE_LIFECYCLE_STATE_MACHINE.m
 | R33 | “Could you hear me?” → unknown | Voice matcher missed softened hear-me | Expand patterns + matchText retry | P16.25 |
 | R34 | Soft×2 count stuck after Settings | Counter never reset on return/open | Reset `softMicDenyCountRef` on Settings open/return | P16.25 |
 | R35 | Ready lag after Capturing | Unnecessary 20ms settle | Immediate Ready after Capturing (`settleBeforeReadyMs: 0`) | P16.25 |
+| R36 | Late Ready/Listening UI drop | Bridge deleted callbacks when IPC returned | Defer callback teardown 120ms (`setTimeout`) | P16.26 |
 
 ### Engineering stress (non-Owner)
 

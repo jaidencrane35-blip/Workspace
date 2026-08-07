@@ -1,9 +1,9 @@
 # Engineering Milestone Report
-## P16.25 Final Owner Readiness Investigation
+## P16.26 Final Live Product Proof Preparation
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.25 Final Owner Readiness Investigation |
+| **Execution program** | P16.26 Final Live Product Proof Preparation |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
@@ -13,21 +13,27 @@
 
 ## Summary
 
-Hostile falsification of Owner readiness. Engineering’s “clean” conclusion was **falsified** — four Voice-owned defects proven and fixed (R32–R35): warm-fail soft remap hole, hear-me NL soften miss, soft-mic counter stuck after Settings, unnecessary Ready settle after Capturing. Bridge Ready/Listening callback teardown deferred.
+Final engineering program before definitive Owner Product Proof. Purpose: remove uncertainty via evidence packaging — not another hardening cycle.
 
-Artifact: `docs/capability-runtime/product-proof/VOICE_FINAL_OWNER_READINESS_INVESTIGATION.md`.
+Delivered:
+- Canonical live checklist: `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`
+- Owner finding traceability: `VOICE_OWNER_FINDINGS_TRACEABILITY.md`
+- Preparation audit: `VOICE_FINAL_LIVE_PRODUCT_PROOF_PREPARATION.md`
+- R36 (bridge callback teardown) · Product Gravity cross-ref in Product Proof Rule
+
+No new Voice-owned reproducible defect was proven while packaging. No code behaviour change except documentation/regression authority.
 
 Engineering statement: **No remaining reproducible Voice-owned engineering defects were identified.**
 
 ## Explicit
 
-- **Recommend Owner acceptance review:** Yes (evidence after hostile pass)  
+- **Recommend Owner acceptance review:** Yes (evidence packaged)  
 - **P16 permanently closed:** **No**  
 - **Workspace launched:** **No**  
 - **P17:** Not begun  
 
 ---
 
-# Prior — P16.24 Final Live Product Proof Execution
+# Prior — P16.25 Final Owner Readiness Investigation
 
-Owner-feel chrome R26–R31. See `VOICE_FINAL_LIVE_PRODUCT_PROOF.md`.
+Hostile falsification R32–R35. See `VOICE_FINAL_OWNER_READINESS_INVESTIGATION.md`.

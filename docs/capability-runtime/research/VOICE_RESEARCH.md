@@ -462,6 +462,11 @@ Doc: `VOICE_FINAL_LIVE_PRODUCT_PROOF.md`. **WinRT remains WRAP.** Engineering Co
 Hostile falsification found and fixed: warm-fail soft remap (R32), hear-me NL soften (R33), soft-mic counter after Settings (R34), remove Ready settle after Capturing (R35), defer bridge callback teardown.  
 Doc: `VOICE_FINAL_OWNER_READINESS_INVESTIGATION.md`. **WinRT remains WRAP.**
 
+### P16.26 Final Live Product Proof Preparation
+
+Canonical Owner checklist + finding→fix→regression traceability. R36 documents bridge teardown. Product Gravity cross-ref in Product Proof Rule.  
+Docs: `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`, `VOICE_OWNER_FINDINGS_TRACEABILITY.md`. **WinRT remains WRAP.**
+
 ---
 
 ## Explicit non-goals

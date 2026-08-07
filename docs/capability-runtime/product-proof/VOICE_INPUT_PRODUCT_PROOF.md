@@ -1,38 +1,25 @@
 # Voice Input — Product Proof
-## P16 / P16.25 — Owner checklist (Final Owner readiness)
+## P16 / P16.26 — Entry point
 
 | Field | Value |
 | --- | --- |
-| **Program** | P16 Voice Input (+ P16.25 Final Owner Readiness Investigation) |
+| **Program** | P16 Voice Input (+ P16.26 Final Live Product Proof Preparation) |
 | **Status** | **Pending live Product Owner acceptance** (**not** Product Complete) |
 | **Launch** | **Do not launch until Owner requests** |
-| **Engineering brief** | `VOICE_FINAL_OWNER_READINESS_INVESTIGATION.md` |
+| **Canonical live checklist** | **`VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`** ← use this during review |
+| **Traceability** | `VOICE_OWNER_FINDINGS_TRACEABILITY.md` |
+| **Preparation brief** | `VOICE_FINAL_LIVE_PRODUCT_PROOF_PREPARATION.md` |
 
 ---
 
-## Before live review (engineer / Owner)
-
-Set for the Product Proof session only:
+## Before live review
 
 ```text
 WORKSPACE_VOICE_PRODUCT_PROOF=1
 ```
 
-Optional: `RUST_LOG=info` to see `voice.proof.report` lines.  
-Reports land in `%TEMP%/workspace-voice-proof/`.  
-Ordinary Conversation UI stays free of instrumentation jargon.
-
----
-
-## Please stress these paths (feel first)
-
-1. Click mic — **Preparing** should be obvious, then **Ready** (green) before you speak  
-2. Speak — **Listening** (cyan + bars) must feel different from Ready  
-3. Finish — brief **Done** (✓) before idle  
-4. Soft mic fail once → amber retry chrome; twice → Settings guidance  
-5. Permission message must say click mic to speak — never claim ready while idle  
-6. Ordinary desktop phrasing — never inventing `.exe`  
-7. Cancel mid-listen; immediate second listen (warm)  
+Optional: `RUST_LOG=info`. Reports: `%TEMP%/workspace-voice-proof/`.  
+Follow **`VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`** row-by-row.
 
 When finished, **close Workspace normally**. Engineering will **not** relaunch.
 
