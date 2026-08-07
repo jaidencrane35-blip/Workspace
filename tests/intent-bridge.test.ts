@@ -116,4 +116,25 @@ describe("intent bridge", () => {
       "unknown",
     );
   });
+
+  it("routes browser provider operations", () => {
+    expect(resolveIntent("Which browsers are available?").kind).toBe(
+      "browserStatus",
+    );
+    expect(resolveIntent("Open ChatGPT.")).toMatchObject({
+      kind: "browserOpen",
+      url: "https://chatgpt.com",
+    });
+    expect(resolveIntent("Open Google.")).toMatchObject({
+      kind: "browserOpen",
+      url: "https://www.google.com",
+    });
+    expect(resolveIntent("Open ChatGPT beside Cursor.")).toMatchObject({
+      kind: "browserOpenBeside",
+      url: "https://chatgpt.com",
+      beside: "Cursor",
+    });
+    expect(resolveIntent("Open this website.").kind).toBe("unknown");
+    expect(resolveIntent("Open Notepad.").kind).not.toBe("browserOpen");
+  });
 });

@@ -18,4 +18,7 @@ pub enum WindowsIntegrationError {
 
     #[error("Notification failed: {0}")]
     NotificationFailed(String),
+
+    #[error("Browser failed: {0}")]
+    BrowserFailed(String),
 }

@@ -51,9 +51,10 @@ A provider is not a bag of unrelated features. It owns a coherent operation set
 | clipboard | `ClipboardProvider` | WRAP `arboard` | read, write | P10 reference |
 | application | `ApplicationProvider` | ADAPT Win32 ports | launch, enumerate, find, focus, close, minimize, restore | P11 |
 | window | `WindowProvider` | ADAPT Win32 ports | enumerate, find, active, bounds, monitors, focus, minimize, restore, maximize, move, resize, center, snap | P12 |
-| notifications | `NotificationProvider` | WRAP WinRT toast | status, show, dismiss | **P13** |
+| notifications | `NotificationProvider` | WRAP WinRT toast | status, show, dismiss | **P13** (closed) |
+| browser | `BrowserProvider` | WRAP `webbrowser` | status, open, focus | **P14** |
 
-Placeholders: Browser, Screenshot, File, Terminal, Memory, Voice, Automation.
+Placeholders: Screenshot, File, Terminal, Memory, Voice, Automation.
 
 **Independence:** Providers never call each other (Kernel Operator composes).
 

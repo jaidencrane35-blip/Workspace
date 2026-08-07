@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "provider": "browser",
+  "program": "P14",
+  "pipeline": [
+    "Conversation",
+    "Intent Layer",
+    "execute_capability_intent",
+    "Kernel Operator",
+    "Capability Runtime",
+    "Capability Router",
+    "Provider Registry",
+    "Browser Provider",
+    "Desktop Service",
+    "Conversation Response"
+  ],
+  "ipc": "execute_capability_intent",
+  "userLanguageRules": [
+    "Never expose Provider, Router, or Registry terminology",
+    "Never invent success",
+    "Ask for a URL when missing"
+  ],
+  "examples": [
+    {
+      "category": "status",
+      "utterance": "Which browsers are available?",
+      "expectedKind": "browserStatus",
+      "expectedOperation": "status"
+    },
+    {
+      "category": "open",
+      "utterance": "Open ChatGPT.",
+      "expectedKind": "browserOpen",
+      "expectedOperation": "open",
+      "expectedUrl": "https://chatgpt.com"
+    },
+    {
+      "category": "open",
+      "utterance": "Open Google.",
+      "expectedKind": "browserOpen",
+      "expectedOperation": "open",
+      "expectedUrl": "https://www.google.com"
+    },
+    {
+      "category": "open",
+      "utterance": "Open GitHub.",
+      "expectedKind": "browserOpen",
+      "expectedOperation": "open",
+      "expectedUrl": "https://github.com"
+    },
+    {
+      "category": "open",
+      "utterance": "Open YouTube.",
+      "expectedKind": "browserOpen",
+      "expectedOperation": "open",
+      "expectedUrl": "https://www.youtube.com"
+    },
+    {
+      "category": "open",
+      "utterance": "Open https://example.com",
+      "expectedKind": "browserOpen",
+      "expectedOperation": "open",
+      "expectedUrl": "https://example.com"
+    },
+    {
+      "category": "compose",
+      "utterance": "Open ChatGPT beside Cursor.",
+      "expectedKind": "browserOpenBeside",
+      "expectedOperation": "open_beside",
+      "expectedUrl": "https://chatgpt.com",
+      "expectedBeside": "Cursor"
+    },
+    {
+      "category": "open",
+      "utterance": "Open browser.",
+      "expectedKind": "browserOpen",
+      "expectedOperation": "open"
+    }
+  ],
+  "clarifications": [
+    {
+      "utterance": "Open this website.",
+      "expectedKind": "unknown",
+      "mustMention": "which website"
+    }
+  ],
+  "ownerReviewChecklist": [
+    "Open ChatGPT / Google / GitHub through Conversation",
+    "Open a raw https URL",
+    "Open ChatGPT beside Cursor (Window composition)",
+    "Ask which browsers are available",
+    "Open this website → clarification",
+    "No provider / runtime jargon in replies"
+  ]
+}

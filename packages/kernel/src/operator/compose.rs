@@ -8,6 +8,7 @@ fn strip_jargon(text: &str) -> String {
         .replace("Application Provider", "Workspace")
         .replace("Notification Provider", "Workspace")
         .replace("Notifications Provider", "Workspace")
+        .replace("Browser Provider", "Workspace")
         .replace("Provider Registry", "Workspace")
         .replace("Capability Router", "Workspace")
 }
@@ -151,6 +152,44 @@ pub fn compose_user_reply(
                     .as_deref()
                     .unwrap_or("I couldn’t dismiss that notification."),
             ),
+            ("browser", "status") => {
+                let browsers = last.text.as_deref().unwrap_or("system default");
+                if ok {
+                    format!(
+                        "{}\nBrowsers: {browsers}",
+                        last.message
+                            .as_deref()
+                            .unwrap_or("Browser support looks available.")
+                    )
+                } else {
+                    strip_jargon(
+                        last.message
+                            .as_deref()
+                            .unwrap_or("Browser support isn’t available."),
+                    )
+                }
+            }
+            ("browser", "open") => strip_jargon(
+                last.message
+                    .as_deref()
+                    .unwrap_or(if ok {
+                        "Opened in your browser."
+                    } else {
+                        "I couldn’t open that."
+                    }),
+            ),
+            ("browser", "open_beside") => {
+                if ok {
+                    let beside = intent.title.as_deref().unwrap_or("the other window");
+                    format!("Opened beside “{beside}”.")
+                } else {
+                    strip_jargon(
+                        last.message
+                            .as_deref()
+                            .unwrap_or("I couldn’t arrange that beside the other window."),
+                    )
+                }
+            }
             _ => strip_jargon(
                 last.message
                     .as_deref()

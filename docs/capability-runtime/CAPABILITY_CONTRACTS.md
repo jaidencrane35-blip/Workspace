@@ -254,15 +254,19 @@ Cross-capability message envelopes remain governed by `architecture/10_Capabilit
 
 | | |
 | --- | --- |
-| **Purpose** | Open URLs; later assisted browser control |
-| **Examples** | “Open the PR link.” |
-| **Permissions** | `browser.open`; future `browser.cdp` Critical |
-| **Arguments** | `url` |
-| **Results** | `{ opened: bool }` |
-| **Failures** | Invalid URL; no handler |
+| **Purpose** | Open URLs; report browser availability (P14 Levels 1–2) |
+| **Examples** | “Open ChatGPT.” / “Open Google.” / “Which browsers are available?” |
+| **Permissions** | `browser.read`, `browser.open`; future `browser.cdp` Critical |
+| **Adoption** | WRAP `webbrowser` behind `BrowserPort` |
+| **Rust** | `BrowserProvider` + `BrowserStatus` / `OpenBrowserUrl` |
+| **Arguments** | `url` / site alias; `open_beside` + window title via Operator |
+| **Results** | `{ ok, status, target, message }` |
+| **Failures** | Missing URL; open failure — truthful reply, no fake success |
 | **Rollback** | N/A |
-| **Audit** | host only (not full URL if sensitive) |
-| **Future** | CDP WRAP under STUDY |
+| **Audit** | host / outcome (not full sensitive URL body) |
+| **Pipeline** | Intent → Kernel Operator → Runtime → Router → Registry → BrowserProvider → reply |
+| **Composition** | `focus` / `open_beside` compose via Kernel Operator → Window Provider |
+| **Future** | CDP WRAP under STUDY; tab management later |
 
 ---
 

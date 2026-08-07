@@ -365,6 +365,22 @@ impl Capability {
             scope: CapabilityScope::System,
         }
     }
+
+    /// Query browser availability (Browser Provider Level 1).
+    pub fn browser_read() -> Self {
+        Self {
+            id: CapabilityId::new("browser.read").expect("browser.read is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
+
+    /// Open a URL in the system browser (Browser Provider Level 2).
+    pub fn browser_open() -> Self {
+        Self {
+            id: CapabilityId::new("browser.open").expect("browser.open is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
 }
 
 impl CapabilitySet {
@@ -441,6 +457,8 @@ impl CapabilitySet {
             .with_capability(&Capability::window_state())
             .with_capability(&Capability::notify_read())
             .with_capability(&Capability::notify_show())
+            .with_capability(&Capability::browser_read())
+            .with_capability(&Capability::browser_open())
     }
 
     /// Capabilities attributed to system lifecycle operations.

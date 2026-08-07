@@ -1,6 +1,7 @@
 mod accept_suggestion;
 mod application;
 mod application_capability;
+mod browser;
 mod capability_intent;
 mod clipboard;
 mod notification;
@@ -393,6 +394,7 @@ pub use get_workspace_metrics::GetWorkspaceMetrics;
 pub use get_workspace_snapshot::GetWorkspaceSnapshot;
 pub use application_capability::{ApplicationOperationResult, ExecuteApplicationOperation};
 pub use capability_intent::execute_capability_intent;
+pub use browser::{BrowserOperationResult, BrowserStatus, BrowserStatusResult, OpenBrowserUrl};
 pub use clipboard::{ClipboardReadResult, ClipboardWriteResult, ReadClipboard, WriteClipboard};
 pub use notification::{
     DismissNotification, NotificationOperationResult, NotificationStatus, NotificationStatusResult,

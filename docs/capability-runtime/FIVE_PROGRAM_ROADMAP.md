@@ -1,5 +1,5 @@
 # Rolling Capability Provider Roadmap
-## Updated after P13 Notifications Provider
+## Updated after P14 Browser Provider
 
 UI Architecture, Desktop Operator, Conversation, and Capability Runtime pipeline remain **frozen**.  
 Providers own **operations**. Providers never call each other.  
@@ -20,10 +20,18 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 | **P12.7** | Operator Intelligence Foundation (TS interim) | `644c125` |
 | **P12 Finalization** | Kernel Operator + Presentation Purity | `daf3ae9` |
 | **P12 COMPLETE** | Final Repository Closure | `030fa3f` |
-| **P13** | Notifications Provider | `f0e03c4` |
+| **P13** | Notifications Provider | `f0e03c4` (closed `f1a359c`) |
 
 P12 series remains **permanently closed**.  
 **P13 is permanently closed** (Product Proof + Composition Audit).
+
+---
+
+## Current
+
+| Program | Title | Status |
+| --- | --- | --- |
+| **P14** | Browser Provider | Engineering complete (`d258533`) — awaiting Owner Product Proof review |
 
 ---
 
@@ -31,13 +39,13 @@ P12 series remains **permanently closed**.
 
 | Program | Title | Why |
 | --- | --- | --- |
-| **P14** | Browser Provider | URL open (WRAP) — this execution program Phase B |
-| **P15** | Screenshot Provider | Capture under consent |
+| **P15** | Screenshot Provider | Capture under consent — eligible after P14 Owner acceptance |
 | **P16** | File Provider | Scoped FS for later automation |
 | **P17** | Terminal Provider | Governed ConPTY |
 | **P18** | Voice Provider | Spoken operator entry |
+| **P19** | Memory Provider | Workspace restoration |
 
-Longer: P19 Memory → P20 Automation → P21 Intelligence
+Longer: P20 Automation → P21 Intelligence
 
 ---
 

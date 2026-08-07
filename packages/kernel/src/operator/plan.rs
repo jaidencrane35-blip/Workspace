@@ -75,6 +75,59 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
         });
     }
 
+    // Browser open beside = open URL then Window snap composition
+    if domain == CapabilityDomainId::browser() && op_raw == "open_beside" {
+        let url = intent
+            .path
+            .as_deref()
+            .or(intent.query.as_deref())
+            .unwrap_or("")
+            .trim();
+        if url.is_empty() {
+            return Err(KernelError::CapabilityRuntime {
+                message: "Which website should I open?".into(),
+            });
+        }
+        let beside = intent.title.as_deref().unwrap_or("").trim();
+        if beside.is_empty() {
+            return Err(KernelError::CapabilityRuntime {
+                message: "Beside which window should I place it?".into(),
+            });
+        }
+        let mut open_intent = intent.clone();
+        open_intent.path = Some(url.to_string());
+        open_intent.query = Some(url.to_string());
+        return Ok(OperatorPlan {
+            composition_id: Some("browser.open_beside".into()),
+            steps: vec![step_from_intent(
+                CapabilityDomainId::browser(),
+                CapabilityOperation::Open,
+                &open_intent,
+            )],
+        });
+    }
+
+    // Browser focus composes to Window focus (providers stay independent)
+    if domain == CapabilityDomainId::browser() && op_raw == "focus" {
+        let query = intent.query.as_deref().unwrap_or("").trim();
+        if query.is_empty() {
+            return Err(KernelError::CapabilityRuntime {
+                message: "Which browser should I bring forward?".into(),
+            });
+        }
+        let mut win = intent.clone();
+        win.domain = "window".into();
+        win.operation = "focus".into();
+        return Ok(OperatorPlan {
+            composition_id: Some("browser.focus_window".into()),
+            steps: vec![step_from_intent(
+                CapabilityDomainId::window(),
+                CapabilityOperation::Focus,
+                &win,
+            )],
+        });
+    }
+
     let operation = CapabilityOperation::parse(&op_raw).ok_or_else(|| {
         KernelError::CapabilityRuntime {
             message: format!("unknown capability operation '{}'", intent.operation),
@@ -116,6 +169,10 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
             | CapabilityOperation::Show
             | CapabilityOperation::Dismiss,
         ) => {}
+        (
+            "browser",
+            CapabilityOperation::Status | CapabilityOperation::Open | CapabilityOperation::Focus,
+        ) => {}
         (d, op) => {
             return Err(KernelError::CapabilityRuntime {
                 message: format!(
@@ -132,6 +189,21 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
         if title.is_empty() && body.is_empty() {
             return Err(KernelError::CapabilityRuntime {
                 message: "What should the notification say?".into(),
+            });
+        }
+    }
+
+    if domain.as_str() == "browser" && operation == CapabilityOperation::Open {
+        let url = intent
+            .path
+            .as_deref()
+            .or(intent.query.as_deref())
+            .or(intent.text.as_deref())
+            .unwrap_or("")
+            .trim();
+        if url.is_empty() {
+            return Err(KernelError::CapabilityRuntime {
+                message: "Which website should I open?".into(),
             });
         }
     }

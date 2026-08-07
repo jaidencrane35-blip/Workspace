@@ -1,4 +1,4 @@
-//! Capability Runtime — P10–P13 providers (Clipboard, Application, Window, Notifications).
+//! Capability Runtime — P10–P14 providers (Clipboard, Application, Window, Notifications, Browser).
 //!
 //! Permanent pipeline:
 //! Conversation → Intent Layer → execute_capability_intent → Kernel Operator →
@@ -11,6 +11,7 @@
 //! Conversation never invokes providers — Kernel Authority / Presentation Purity.
 
 mod application_provider;
+mod browser_provider;
 mod clipboard_provider;
 mod notification_provider;
 mod registry;
@@ -19,6 +20,7 @@ mod types;
 mod window_provider;
 
 pub use application_provider::{ApplicationPorts, ApplicationProvider};
+pub use browser_provider::BrowserProvider;
 pub use clipboard_provider::ClipboardProvider;
 pub use notification_provider::NotificationProvider;
 pub use registry::ProviderRegistry;
@@ -33,12 +35,12 @@ use std::sync::{Arc, OnceLock, RwLock};
 
 use workspace_windows_integration::{
     platform_desktop_capturer, platform_process_launcher, platform_window_enumerator,
-    platform_window_mutator, ClipboardPort, NotificationPort,
+    platform_window_mutator, BrowserPort, ClipboardPort, NotificationPort,
 };
 #[cfg(test)]
 use workspace_windows_integration::{
-    FixtureWindowEnumerator, MemoryClipboard, MemoryNotificationPort, StubDesktopCapturer,
-    StubProcessLauncher, StubWindowMutator,
+    FixtureWindowEnumerator, MemoryBrowserPort, MemoryClipboard, MemoryNotificationPort,
+    StubDesktopCapturer, StubProcessLauncher, StubWindowMutator,
 };
 
 use crate::error::{KernelError, Result};
@@ -63,6 +65,9 @@ impl CapabilityRuntime {
         registry
             .register(Box::new(NotificationProvider::new(notification_port())))
             .expect("notification provider registers once at bootstrap");
+        registry
+            .register(Box::new(BrowserProvider::new(browser_port())))
+            .expect("browser provider registers once at bootstrap");
         Self {
             registry: RwLock::new(registry),
         }
@@ -147,6 +152,17 @@ fn notification_port() -> Arc<dyn NotificationPort> {
     }
 }
 
+fn browser_port() -> Arc<dyn BrowserPort> {
+    #[cfg(test)]
+    {
+        Arc::new(MemoryBrowserPort::new())
+    }
+    #[cfg(not(test))]
+    {
+        workspace_windows_integration::platform_browser()
+    }
+}
+
 static RUNTIME: OnceLock<CapabilityRuntime> = OnceLock::new();
 
 /// Shared Capability Runtime for the process.
@@ -169,6 +185,7 @@ mod tests {
         assert!(descriptors
             .iter()
             .any(|d| d.domain.as_str() == "notifications"));
+        assert!(descriptors.iter().any(|d| d.domain.as_str() == "browser"));
     }
 
     #[test]
@@ -271,5 +288,30 @@ mod tests {
             .as_ref()
             .map(|m| m.len() >= 2)
             .unwrap_or(false));
+    }
+
+    #[test]
+    fn browser_status_and_open_through_router() {
+        let status = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::browser(),
+                operation: CapabilityOperation::Status,
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(status.ok);
+        assert_eq!(status.status.as_deref(), Some("available"));
+
+        let opened = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::browser(),
+                operation: CapabilityOperation::Open,
+                path: Some("https://example.com".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(opened.ok);
+        assert_eq!(opened.status.as_deref(), Some("opened"));
+        assert_eq!(opened.target.as_deref(), Some("https://example.com"));
     }
 }

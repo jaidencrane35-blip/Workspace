@@ -1,36 +1,49 @@
 # Engineering Milestone Report
-## P13 Product Closure
+## P14 Browser Provider
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P13 Product Closure (Phase A) |
+| **Execution program** | P14 Browser Provider |
 | **Date** | 2026-08-07 |
-| **Engineering base** | `f0e03c4` |
-| **Closure commit** | `940fcc2` |
-| **Status** | **P13 PERMANENTLY CLOSED** |
-| **Composition audit** | `docs/capability-runtime/product-proof/NOTIFICATIONS_PROVIDER_COMPOSITION_AUDIT.md` |
+| **Commit** | `d258533` |
+| **Status** | Engineering complete — awaiting Product Owner Product Proof review |
+| **Prior closure** | P13 Notifications permanently closed (`f1a359c`) |
+| **Composition audit** | `docs/capability-runtime/product-proof/BROWSER_PROVIDER_COMPOSITION_AUDIT.md` |
+| **Product Proof** | `docs/capability-runtime/product-proof/BROWSER_PROVIDER_PRODUCT_PROOF.md` |
+| **Handoff** | `AWAITING_PROJECT_OWNER_BROWSER_PRODUCT_PROOF_REVIEW` |
 
 ---
 
-## Closure findings
+## What shipped
 
-| Gate | Result |
+| Layer | Artifact |
 | --- | --- |
-| Engineering complete | Yes (`f0e03c4`) |
-| Conversation → Operator → Notifications | Yes |
-| Natural language Product Proof | Yes (Intent phrase gaps closed) |
-| Deferred “notify me when…” | Clarifies — no fake watching |
-| Provider Composition Audit | Complete |
-| Architectural coupling | None |
+| Research | WRAP `webbrowser`; path detection for installed browsers |
+| Port | `BrowserPort` / `SystemBrowserPort` / `MemoryBrowserPort` |
+| Provider | `BrowserProvider` — `status`, `open`, `focus` |
+| Permissions | `browser.read`, `browser.open` |
+| Operator | `browser` / `web` domain; `open_beside` → Window snap composition |
+| Conversation | Intent kinds `browserStatus` / `browserOpen` / `browserOpenBeside` |
+| IPC | `execute_capability_intent` only |
 
-Intent-only Product Proof fixes (no feature expansion):
-- “Notify me that the build finished.” → `notifyShow`
-- “Can you send me a notification?” → `notifyStatus`
+Levels 1–2 only. No tab management, CDP, downloads, or web intelligence.
+
+---
+
+## Validation
+
+| Check | Result |
+| --- | --- |
+| `pnpm typecheck` / `build` / `test` | Pass |
+| `cargo check` (kernel, app, windows-integration) | Pass |
+| Constitutional / browser / operator / runtime verifiers | Pass |
+| Launch (`pnpm dev`) | Kernel ready; terminated after verify |
 
 ---
 
 ## Explicit statements
 
-- **Is P13 now permanently closed?** **Yes.**  
-- No further P13.x except genuine bug fixes.  
-- **P14 Browser Provider** is next (Phase B of this execution program).
+- **Is P13 now permanently closed?** **Yes.**
+- **Is P14 Engineering Complete?** **Yes.**
+- **Is P14 Product Complete?** **No** — Product Proof harness is ready; Owner review required.
+- **Next eligible execution program:** P15 Screenshot Provider (after Owner accepts P14).

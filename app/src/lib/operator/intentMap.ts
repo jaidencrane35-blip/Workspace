@@ -29,6 +29,25 @@ export function toCapabilityIntent(action: IntentAction): CapabilityIntent | nul
         operation: "dismiss",
         query: action.id,
       };
+    case "browserStatus":
+      return { domain: "browser", operation: "status" };
+    case "browserOpen":
+      return {
+        domain: "browser",
+        operation: "open",
+        path: action.url,
+        query: action.url,
+      };
+    case "browserOpenBeside":
+      return {
+        domain: "browser",
+        operation: "open_beside",
+        path: action.url,
+        query: action.url,
+        title: action.beside,
+        // Prefer matching the browser window that typically appears after URL open.
+        snap: "Chrome",
+      };
     case "appEnumerate":
       return { domain: "application", operation: "enumerate" };
     case "appLaunch":

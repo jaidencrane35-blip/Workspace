@@ -94,4 +94,14 @@ All capability kinds map to one IPC: **`execute_capability_intent`**.
 
 Deferred “notify me when…” watching clarifies truthfully (not Level 1–2).
 
+### Browser (P14)
+
+| Kind | Domain | Operation |
+| --- | --- | --- |
+| `browserStatus` | browser | status |
+| `browserOpen` | browser | open |
+| `browserOpenBeside` | browser | open_beside (Operator → Window snap) |
+
+Site aliases (ChatGPT, Google, GitHub, YouTube, Bing) and raw `https://` URLs. Missing website → clarify. App opens remain Application Provider.
+
 Provider-specific IPC remains registered for diagnostics/legacy but **must not** be called from Conversation or the TS Operator façade.

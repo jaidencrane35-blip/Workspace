@@ -3,6 +3,7 @@
 //! Only this crate talks to OS window and process APIs. Kernel and UI consume
 //! traits — never Win32 directly.
 
+mod browser;
 mod capture;
 mod clipboard;
 mod enumerator;
@@ -24,6 +25,10 @@ pub use capture::{
     monitor_index_for_point, monitor_index_for_window_bounds, CaptureMetadata,
     CapturedDesktopMonitor, CapturedDesktopWindow, DesktopCapturer, DesktopObservationCapture,
     STUB_DESKTOP_SESSION_ID,
+};
+pub use browser::{
+    platform_browser, BrowserCapabilityStatus, BrowserOperationOutcome, BrowserPort,
+    MemoryBrowserPort, SystemBrowserPort, UnavailableBrowserPort,
 };
 pub use clipboard::{
     platform_clipboard, ArboardClipboard, ClipboardPort, MemoryClipboard,

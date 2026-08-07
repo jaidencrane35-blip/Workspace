@@ -26,6 +26,10 @@ impl CapabilityDomainId {
         Self::new("notifications")
     }
 
+    pub fn browser() -> Self {
+        Self::new("browser")
+    }
+
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -58,6 +62,8 @@ pub enum CapabilityOperation {
     Show,
     /// Notifications Provider — Level 2 dismiss (best-effort).
     Dismiss,
+    /// Browser Provider — Level 2 open URL / site.
+    Open,
 }
 
 impl CapabilityOperation {
@@ -83,6 +89,7 @@ impl CapabilityOperation {
             Self::Status => "status",
             Self::Show => "show",
             Self::Dismiss => "dismiss",
+            Self::Open => "open",
         }
     }
 
@@ -108,6 +115,7 @@ impl CapabilityOperation {
             "status" | "available" | "capability" => Some(Self::Status),
             "show" | "notify" | "toast" => Some(Self::Show),
             "dismiss" | "clear" | "hide" => Some(Self::Dismiss),
+            "open" | "browse" | "visit" => Some(Self::Open),
             _ => None,
         }
     }

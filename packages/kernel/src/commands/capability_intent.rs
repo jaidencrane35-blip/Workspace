@@ -5,6 +5,7 @@ use crate::capability_runtime::{
 };
 use crate::commands::application_capability::ExecuteApplicationOperation;
 use crate::commands::clipboard::{ReadClipboard, WriteClipboard};
+use crate::commands::browser::{BrowserStatus, OpenBrowserUrl};
 use crate::commands::notification::{DismissNotification, NotificationStatus, ShowNotification};
 use crate::commands::pipeline::CommandPipeline;
 use crate::commands::window_capability::ExecuteWindowOperation;
@@ -130,6 +131,54 @@ fn execute_step(
             ))?;
             Ok(window_result_as_response(step.operation, result))
         }
+        "browser" => match step.operation {
+            CapabilityOperation::Status => {
+                let result = pipeline().execute_query(BrowserStatus)?;
+                Ok(ProviderInvokeResponse {
+                    domain: CapabilityDomainId::browser(),
+                    operation: CapabilityOperation::Status,
+                    ok: result.available,
+                    format: Some(result.default_handler),
+                    bytes: None,
+                    text: Some(result.browsers),
+                    preview: Some(result.message.clone()),
+                    message: Some(result.message),
+                    status: Some(if result.available {
+                        "available".into()
+                    } else {
+                        "unavailable".into()
+                    }),
+                    target: None,
+                    items: None,
+                    monitors: None,
+                })
+            }
+            CapabilityOperation::Open => {
+                let result = pipeline().execute_mutation(OpenBrowserUrl::new(
+                    step.path
+                        .clone()
+                        .or_else(|| step.query.clone())
+                        .or_else(|| step.text.clone()),
+                ))?;
+                Ok(ProviderInvokeResponse {
+                    domain: CapabilityDomainId::browser(),
+                    operation: CapabilityOperation::Open,
+                    ok: result.ok,
+                    format: None,
+                    bytes: None,
+                    text: result.target.clone(),
+                    preview: result.preview,
+                    message: Some(result.message),
+                    status: Some(result.status),
+                    target: result.target,
+                    items: None,
+                    monitors: None,
+                })
+            }
+            other => Err(KernelError::CapabilityRuntime {
+                message: format!("browser does not support '{}'", other.as_str()),
+            }),
+        },
         "notifications" => match step.operation {
             CapabilityOperation::Status => {
                 let result = pipeline().execute_query(NotificationStatus)?;
@@ -242,6 +291,114 @@ pub fn execute_capability_intent(
     }
 
     let mut results = Vec::new();
+
+    if plan.composition_id.as_deref() == Some("browser.open_beside") {
+        let opened = execute_step(kernel, actor.clone(), intent_ctx.clone(), &plan.steps[0])?;
+        results.push(opened);
+        let beside = intent.title.clone().unwrap_or_default();
+        // Prefer Intent snap hint, then common Windows browser window titles.
+        let browser_candidates: Vec<String> = {
+            let mut list = Vec::new();
+            if let Some(hint) = intent.snap.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+                list.push(hint.to_string());
+            }
+            for name in ["Chrome", "Edge", "Firefox", "Brave"] {
+                if !list.iter().any(|n| n.eq_ignore_ascii_case(name)) {
+                    list.push(name.to_string());
+                }
+            }
+            list
+        };
+        let mut snapped_left = false;
+        for browser_query in browser_candidates {
+            let left = execute_step(
+                kernel,
+                actor.clone(),
+                intent_ctx.clone(),
+                &OperatorPlanStep {
+                    domain: CapabilityDomainId::window(),
+                    operation: CapabilityOperation::Snap,
+                    text: None,
+                    query: Some(browser_query),
+                    path: None,
+                    hwnd: None,
+                    pid: None,
+                    x: None,
+                    y: None,
+                    width: None,
+                    height: None,
+                    monitor_index: None,
+                    snap: Some("left".into()),
+                    title: None,
+                    category: None,
+                    priority: None,
+                    duration: None,
+                },
+            )?;
+            let ok = left.ok;
+            results.push(left);
+            if ok {
+                snapped_left = true;
+                break;
+            }
+        }
+        if !snapped_left {
+            // Fall back to active window after URL open.
+            let left = execute_step(
+                kernel,
+                actor.clone(),
+                intent_ctx.clone(),
+                &OperatorPlanStep {
+                    domain: CapabilityDomainId::window(),
+                    operation: CapabilityOperation::Snap,
+                    text: None,
+                    query: Some("this".into()),
+                    path: None,
+                    hwnd: None,
+                    pid: None,
+                    x: None,
+                    y: None,
+                    width: None,
+                    height: None,
+                    monitor_index: None,
+                    snap: Some("left".into()),
+                    title: None,
+                    category: None,
+                    priority: None,
+                    duration: None,
+                },
+            )?;
+            results.push(left);
+        }
+        if !beside.is_empty() {
+            let right = execute_step(
+                kernel,
+                actor,
+                intent_ctx,
+                &OperatorPlanStep {
+                    domain: CapabilityDomainId::window(),
+                    operation: CapabilityOperation::Snap,
+                    text: None,
+                    query: Some(beside),
+                    path: None,
+                    hwnd: None,
+                    pid: None,
+                    x: None,
+                    y: None,
+                    width: None,
+                    height: None,
+                    monitor_index: None,
+                    snap: Some("right".into()),
+                    title: None,
+                    category: None,
+                    priority: None,
+                    duration: None,
+                },
+            )?;
+            results.push(right);
+        }
+        return Ok(compose_user_reply(&intent, &plan, &results));
+    }
 
     if plan.composition_id.as_deref() == Some("app.open_or_focus") {
         let found = execute_step(kernel, actor.clone(), intent_ctx.clone(), &plan.steps[0])?;

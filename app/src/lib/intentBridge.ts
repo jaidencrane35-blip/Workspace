@@ -47,6 +47,14 @@ export type IntentAction =
       reply: string;
     }
   | { kind: "notifyDismiss"; id?: string; reply: string }
+  | { kind: "browserStatus"; reply: string }
+  | { kind: "browserOpen"; url: string; reply: string }
+  | {
+      kind: "browserOpenBeside";
+      url: string;
+      beside: string;
+      reply: string;
+    }
   | { kind: "appOpen"; query: string; reply: string }
   | { kind: "appLaunch"; query: string; reply: string }
   | { kind: "appFocus"; query: string; reply: string }
@@ -200,6 +208,121 @@ function resolveNotificationIntent(raw: string, text: string): IntentAction | nu
       text: "Notification from Workspace.",
       reply: "Showing a desktop notification.",
     };
+  }
+
+  return null;
+}
+
+const SITE_ALIASES: Record<string, string> = {
+  chatgpt: "https://chatgpt.com",
+  "chat gpt": "https://chatgpt.com",
+  google: "https://www.google.com",
+  github: "https://github.com",
+  youtube: "https://www.youtube.com",
+  bing: "https://www.bing.com",
+};
+
+function resolveSiteAlias(name: string): string | null {
+  const key = name.trim().toLowerCase();
+  return SITE_ALIASES[key] ?? null;
+}
+
+/**
+ * Browser intents — URL / site open via Kernel Operator (P14).
+ * Must run before generic “open <app>” application intents.
+ */
+function resolveBrowserIntent(raw: string, text: string): IntentAction | null {
+  if (
+    /\b(can you (use |open )?browsers?|are browsers? available|browser support|which browsers)\b/.test(
+      text,
+    ) ||
+    text === "browsers?" ||
+    text === "browsers"
+  ) {
+    return {
+      kind: "browserStatus",
+      reply: "Checking browser support.",
+    };
+  }
+
+  if (
+    /^(open|go to)\s+this\s+website[.!]?$/i.test(raw.trim()) ||
+    text === "open this website"
+  ) {
+    return {
+      kind: "unknown",
+      reply: "Which website should I open?",
+      suggestion: 'Try “open google”, “open github”, or “open https://example.com”.',
+    };
+  }
+
+  const beside = raw
+    .trim()
+    .match(
+      /^open\s+(.+?)\s+beside\s+(.+)$/i,
+    );
+  if (beside?.[1] && beside[2]) {
+    const left = stripTrailingPunctuation(beside[1]);
+    const right = stripTrailingPunctuation(beside[2]);
+    const url =
+      resolveSiteAlias(left) ??
+      (/^https?:\/\//i.test(left) ? left : null) ??
+      (/^www\./i.test(left) ? `https://${left}` : null);
+    if (url && right) {
+      return {
+        kind: "browserOpenBeside",
+        url,
+        beside: right,
+        reply: `Opening beside “${right}”.`,
+      };
+    }
+  }
+
+  const openUrl = raw.trim().match(/^(?:open|go to|visit|browse)\s+(.+)$/i);
+  if (openUrl?.[1]) {
+    const target = stripTrailingPunctuation(openUrl[1]);
+    if (!target || /^(workspace|conversation)$/i.test(target)) {
+      return null;
+    }
+    // App-like launches stay with Application Provider
+    if (
+      /^(notepad|calculator|calc|spotify|discord|slack|figma|cursor|code|vscode|word|excel|outlook)$/i.test(
+        target,
+      )
+    ) {
+      return null;
+    }
+    const alias = resolveSiteAlias(target);
+    if (alias) {
+      return {
+        kind: "browserOpen",
+        url: alias,
+        reply: `Opening ${target}.`,
+      };
+    }
+    if (/^https?:\/\//i.test(target)) {
+      return {
+        kind: "browserOpen",
+        url: target,
+        reply: "Opening that site.",
+      };
+    }
+    if (/^www\./i.test(target) || /\.[a-z]{2,}([/?#]|$)/i.test(target)) {
+      const url = target.startsWith("http") ? target : `https://${target}`;
+      return {
+        kind: "browserOpen",
+        url,
+        reply: "Opening that site.",
+      };
+    }
+    // "open browser" / "open my browser"
+    if (/^(my\s+)?browsers?$/i.test(target)) {
+      return {
+        kind: "browserOpen",
+        url: "https://www.google.com",
+        reply: "Opening your browser.",
+      };
+    }
   }
 
   return null;
@@ -534,6 +657,11 @@ export function resolveIntent(raw: string): IntentAction {
   const notificationIntent = resolveNotificationIntent(raw, text);
   if (notificationIntent) {
     return notificationIntent;
+  }
+
+  const browserIntent = resolveBrowserIntent(raw, text);
+  if (browserIntent) {
+    return browserIntent;
   }
 
   if (isEvolutionRequest(raw)) {

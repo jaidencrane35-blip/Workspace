@@ -54,6 +54,7 @@ const verifiers = {
   "verify:product-gravity": "scripts/verify-product-gravity.mjs",
   "verify:operator-intelligence": "scripts/verify-operator-intelligence.mjs",
   "verify:notifications-provider": "scripts/verify-notifications-provider.mjs",
+  "verify:browser-provider": "scripts/verify-browser-provider.mjs",
 };
 
 const verifierStatus = {};
@@ -314,6 +315,18 @@ const completedPrograms = [
       "execute_capability_intent",
     ],
   },
+  {
+    id: "browser-provider-p14",
+    backlogRef: "P14 Browser Provider",
+    completed: "2026-08-07",
+    artifacts: [
+      "docs/capability-runtime/BROWSER_PROVIDER.md",
+      "docs/capability-runtime/product-proof/browser-provider.proof.json",
+      "packages/kernel/src/capability_runtime/browser_provider.rs",
+      "pnpm verify:browser-provider",
+      "execute_capability_intent",
+    ],
+  },
 ];
 
 const remainingBacklog = [
@@ -400,10 +413,10 @@ const health = {
     machineState: "docs/project-health.json",
   },
   currentExecutionProgram: {
-    id: "notifications-provider-p13",
-    title: "P13 Notifications Provider",
-    status: "permanently_closed",
-    note: "P13 Product Complete and permanently closed. Composition audit complete. P14 Browser is next.",
+    id: "browser-provider-p14",
+    title: "P14 Browser Provider",
+    status: "awaiting_owner_review",
+    note: "P14 engineering + Product Proof harness complete. Awaiting Product Owner Product Proof review. P13 remains permanently closed.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -430,6 +443,7 @@ const health = {
     kernelOperator: "complete",
     p12Series: "permanently_complete",
     notificationsProvider: "permanently_complete",
+    browserProvider: "engineering_complete_awaiting_product_proof_review",
     notes: [
       "UI Architecture Spec accepted/frozen (P8)",
       "Capability Runtime research accepted (P9)",
@@ -437,14 +451,15 @@ const health = {
       "Application Provider accepted (P11)",
       "Window Provider + P12 series permanently complete",
       "P13 Notifications Provider permanently closed (Product Proof + Composition Audit)",
+      "P14 Browser Provider engineering + Product Proof harness (Owner review pending)",
       "Operator Authority + Kernel Authority + Composition permanent",
       "Providers own operations; independently testable",
     ],
   },
   currentMilestone: {
-    id: "notifications-provider-p13",
-    title: "P13 Notifications Provider",
-    status: "permanently_closed",
+    id: "browser-provider-p14",
+    title: "P14 Browser Provider",
+    status: "awaiting_owner_review",
     commit: milestoneCommit,
   },
   acceptedReviews: [
@@ -527,9 +542,9 @@ const health = {
   ],
   outstandingProductDebt: [
     {
-      id: "capability-providers-p14-plus",
+      id: "capability-providers-p15-plus",
       track: "B",
-      summary: "Browser / Screenshot / File providers — P14+ (P13 closed)",
+      summary: "Screenshot / File / Terminal providers — P15+ (P14 Browser engineering complete)",
     },
     {
       id: "tray-integration",
@@ -561,7 +576,8 @@ const health = {
       "Operator Intelligence Foundation (P12.7 TS interim)",
       "P12 Finalization — Kernel Operator architecture",
       "P12 series permanently closed",
-      "P13 Notifications Provider engineering + Product Proof harness",
+      "P13 Notifications Provider permanently closed",
+      "P14 Browser Provider engineering + Product Proof harness",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)",
     ],
@@ -629,15 +645,15 @@ const health = {
   lastMilestone: {
     date: "2026-08-07",
     document: "docs/engineering-milestone-report.md",
-    title: "P13 Notifications Provider — permanently closed",
-    reviewBrief: "docs/capability-runtime/product-proof/NOTIFICATIONS_PROVIDER_COMPOSITION_AUDIT.md",
+    title: "P14 Browser Provider — engineering complete",
+    reviewBrief: "docs/capability-runtime/product-proof/BROWSER_PROVIDER_PRODUCT_PROOF.md",
   },
-  handoffStatus: "P13_PERMANENTLY_CLOSED_P14_ELIGIBLE",
+  handoffStatus: "AWAITING_PROJECT_OWNER_BROWSER_PRODUCT_PROOF_REVIEW",
   nextRecommendedExecutionProgram: {
-    id: "browser-provider-p14",
-    title: "P14 Browser Provider",
-    blockedUntil: null,
-    note: "P13 permanently closed. P14 is the next constitutional execution program.",
+    id: "screenshot-provider-p15",
+    title: "P15 Screenshot Provider",
+    blockedUntil: "P14 Product Owner Product Proof acceptance",
+    note: "Do not begin P15 until Owner accepts P14 Product Proof.",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",
