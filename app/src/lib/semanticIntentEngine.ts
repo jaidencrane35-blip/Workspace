@@ -21,6 +21,7 @@ import {
   type DesktopIntent,
 } from "./intentGrammar";
 import type { IntentAction } from "./intentBridge"; // type-only — avoid runtime cycle
+import { resolveSituationGoal } from "./situationGoals";
 
 export type DesktopEntityKind =
   | "protocol"
@@ -655,6 +656,13 @@ export function resolveSemanticIntent(raw: string): IntentAction | null {
       reply: discovery.reply,
       suggestion: discovery.suggestion,
     };
+  }
+
+  // Situation goals (P16.35) — resume/setup/screenshots/done/discovery phrasing
+  // before entity locate, without Intent Grammar alias growth.
+  const situation = resolveSituationGoal(raw) ?? resolveSituationGoal(text);
+  if (situation) {
+    return situation;
   }
 
   const cognitive = reasonCognitiveDesktop(text);

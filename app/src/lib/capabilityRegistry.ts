@@ -24,8 +24,14 @@ export interface CapabilityNode {
   examples: string[];
   /** How Conversation recovers when this capability cannot complete. */
   failureRecovery: string;
-  /** Related capability ids in this graph. */
+  /** Related capability ids in this graph (relationships). */
   related: string[];
+  /** Similar capability ids (overlapping purpose). */
+  similar: string[];
+  /** Alternative capability ids when this one cannot apply. */
+  alternatives: string[];
+  /** How an ordinary user discovers this without menus. */
+  discoverability: string;
   /** Short Owner-facing note used only when generating discovery text. */
   documentation: string;
 }
@@ -54,6 +60,9 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     failureRecovery:
       "Say a known app name, or ask what applications I can control — I won’t invent a program.",
     related: ["focus-window", "browser", "folders"],
+    similar: ["focus-window", "browser"],
+    alternatives: ["focus-window", "folders"],
+    discoverability: "Ask to open a named app, or ask what applications I can control.",
     documentation:
       "Resolved apps go through Find → Focus or Launch — never raw transcripts.",
   },
@@ -77,6 +86,9 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     failureRecovery:
       "Ask what windows are open, or name the app/site window you want — I won’t invent a window.",
     related: ["window-state", "browser", "open-app"],
+    similar: ["open-app", "window-state"],
+    alternatives: ["open-app", "browser"],
+    discoverability: "Ask what windows are open, or say you’ve got an app somewhere.",
     documentation: "Locate/focus compose to Window focus (and optional minimise).",
   },
   {
@@ -99,6 +111,9 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     failureRecovery:
       "Name the window and the change (maximize, snap left, other monitor) — or ask what windows are open.",
     related: ["focus-window", "browser"],
+    similar: ["focus-window"],
+    alternatives: ["focus-window"],
+    discoverability: "Name a window and a change — maximize, snap, or other monitor.",
     documentation: "Window state changes apply only to matching open windows.",
   },
   {
@@ -120,6 +135,9 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     failureRecovery:
       "Name a known site (ChatGPT, YouTube, GitHub) or ask what I can do with browsers.",
     related: ["focus-window", "window-state", "open-app"],
+    similar: ["open-app", "focus-window"],
+    alternatives: ["focus-window", "open-app"],
+    discoverability: "Ask to open a site, or put a site beside an app.",
     documentation: "Browser open may compose with Window focus or snap.",
   },
   {
@@ -137,6 +155,9 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     failureRecovery:
       "Try “take a screenshot” or “capture this window”. Finding old screenshot files uses Folders (Pictures).",
     related: ["folders", "clipboard"],
+    similar: ["folders", "clipboard"],
+    alternatives: ["folders"],
+    discoverability: "Ask to take a screenshot, or to find your screenshots folder.",
     documentation: "Screenshot capture can compose with copy when you ask.",
   },
   {
@@ -153,6 +174,9 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     examples: ["What’s on my clipboard?", "Copy this text"],
     failureRecovery: "Ask what’s on the clipboard, or tell me the text to copy.",
     related: ["screenshots"],
+    similar: ["screenshots"],
+    alternatives: ["screenshots"],
+    discoverability: "Ask what’s on the clipboard.",
     documentation: "Clipboard is a first-class capability domain.",
   },
   {
@@ -169,6 +193,9 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     examples: ["Show me a notification: Done"],
     failureRecovery: "Say “show me a notification: …” with the message text.",
     related: [],
+    similar: [],
+    alternatives: [],
+    discoverability: "Ask to show a notification with your message text.",
     documentation: "Notifications are shown under Workspace governance.",
   },
   {
@@ -186,6 +213,9 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     failureRecovery:
       "Use the microphone, review the transcript, then Send — or type the same request.",
     related: [],
+    similar: [],
+    alternatives: [],
+    discoverability: "Use the microphone beside Conversation, then Send.",
     documentation:
       "Voice is an input device — transcript follows the same Intent path as typing.",
   },
@@ -211,6 +241,9 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     failureRecovery:
       "Name a common folder (Downloads, Pictures, Desktop, Documents) — I won’t invent paths.",
     related: ["open-app", "screenshots"],
+    similar: ["open-app", "screenshots"],
+    alternatives: ["open-app"],
+    discoverability: "Ask for Downloads, Pictures, Desktop, or Documents.",
     documentation: "Folders open via Windows shell: URIs.",
   },
 ];
@@ -240,9 +273,10 @@ export function isCapabilityDiscoveryUtterance(text: string): boolean {
     /^(show( me)?( your)? capabilities|list (your )?capabilities|list desktop (actions|commands)|what are your capabilities|capabilities)$/i.test(
       t,
     ) ||
-    /^(show me everything you can (control|do)|what can you control|everything you can (control|do))$/i.test(
+    /^(show me everything you can (control|do)|show me everything you know how to control|what can you control|everything you can (control|do)|everything you know how to control)$/i.test(
       t,
     ) ||
+    /^(tell me everything you (can|know how to) (control|do))$/i.test(t) ||
     /^(what (desktop )?tasks can you perform|what can you do on (the )?desktop|desktop (help|capabilities)|help with (the )?desktop)$/i.test(
       t,
     ) ||
@@ -309,14 +343,26 @@ export function describeCapability(id: string): string | null {
     .map((rid) => getCapabilityById(rid)?.domain)
     .filter(Boolean)
     .join(", ");
+  const similar = node.similar
+    .map((rid) => getCapabilityById(rid)?.domain)
+    .filter(Boolean)
+    .join(", ");
+  const alternatives = node.alternatives
+    .map((rid) => getCapabilityById(rid)?.domain)
+    .filter(Boolean)
+    .join(", ");
   return [
     `${node.domain}: ${node.summary}`,
+    `Purpose: ${node.summary}`,
     `Does: ${node.documentation}`,
     `Arguments: ${node.arguments.join("; ") || "none"}`,
     `Needs: ${node.requirements.join("; ")}`,
     `Won’t: ${node.limitations.join("; ")}`,
     `If it fails: ${node.failureRecovery}`,
+    `Discover: ${node.discoverability}`,
     related ? `Related: ${related}` : "",
+    similar ? `Similar: ${similar}` : "",
+    alternatives ? `Alternatives: ${alternatives}` : "",
     `Example — “${node.examples[0] ?? node.summary}”`,
   ]
     .filter(Boolean)

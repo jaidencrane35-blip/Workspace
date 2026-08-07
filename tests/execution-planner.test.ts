@@ -124,7 +124,7 @@ describe("P16.34 execution planner + capability intelligence", () => {
       expect(node.requirements.length, node.id).toBeGreaterThan(0);
       const described = describeCapability(node.id);
       expect(described).toBeTruthy();
-      expect(described!).toMatch(/Arguments:|Won’t:|If it fails:/);
+      expect(described!).toMatch(/Arguments:|Won’t:|If it fails:|Discover:/);
       expect(described!).not.toMatch(/Provider|Kernel|WinRT/);
     }
     const discovery = generateCapabilityDiscovery("all");

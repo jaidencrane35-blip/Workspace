@@ -1,32 +1,30 @@
 # Engineering Milestone Report
-## P16.34 Desktop Cognition Validation & Capability Intelligence
+## P16.35 Product Cognition Gap Analysis
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.34 Desktop Cognition Validation & Capability Intelligence |
+| **Execution program** | P16.35 Product Cognition Gap Analysis |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete for program** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Not** | P17 / Product Complete / permanently closed / Voice rework |
+| **Not** | P17 / permanently closed / Voice rework / alias expansion |
 
 ---
 
 ## Summary
 
-Desktop cognition outranks voice transcription. P16.34:
+Owner evidence falsified “Intent+Registry+Planner ? premium feel.” P16.35:
 
-1. **Execution Planner** — Goal ? Capabilities ? declarative plan steps before Kernel execution  
-2. **Registry intelligence** — every node: arguments, failureRecovery, related, full `describeCapability`  
-3. **Hostile cognition** — need/beside, prior browser (honest), where I was / work setup ? Continue  
-4. **Pipeline evidence** — `execution_plan` stage on `resolveIntentWithEvidence`  
-5. **Verifier** `scripts/verify-execution-planner.mjs`
+1. **Falsified** discovery?proposal misroute; setup/screenshot/situation gaps  
+2. **Situation Goals** layer (deterministic; not grammar/alias growth)  
+3. **Capability Graph** discoverability / similar / alternatives  
+4. **?250** cognition battery with outcome classification  
+5. **Scorecard** + ownership of top 25 gaps  
 
-Artifact: `docs/capability-runtime/product-proof/VOICE_P16_34_DESKTOP_COGNITION.md`
+Artifact: `docs/capability-runtime/product-proof/VOICE_P16_35_PRODUCT_COGNITION.md`
 
 ## Explicit
 
-- **Recommend Owner live review:** Yes — launch once  
-- **P16 permanently closed:** **No**  
+- **Further P16:** Only if Owner proves Intent/Situation/Registry defect  
+- **Further Voice:** No without Voice-owned defect  
 - **P17:** Not begun  
-- **Voice engineering reopened:** **No**  
-- **Further P16 engineering:** Only if Owner proves reproducible Intent/Registry/Desktop Operator defect  

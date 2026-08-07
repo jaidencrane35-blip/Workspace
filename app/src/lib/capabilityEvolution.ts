@@ -156,6 +156,14 @@ export function isEvolutionRequest(raw: string): boolean {
   if (isWindowDesktopRequest(raw)) {
     return false;
   }
+  // Capability discovery must never become a product-evolution proposal (P16.35).
+  if (
+    /\b(everything you (can|know)|what can you|capabilities|how can you help)\b/.test(
+      text,
+    )
+  ) {
+    return false;
+  }
   return (
     /^(add|move|make|resize|change|remove|hide|show|enable|disable|put|relocate)\b/.test(
       text,
