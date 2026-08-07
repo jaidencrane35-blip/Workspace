@@ -6,7 +6,7 @@
 | **Execution program** | P13 Product Closure (Phase A) |
 | **Date** | 2026-08-07 |
 | **Engineering base** | `f0e03c4` |
-| **Closure commit** | pending |
+| **Closure commit** | `940fcc2` |
 | **Status** | **P13 PERMANENTLY CLOSED** |
 | **Composition audit** | `docs/capability-runtime/product-proof/NOTIFICATIONS_PROVIDER_COMPOSITION_AUDIT.md` |
 

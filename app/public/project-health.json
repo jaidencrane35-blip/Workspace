@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T00:10:43.994Z",
+  "updatedAt": "2026-08-07T00:11:15.922Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -363,7 +363,7 @@
     "id": "notifications-provider-p13",
     "title": "P13 Notifications Provider",
     "status": "permanently_closed",
-    "commit": "pending"
+    "commit": "940fcc2"
   },
   "acceptedReviews": [
     {
