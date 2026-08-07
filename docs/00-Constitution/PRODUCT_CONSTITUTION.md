@@ -121,6 +121,12 @@ Listening ends only when the user clearly finishes speaking, the user explicitly
 The Kernel Operator (via the Intent Layer) owns deterministic semantic aliases (GPT→ChatGPT, Git→GitHub, YT→YouTube, VSCode→Visual Studio Code, Edge→Microsoft Edge, Chrome→Google Chrome, Settings→Windows Settings).  
 Providers remain unaware of aliases. No probabilistic guessing.
 
+### P15 — Permission Guidance Principle (permanent — P16.9)
+
+Operating system permissions belong to the operating system. Workspace never replaces Windows permission dialogs.  
+Workspace detects permission state, explains it, guides the user, verifies success, and remembers completed permission flows.  
+Workspace never repeatedly opens Settings once permissions are correctly configured.
+
 ---
 
 ## 3. Presentation modes (binding intent)

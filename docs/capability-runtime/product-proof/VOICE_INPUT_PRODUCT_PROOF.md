@@ -1,9 +1,9 @@
 # Voice Input — Product Proof
-## P16 / P16.8 — Owner checklist
+## P16 / P16.9 — Owner checklist
 
 | Field | Value |
 | --- | --- |
-| **Program** | P16 Voice Input (+ P16.8 Conversation Continuity) |
+| **Program** | P16 Voice Input (+ P16.9 Product Completion) |
 | **Status** | **Pending live Product Owner acceptance** (**not** permanently closed) |
 | **Role** | Conversation input device |
 
@@ -11,14 +11,13 @@
 
 ## Owner checklist
 
-1. Mic is easy to find; phases: Idle → Preparing → **Ready** → Listening → Recognizing → Processing → Finished  
-2. **Ready / Listening never appear until capture is real** (WinRT Capturing)  
-3. Speak naturally for a long turn — short pauses must **not** cut you off  
-4. Click mic again to finish (submit), or pause ~10s after you stop speaking  
-5. Waveform / Ready / Listening make it obvious Workspace is listening  
-6. Shell glass is readable (premium glass, not invisible)  
-7. Aliases: Open GPT / Git / YT / VSCode / Edge / Chrome / Settings  
-8. No Provider / WinRT / HRESULT terminology  
+1. Mic is large / high-contrast; phases Idle → Preparing → **Ready** → Speech Detected → Listening → Recognizing → Finished  
+2. Ready only when capture is real — speak after Ready; first words kept  
+3. Speak naturally for a long turn (minutes); pauses should not cut you off; click mic to finish  
+4. If permission is denied: explain once; click mic to open Settings; return → “✓ Voice ready”; no Settings spam on later launches  
+5. Glass readable over desktop / screenshots  
+6. Natural phrases: Open GPT / beside / Chrome / browser / Close Settings / Maximize Cursor / screenshot / can you hear me  
+7. No Provider / WinRT / HRESULT terminology  
 
 ---
 

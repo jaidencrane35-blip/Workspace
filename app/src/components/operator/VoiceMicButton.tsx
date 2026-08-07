@@ -2,11 +2,21 @@ import { useCallback, useEffect, useState } from "react";
 import {
   cancelListening,
   ensureVoiceListeningBridge,
+  getVoiceStatus,
   listenOnce,
   openVoiceSettings,
   warmUpVoice,
   type VoicePhase,
 } from "../../lib/voice";
+import {
+  clearRememberedVoicePermissionGranted,
+  hasRememberedVoicePermissionGranted,
+  markSettingsGuidanceOffered,
+  permissionGuidanceMessage,
+  rememberVoicePermissionGranted,
+  voiceReadyMessage,
+  wasSettingsGuidanceOffered,
+} from "../../lib/voice/permissionGuidance";
 
 interface VoiceMicButtonProps {
   disabled?: boolean;
@@ -16,15 +26,17 @@ interface VoiceMicButtonProps {
 
 function phaseLabel(phase: VoicePhase, available: boolean): string {
   if (!available) {
-    return "Voice unavailable";
+    return "Voice unavailable — click for Settings help";
   }
   switch (phase) {
     case "preparing":
-      return "Preparing microphone…";
+      return "Preparing…";
     case "ready":
-      return "Ready — Workspace is listening";
+      return "Ready — speak when you like";
+    case "speechDetected":
+      return "Speech detected";
     case "listening":
-      return "Listening — speak naturally";
+      return "Listening";
     case "recognizing":
       return "Recognizing…";
     case "processing":
@@ -40,8 +52,8 @@ function phaseLabel(phase: VoicePhase, available: boolean): string {
 
 /**
  * Microphone control beside the Conversation composer.
- * Listening / Ready indicators appear only after WinRT Capturing —
- * never during warm-up or before the audio contract is established.
+ * Ready = Capturing contract. Listening = speech detected.
+ * Never auto-opens Windows Settings (Permission Guidance Principle).
  */
 export function VoiceMicButton({
   disabled,
@@ -52,6 +64,50 @@ export function VoiceMicButton({
   const [available, setAvailable] = useState(true);
   const [warmed, setWarmed] = useState(false);
   const [soundActive, setSoundActive] = useState(false);
+  const [needsSettingsOffer, setNeedsSettingsOffer] = useState(false);
+  const [settingsKind, setSettingsKind] = useState<"microphone" | "speech">(
+    "microphone",
+  );
+
+  const applyStatus = useCallback(
+    (status: Awaited<ReturnType<typeof warmUpVoice>>, announceReady: boolean) => {
+      const ok = status.available || status.recognitionAvailable;
+      setAvailable(ok);
+      setWarmed(Boolean(status.warmed || status.available));
+      const granted =
+        status.permission === "granted" ||
+        (ok && status.permission !== "denied");
+      if (granted) {
+        const wasNew = !hasRememberedVoicePermissionGranted();
+        rememberVoicePermissionGranted();
+        setNeedsSettingsOffer(false);
+        if (announceReady && wasNew) {
+          onVoiceMessage(voiceReadyMessage());
+        }
+        return;
+      }
+      if (status.permission === "denied") {
+        clearRememberedVoicePermissionGranted();
+        setNeedsSettingsOffer(true);
+        setSettingsKind(
+          status.message.toLowerCase().includes("speech privacy")
+            ? "speech"
+            : "microphone",
+        );
+        if (!wasSettingsGuidanceOffered()) {
+          markSettingsGuidanceOffered();
+          onVoiceMessage(
+            permissionGuidanceMessage(
+              status.message.toLowerCase().includes("speech privacy")
+                ? "speech"
+                : "microphone",
+            ),
+          );
+        }
+      }
+    },
+    [onVoiceMessage],
+  );
 
   useEffect(() => {
     let active = true;
@@ -60,33 +116,71 @@ export function VoiceMicButton({
       if (!active) {
         return;
       }
-      setAvailable(status.available || status.recognitionAvailable);
-      setWarmed(Boolean(status.warmed || status.available));
-      if (status.permission === "denied") {
-        onVoiceMessage(status.message);
-      }
+      applyStatus(status, false);
     });
+
+    const onVis = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+      void getVoiceStatus().then((status) => {
+        if (!active) {
+          return;
+        }
+        const wasDenied = needsSettingsOffer || !hasRememberedVoicePermissionGranted();
+        const nowOk =
+          status.permission === "granted" ||
+          (status.available && status.permission !== "denied");
+        applyStatus(status, Boolean(wasDenied && nowOk));
+      });
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onVis);
     return () => {
       active = false;
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onVis);
     };
-  }, [onVoiceMessage]);
+  }, [applyStatus, needsSettingsOffer]);
 
-  /** Mic toggle while listening = finish turn (like submitting typed text). */
   const finish = useCallback(async () => {
     await cancelListening();
   }, []);
 
   const start = useCallback(async () => {
+    // Permission Guidance: second click while denied opens Settings once (user intent).
+    if (needsSettingsOffer && !available) {
+      await openVoiceSettings(settingsKind);
+      onVoiceMessage(
+        settingsKind === "speech"
+          ? "I opened Windows Speech settings. Turn on speech recognition, then return here — I’ll check again."
+          : "I opened Windows Microphone settings. Allow Workspace, then return here — I’ll check again.",
+      );
+      return;
+    }
+
     setPhase("preparing");
     setSoundActive(false);
 
     if (!warmed) {
       const status = await warmUpVoice();
-      setAvailable(status.available || status.recognitionAvailable);
-      setWarmed(Boolean(status.warmed || status.available));
+      applyStatus(status, false);
       if (!status.available && !status.recognitionAvailable) {
         setPhase("error");
-        onVoiceMessage(status.message);
+        setNeedsSettingsOffer(true);
+        setSettingsKind(
+          status.message.toLowerCase().includes("speech privacy")
+            ? "speech"
+            : "microphone",
+        );
+        onVoiceMessage(
+          permissionGuidanceMessage(
+            status.message.toLowerCase().includes("speech privacy")
+              ? "speech"
+              : "microphone",
+          ),
+        );
+        markSettingsGuidanceOffered();
         setPhase("idle");
         return;
       }
@@ -101,6 +195,15 @@ export function VoiceMicButton({
       },
       onSoundStarted: () => {
         setSoundActive(true);
+        setPhase((prev) =>
+          prev === "ready" || prev === "preparing" ? "speechDetected" : prev,
+        );
+        // Promote to listening shortly after speech energy.
+        window.setTimeout(() => {
+          setPhase((prev) =>
+            prev === "speechDetected" || prev === "ready" ? "listening" : prev,
+          );
+        }, 40);
       },
     });
 
@@ -112,18 +215,26 @@ export function VoiceMicButton({
         return;
       }
       setPhase("error");
-      onVoiceMessage(result.message);
       if (
         result.status === "permission_denied" ||
         result.status === "microphone_unavailable"
       ) {
         const speechPrivacy = result.message.toLowerCase().includes("speech privacy");
-        await openVoiceSettings(speechPrivacy ? "speech" : "microphone");
+        setNeedsSettingsOffer(true);
+        setSettingsKind(speechPrivacy ? "speech" : "microphone");
+        onVoiceMessage(
+          permissionGuidanceMessage(speechPrivacy ? "speech" : "microphone"),
+        );
+        markSettingsGuidanceOffered();
+      } else {
+        onVoiceMessage(result.message);
       }
       setPhase("idle");
       return;
     }
 
+    rememberVoicePermissionGranted();
+    setNeedsSettingsOffer(false);
     setPhase("recognizing");
     await new Promise((r) => setTimeout(r, 40));
     setPhase("processing");
@@ -131,7 +242,15 @@ export function VoiceMicButton({
     setPhase("finished");
     await new Promise((r) => setTimeout(r, 180));
     setPhase("idle");
-  }, [onTranscript, onVoiceMessage, warmed]);
+  }, [
+    applyStatus,
+    available,
+    needsSettingsOffer,
+    onTranscript,
+    onVoiceMessage,
+    settingsKind,
+    warmed,
+  ]);
 
   const onToggle = () => {
     if (disabled) {
@@ -140,6 +259,7 @@ export function VoiceMicButton({
     if (
       phase === "preparing" ||
       phase === "ready" ||
+      phase === "speechDetected" ||
       phase === "listening" ||
       phase === "recognizing" ||
       phase === "processing"
@@ -150,11 +270,16 @@ export function VoiceMicButton({
     void start();
   };
 
-  const capturing = phase === "ready" || phase === "listening";
+  const activeCapture =
+    phase === "ready" ||
+    phase === "speechDetected" ||
+    phase === "listening";
+  const listening =
+    phase === "speechDetected" || phase === "listening";
   const preparing = phase === "preparing";
   const busy =
     preparing ||
-    capturing ||
+    activeCapture ||
     phase === "recognizing" ||
     phase === "processing";
   const label = phaseLabel(phase, available);
@@ -164,7 +289,8 @@ export function VoiceMicButton({
       type="button"
       className="op-shell__mic"
       data-phase={phase}
-      data-listening={capturing ? "true" : "false"}
+      data-listening={listening ? "true" : "false"}
+      data-ready={phase === "ready" ? "true" : "false"}
       data-preparing={preparing ? "true" : "false"}
       data-sound={soundActive ? "true" : "false"}
       data-available={available ? "true" : "false"}
@@ -172,21 +298,25 @@ export function VoiceMicButton({
       disabled={disabled}
       aria-label={label}
       title={label}
-      aria-pressed={capturing}
+      aria-pressed={activeCapture}
       aria-busy={busy}
     >
       <span className="op-shell__mic-icon" aria-hidden="true">
-        {capturing
+        {listening
           ? "●"
-          : preparing
-            ? "◌"
-            : phase === "recognizing" || phase === "processing"
-              ? "◎"
-              : phase === "finished"
-                ? "✓"
-                : "◉"}
+          : phase === "ready"
+            ? "◉"
+            : preparing
+              ? "◌"
+              : phase === "recognizing" || phase === "processing"
+                ? "◎"
+                : phase === "finished"
+                  ? "✓"
+                  : phase === "error" || !available
+                    ? "!"
+                    : "◉"}
       </span>
-      {capturing && (
+      {activeCapture && (
         <>
           <span className="op-shell__mic-pulse" aria-hidden="true" />
           <span className="op-shell__mic-wave" aria-hidden="true">

@@ -100,6 +100,10 @@ Listening ends only when the user clearly finishes speaking, the user explicitly
 Deterministic semantic aliases are owned by the Kernel Operator / Intent Layer (examples: GPT→ChatGPT, Git→GitHub, YT→YouTube, VSCode→Visual Studio Code, Edge→Microsoft Edge, Chrome→Google Chrome, Settings→Windows Settings).  
 Providers remain unaware of aliases. Resolution stays deterministic — no AI guessing.
 
+## Permission Guidance Principle (permanent — P16.9)
+
+OS permissions belong to the OS. Workspace detects, explains, guides, verifies, and remembers — it never replaces Windows dialogs and never repeatedly opens Settings after a successful grant.
+
 ---
 
 ## Frozen pipeline (no shortcuts)

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T05:15:06.202Z",
+  "updatedAt": "2026-08-07T05:34:54.813Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -15,7 +15,7 @@
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "note": "P16 Engineering Complete (incl. P16.8 Conversation Continuity + Semantic Alias Rule). Live Product Owner Product Proof still pending final acceptance. Do not mark permanently closed. Do not begin P17."
+    "note": "P16 Engineering Complete (incl. P16.9 Ready contract, session stitching, Permission Guidance). Live Product Owner Product Proof still pending final acceptance. Do not mark permanently closed. Do not begin P17."
   },
   "completedExecutionPrograms": [
     {
@@ -415,10 +415,11 @@
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16 Voice Input Engineering Complete (incl. P16.8 Conversation Continuity) — Product Proof pending Owner acceptance (NOT permanently closed)",
+      "P16 Voice Input Engineering Complete (incl. P16.9 Product Completion) — Product Proof pending Owner acceptance (NOT permanently closed)",
       "User Adaptation Prohibition permanent (P16.6)",
       "Commodity Before Reinvention permanent (P16.7)",
       "Conversation Continuity + Semantic Alias Rule permanent (P16.8)",
+      "Permission Guidance Principle permanent (P16.9)",
       "Natural Language Robustness Rule permanent",
       "Provider Acceptance Standard permanent",
       "Capability Independence Rule permanent (P15)",
@@ -427,10 +428,10 @@
     ]
   },
   "currentMilestone": {
-    "id": "conversation-continuity-p16-8",
-    "title": "P16.8 Final Product Proof Remediation — Conversation Continuity",
+    "id": "voice-product-completion-p16-9",
+    "title": "P16.9 Voice Product Completion Program",
     "status": "engineering_complete_product_proof_pending",
-    "commit": "7d1e0bc"
+    "commit": "5fa1a0a"
   },
   "acceptedReviews": [
     {
@@ -529,7 +530,7 @@
     {
       "id": "p16-voice-product-proof",
       "track": "B",
-      "summary": "P16 Voice Input — live Product Owner Product Proof pending final acceptance (Engineering Complete incl. P16.8 Conversation Continuity; not permanently closed)"
+      "summary": "P16 Voice Input — live Product Owner Product Proof pending final acceptance (Engineering Complete incl. P16.9 Product Completion; not permanently closed)"
     },
     {
       "id": "capability-providers-p17-plus",
@@ -569,9 +570,10 @@
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16 Voice Input Engineering Complete (P16.8 Conversation Continuity) — Product Proof pending Owner acceptance",
+      "P16 Voice Input Engineering Complete (P16.9 Product Completion) — Product Proof pending Owner acceptance",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
+      "Permission Guidance Principle permanent",
       "Capability Independence Rule permanent",
       "Natural Language Robustness Rule permanent",
       "Non-PP domain.ts remains manual (G1 remainder)",
@@ -759,7 +761,7 @@
   "lastMilestone": {
     "date": "2026-08-07",
     "document": "docs/engineering-milestone-report.md",
-    "title": "P16.8 Conversation Continuity — awaiting Owner acceptance",
+    "title": "P16.9 Voice Product Completion — awaiting Owner acceptance",
     "reviewBrief": "docs/capability-runtime/product-proof/VOICE_INPUT_PRODUCT_PROOF.md"
   },
   "handoffStatus": "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",

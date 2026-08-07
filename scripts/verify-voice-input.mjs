@@ -177,6 +177,29 @@ if (
 if (!voiceRs.includes("StartWithModeAsync") || !voiceRs.includes("ResultGenerated")) {
   fail("continuous listen must start a session and accumulate ResultGenerated fragments");
 }
+if (!voiceRs.includes("stitch_resume") || !voiceRs.includes("MAX_WALL")) {
+  fail("voice port must stitch continuous sessions up to 5 minutes (P16.9)");
+}
+if (
+  voiceRs.includes("open_windows_settings_uri(VoiceSettingsTarget::Microphone") &&
+  voiceRs.includes("outcome_from_winrt_error")
+) {
+  // Auto-open from classify path must remain removed.
+}
+if (voiceRs.includes("outcome_from_winrt_error") && /fn outcome_from_winrt_error[\s\S]*?open_windows_settings_uri/.test(voiceRs)) {
+  fail("outcome_from_winrt_error must not auto-open Settings (Permission Guidance)");
+}
+if (!micUi.includes("permissionGuidance") || !micUi.includes("speechDetected")) {
+  fail("mic UI must implement Permission Guidance + speechDetected Ready contract");
+}
+const guidePath = path.join(root, "app/src/lib/voice/permissionGuidance.ts");
+if (!fs.existsSync(guidePath)) {
+  fail("missing permissionGuidance.ts");
+}
+const guide = fs.readFileSync(guidePath, "utf8");
+if (!guide.includes("rememberVoicePermissionGranted") || !guide.includes("Permission Guidance")) {
+  fail("permissionGuidance must remember grants and document the principle");
+}
 if (!voiceRs.includes("voice.lifecycle:")) {
   fail("voice port must emit lifecycle timing logs for capture evidence");
 }

@@ -37,12 +37,18 @@
     "continuousRecognitionSession": true,
     "conversationContinuity": true,
     "autoStopSilenceTimeoutSeconds": 10,
-    "micToggleFinalizesTranscript": true
+    "micToggleFinalizesTranscript": true,
+    "sessionStitchingFiveMinutes": true,
+    "readyOnlyOnCapturing": true,
+    "listeningOnlyOnSpeechDetected": true,
+    "permissionGuidanceNoAutoSettings": true,
+    "settleBeforeReadyMs": 90
   },
   "uiPhases": [
     "idle",
     "preparing",
     "ready",
+    "speechDetected",
     "listening",
     "recognizing",
     "processing",
@@ -53,6 +59,8 @@
     "voice.lifecycle: continuous_started",
     "voice.lifecycle: capturing_contract",
     "voice.lifecycle: on_ready_emitted",
+    "voice.lifecycle: speech_detected",
+    "voice.lifecycle: stitch_resume",
     "voice.lifecycle: continuous_complete"
   ],
   "userLanguageRules": [

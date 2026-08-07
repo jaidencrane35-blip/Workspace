@@ -21,7 +21,7 @@ fn sanitize_voice_user_message(raw: impl std::fmt::Display) -> String {
         || lower.contains("privacy statement")
         || lower.contains("0x80045509")
     {
-        return "Windows needs speech privacy turned on before I can listen. Open Settings → Privacy & security → Speech, turn on Online speech recognition, then try again.".into();
+        return "Windows needs speech privacy turned on before I can listen. Click the microphone again and I’ll open the right Settings page for you.".into();
     }
     if lower.contains("microphone") && lower.contains("settings") {
         return text;
@@ -119,13 +119,15 @@ pub fn voice_listen_once(app: AppHandle) -> IpcResponse<VoiceListenOutcome> {
     let app_for_sound = app.clone();
     let outcome = voice_port().listen_once_when_ready(
         Box::new(move || {
-            // Capturing contract established — Ready / Listening UI may show.
-            set_input_state("listening");
+            // Ready contract: Capturing established — invite speech (not yet "Listening").
+            set_input_state("ready");
             let _ = app_for_ready.emit("voice-ready", ());
-            let _ = app_for_ready.emit("voice-listening", ());
         }),
         Some(std::sync::Arc::new(move || {
+            // Speech detected — Listening UI may show.
+            set_input_state("listening");
             let _ = app_for_sound.emit("voice-sound", ());
+            let _ = app_for_sound.emit("voice-listening", ());
         })),
     );
     set_input_state("idle");

@@ -83,6 +83,11 @@ Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 Kernel Operator / Intent Layer owns deterministic aliases (GPT→ChatGPT, Git→GitHub, YT→YouTube, etc.). Providers never see aliases.  
 Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
+## Permission Guidance Principle (permanent — P16.9)
+
+OS permissions belong to Windows. Workspace detects, explains, guides, verifies, and remembers — never auto-spams Settings after grant.  
+Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
 ## Permanent Provider Acceptance Standard (permanent — P14.5 Finalization)
 
 Every provider from **P15 onward** must complete this sequence before permanent acceptance:

@@ -39,6 +39,7 @@ for (const token of [
   "WRAP",
   "Conversation Continuity",
   "Semantic Alias Rule",
+  "Permission Guidance Principle",
 ]) {
   if (!rule.includes(token)) {
     fail(`PRODUCT_PROOF_RULE.md missing token: ${token}`);

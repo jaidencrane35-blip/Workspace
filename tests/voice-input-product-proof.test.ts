@@ -91,13 +91,15 @@ describe("Voice Input Product Proof harness (P16)", () => {
         expect(`${ui}\n${rootTsx}`).toContain(token);
       }
     }
-    // Capturing UI (Ready/Listening) must not be tied to preparing alone.
+    // Ready contract: Listening UI only after speech detected — not Preparing.
+    expect(ui).toContain('data-ready={phase === "ready" ? "true" : "false"}');
     expect(ui).toMatch(
-      /const capturing = phase === "ready" \|\| phase === "listening"/,
+      /const listening =\s*phase === "speechDetected" \|\| phase === "listening"/,
     );
-    expect(ui).toContain('data-listening={capturing ? "true" : "false"}');
+    expect(ui).toContain("permissionGuidance");
+    expect(ui).not.toMatch(/await openVoiceSettings[\s\S]{0,80}setPhase\("idle"\)/);
     const startIdx = ui.indexOf("const start");
-    expect(ui.slice(startIdx, startIdx + 1200)).not.toContain("getVoiceStatus");
+    expect(ui.slice(startIdx, startIdx + 400)).not.toContain("getVoiceStatus");
   });
 
   it("maps Windows speech privacy failure to desktop language", () => {

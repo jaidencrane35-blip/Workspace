@@ -101,7 +101,15 @@ Lifecycle evidence (logged as `voice.lifecycle:*`):
 
 **Root cause:** `RecognizeAsync` + `EndSilenceTimeout` ≈ 2 seconds. Natural mid-speech pauses ended the turn while the Owner was still speaking — not frontend/Operator timeouts.
 
-**Fix:** WRAP `SpeechContinuousRecognitionSession` with `AutoStopSilenceTimeout` at the WinRT maximum (10s post-speech silence = “user finished”). Mic toggle calls `StopAsync` (finalize transcript). Session accumulates `ResultGenerated` fragments. Capturing-contract Ready/Listening gate retained.
+**Fix (P16.8):** WRAP `SpeechContinuousRecognitionSession` with `AutoStopSilenceTimeout` at the WinRT maximum (10s). Mic toggle `StopAsync` finalizes.
+
+### P16.9 Product Completion
+
+| Finding | Cause | Fix |
+| --- | --- | --- |
+| First words / late Ready | Inviting speech at op-create; Ready conflated with Listening | Ready = Capturing + 90ms settle; Listening = SpeechDetected only; latency stays in Preparing |
+| Mid-speech / long turns | AutoStop ends WinRT session | Stitch sessions until user Stop or 5 min wall |
+| Settings spam | Auto-open on deny/fail | Permission Guidance — explain, user-driven open, remember grant |
 
 ---
 

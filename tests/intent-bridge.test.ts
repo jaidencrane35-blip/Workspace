@@ -207,10 +207,26 @@ describe("intent bridge", () => {
       kind: "winFocus",
       query: "Chrome",
     });
+    expect(resolveIntent("Bring Cursor forward")).toMatchObject({
+      kind: "winFocus",
+      query: "Cursor",
+    });
+    expect(resolveIntent("Maximize Cursor")).toMatchObject({
+      kind: "winMaximize",
+      query: "Cursor",
+    });
+    expect(resolveIntent("Close Settings")).toMatchObject({
+      kind: "appClose",
+      query: "Windows Settings",
+    });
     expect(resolveIntent("Open Settings")).toMatchObject({
       kind: "appLaunch",
       query: "ms-settings:",
     });
+    expect(resolveIntent("Can you hear me?").kind).toBe("voiceStatus");
+    expect(resolveIntent("What can you do with voice?").kind).toBe(
+      "voiceExplain",
+    );
     expect(resolveIntent("Take a capture of our chat")).toMatchObject({
       kind: "screenshotWindow",
       query: "this",

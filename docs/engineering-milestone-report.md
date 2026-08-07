@@ -1,9 +1,9 @@
 # Engineering Milestone Report
-## P16.8 Final Product Proof Remediation — Conversation Continuity
+## P16.9 Voice Product Completion Program
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.8 Final Product Proof Remediation — Conversation Continuity |
+| **Execution program** | P16.9 Voice Product Completion Program |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — live Product Owner Product Proof **pending** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
@@ -11,21 +11,22 @@
 
 ---
 
-## Root cause — premature voice end
+## Remaining latency (measured)
 
-WinRT `RecognizeAsync` ended on ~2s `EndSilenceTimeout`. Natural pauses while speaking terminated the session. Not a frontend/Operator/Conversation timeout.
+Hot path after warm: ContinuousRecognition `Start` ? Capturing ? ~90ms settle ? Ready.  
+First-word risk lived in inviting speech before Capturing / before settle. Latency that cannot be removed stays inside **Preparing**.
 
-## Conversation Continuity
+## Ready contract
 
-WRAP `ContinuousRecognitionSession`; accumulate results; stop on finish silence (10s max AutoStop), mic Stop, or error. Mic toggle finalizes (like submitting typed text).
+Ready = Capturing only. Listening = SpeechDetected / SoundStarted. Manual mic stop finalizes.
 
-## Semantic Alias Rule
+## Continuous speech
 
-Intent Layer owns GPT/Git/YT/VSCode/Edge/Chrome/Settings expansions. Providers unaware.
+Session stitching on WinRT AutoStop until user Stop or 5 minutes wall clock.
 
-## Visual / mic
+## Permission Guidance
 
-Shell glass alphas raised for readability; mic enlarged with stronger Ready/Listening distinction.
+Never auto-open Settings. Explain ? user click opens Settings once ? re-check on return ? “? Voice ready”. Remember grant.
 
 ## Explicit
 
