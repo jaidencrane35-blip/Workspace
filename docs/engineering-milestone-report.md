@@ -5,6 +5,7 @@
 | --- | --- |
 | **Execution program** | P14.5 Finalization & Permanent Closure |
 | **Date** | 2026-08-07 |
+| **Commit** | `06f7d06` |
 | **Status** | **P14 PERMANENTLY CLOSED** |
 | **Handoff** | `P14_PERMANENTLY_CLOSED_P15_ELIGIBLE` |
 | **Prior remediation** | `0ed6711` |
