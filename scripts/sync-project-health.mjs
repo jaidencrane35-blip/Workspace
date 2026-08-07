@@ -73,6 +73,7 @@ const verifiers = {
   "verify:dev-environment": "scripts/verify-dev-environment.mjs",
   "verify:production-readiness": "scripts/verify-production-readiness.mjs",
   "verify:installer-foundation": "scripts/verify-installer-foundation.mjs",
+  "verify:single-instance": "scripts/verify-single-instance.mjs",
 };
 
 const verifierStatus = {};
@@ -486,7 +487,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16.PI1 Slice 1: Installer Foundation landed (NSIS config/hooks/docs/verifier). Signing + updater + tray still open. Owner Product Proof remains product gate. Do not start Slice 2 until S1 accepted. P17 blocked.",
+    note: "P16.PI2: Gate C single-instance closed (not updater). Production gates model active. Signing/updater/tray/diagnostics still open. Owner Product Proof pending. Do not start another gate until Owner review. P17 blocked.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,

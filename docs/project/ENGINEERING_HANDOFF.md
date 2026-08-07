@@ -7,9 +7,11 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.PI1 Slice 1 — Installer Foundation (NSIS); do not start Slice 2 until Owner accepts S1 |
+| **Latest program** | P16.PI2 Gate C — Single-instance reliability; await Owner before next gate |
+| **Production gates** | `docs/production/PRODUCTION_GATES.md` |
 | **Production readiness** | `docs/production/PR1_PRODUCTION_READINESS_PROGRAM.md` · `docs/production/production-readiness.json` |
 | **Installer** | `docs/production/INSTALLER.md` · `docs/production/P16_PI1_SLICE1_INSTALLER_FOUNDATION.md` |
+| **Gate C report** | `docs/production/P16_PI2_GATE_C_SINGLE_INSTANCE.md` |
 | **Governance resilience** | `docs/00-Constitution/P16_O3_GOVERNANCE_RESILIENCE_REPORT.md` |
 | **Product Proof readiness** | `docs/capability-runtime/product-proof/P16_O1_PRODUCT_PROOF_READINESS_REPORT.md` |
 | **Product Proof execution** | `docs/capability-runtime/product-proof/P16_O2_OWNER_PRODUCT_PROOF_EXECUTION_AUTHORITY.md` |

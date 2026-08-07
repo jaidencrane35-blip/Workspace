@@ -1,17 +1,25 @@
 # Engineering Milestone Report
-## P16.PI1 Slice 1 — Installer Foundation
+## P16.PI2 — Gate C Single-Instance Reliability
 
 | Field | Value |
 | --- | --- |
-| **Artifacts** | NSIS `tauri.conf.json`, `windows/hooks.nsh`, `INSTALLER.md`, `verify-installer-foundation.mjs` |
+| **Artifacts** | `tauri-plugin-single-instance`, `lib.rs` focus helper, `PRODUCTION_GATES.md`, `P16_PI2_GATE_C_SINGLE_INSTANCE.md`, `verify-single-instance` |
 | **Date** | 2026-08-07 |
-| **Status** | Slice 1 implemented — unsigned NSIS foundation; signing remaining; Slice 2 not started |
-| **Max layer** | Production |
+| **Status** | One gate closed — not updater; signing correctly deferred (cert); stop for Owner |
+| **Max layer** | Production / Runtime |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
 
 ### Summary
 
-Production implementation (not assessment). Install/upgrade/uninstall/WebView2 prerequisites/manifest/verifier. Build with `pnpm installer:build`. Do not begin Slice 2 or P17 until Owner accepts.
+Evidence-ranked next gate: process singular truth (dual-instance DB risk). Updater not next. Signing blocked without Owner cert. Minimum WRAP + focus. Do not start another gate until Owner review.
+
+---
+
+## Prior: P16.PI1 Slice 1 — Installer Foundation
+
+| Field | Value |
+| --- | --- |
+| **Status** | Accepted — NSIS foundation |
 
 ---
 

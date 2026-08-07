@@ -56,6 +56,7 @@ const requiredIds = [
   "ipcSurface",
   "releaseAutomation",
   "telemetry",
+  "singleInstance",
 ];
 for (const id of requiredIds) {
   if (!matrix.areas.some((a) => a.id === id)) {

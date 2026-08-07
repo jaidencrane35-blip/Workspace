@@ -1,12 +1,15 @@
 {
   "id": "workspace-production-readiness",
   "program": "PR1",
-  "implementationProgram": "P16.PI1",
+  "implementationProgram": "P16.PI2",
   "completedSlices": ["S1-installer-foundation"],
-  "version": "1.1.0",
+  "completedGates": ["C-single-instance"],
+  "gatesAuthority": "docs/production/PRODUCTION_GATES.md",
+  "version": "1.2.0",
   "updated": "2026-08-07",
   "authority": "docs/production/PR1_PRODUCTION_READINESS_PROGRAM.md",
   "sliceAuthority": "docs/production/P16_PI1_SLICE1_INSTALLER_FOUNDATION.md",
+  "gateExecution": "docs/production/P16_PI2_GATE_C_SINGLE_INSTANCE.md",
   "normative": [
     "docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md",
     "docs/00-Constitution/WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md"
@@ -32,7 +35,8 @@
     { "id": "errorReporting", "maturity": "TrackARequired", "confidence": "Verified", "evidence": "no crash/minidump/Sentry pipeline" },
     { "id": "systemTray", "maturity": "TrackARequired", "confidence": "Verified", "evidence": "outstandingProductDebt tray-integration; no TrayIcon in app" },
     { "id": "backgroundLifecycle", "maturity": "TrackARequired", "confidence": "Supported", "evidence": "operator window skipTaskbar; no tray/background policy" },
-    { "id": "startupBehaviour", "maturity": "MinorImprovement", "confidence": "Supported", "evidence": "tauri windows defined; first_run flag in settings types" },
+    { "id": "startupBehaviour", "maturity": "MinorImprovement", "confidence": "Verified", "evidence": "single-instance plugin first; secondary launch focuses main; first_run settings remain" },
+    { "id": "singleInstance", "maturity": "Complete", "confidence": "Verified", "evidence": "tauri-plugin-single-instance in Cargo.toml + lib.rs; verify:single-instance" },
     { "id": "updateChannels", "maturity": "FutureScale", "confidence": "Verified", "evidence": "no updater" },
     { "id": "versionManagement", "maturity": "MinorImprovement", "confidence": "Verified", "evidence": "tauri.conf version 0.1.0; no release automation" },
     { "id": "configurationManagement", "maturity": "MinorImprovement", "confidence": "Supported", "evidence": "get_settings/update_settings IPC; no import/export" },

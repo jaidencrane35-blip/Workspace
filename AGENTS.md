@@ -10,7 +10,7 @@ Before any implementation work:
 4. Read the engineering handoff: **[`docs/project/ENGINEERING_HANDOFF.md`](docs/project/ENGINEERING_HANDOFF.md)**
 5. Reassess `docs/project-health.json`.
 
-Current handoff posture: **Sustainable Engineering Operations.** Spec v2.1 + EES v1 are stable constraints. **P16.PI1 Slice 1 (Installer Foundation) complete** — await Owner accept before Slice 2 (updater). Owner Product Proof still open. P17 blocked. Do not open meta-governance.
+Current handoff posture: **Sustainable Engineering Operations.** Spec v2.1 + EES v1 are stable constraints. Production work uses **gates** (`PRODUCTION_GATES.md`), not ad-hoc slices. **P16.PI2 Gate C (single-instance) complete** — await Owner before next gate. Owner Product Proof still open. P17 blocked. Do not open meta-governance.
 
 ## Cursor Cloud specific instructions
 

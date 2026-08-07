@@ -173,12 +173,36 @@ fn init_logging() {
         .try_init();
 }
 
+fn focus_primary_instance(app: &tauri::AppHandle) {
+    // Conversation surface is the product; bring it forward on secondary launches.
+    if let Some(main) = app.get_webview_window("main") {
+        let _ = main.unminimize();
+        let _ = main.show();
+        let _ = main.set_focus();
+        log::info!("single-instance: focused main conversation window");
+        return;
+    }
+    if let Some(operator) = app.get_webview_window("operator") {
+        let _ = operator.unminimize();
+        let _ = operator.show();
+        let _ = operator.set_focus();
+        log::info!("single-instance: focused operator window (main unavailable)");
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     init_logging();
     log::info!("workspace application starting");
 
+    // Single-instance MUST register first so a second process exits before kernel/DB init.
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+            log::info!(
+                "single-instance: secondary launch ignored (argv={argv:?}, cwd={cwd})"
+            );
+            focus_primary_instance(app);
+        }))
         .invoke_handler(tauri::generate_handler![
             // Runtime / settings / shell
             get_workspace_status,
