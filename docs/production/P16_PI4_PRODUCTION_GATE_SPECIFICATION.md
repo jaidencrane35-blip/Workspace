@@ -6,7 +6,7 @@
 | **Status** | Complete — normalize only |
 | **Implemented gates in PI4?** | **None** |
 | **Next ReadyNow (unchanged)** | `A1-artifact-checksums` |
-| **Commit** | (see git tip) |
+| **Commit** | `5c38a9c` (`v2-dev`) |
 
 ---
 
