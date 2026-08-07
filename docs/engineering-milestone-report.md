@@ -1,51 +1,41 @@
 # Engineering Milestone Report
-## P16.6 Voice & Conversation Product Proof Remediation
+## P16.7 Voice Capture Reliability & Product Completion
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.6 Voice & Conversation Product Proof Remediation |
+| **Execution program** | P16.7 Voice Capture Reliability & Product Completion |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — live Product Owner Product Proof **pending** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
 | **Not** | P17 |
-| **Owner brief** | `docs/capability-runtime/product-proof/VOICE_INPUT_PRODUCT_PROOF.md` |
 
 ---
 
-## Repository truth
+## Exact first-word failure point
 
-| Item | Result |
-| --- | --- |
-| P10–P15 | Permanently closed |
-| P16 | Engineering Complete — Product Proof **OPEN** |
-| P17 | Blocked |
+WinRT discards audio until `SpeechRecognizerState::Capturing`.
 
----
+Prior code emitted Listening when `RecognizeAsync()` returned an `IAsyncOperation` — **before** Capturing. Waiting after click did not help if the user spoke during that Idle?Capturing gap (or if UI invited speech early).
 
-## First-word loss — root cause
-
-Speech before `RecognizeAsync()` is never buffered by WinRT. Remaining gap sources:
-
-1. **Event subscribe on the listen hot path** — `await listen("voice-listening")` before `invoke` delayed capture.  
-2. **Click while engine still cold** — create/compile (~280?ms) during “Getting ready…”.
-
-### Changes
-
-- Hoist `voice-listening` subscription (`ensureVoiceListeningBridge`)  
-- Finish warm-up before listen when `warmed` is false  
-- Clearer mic phases + larger control + listening waveform (activity, not calibrated energy — WinRT path exposes none)
+Lifecycle logs: `voice.lifecycle:*` (warm ? recognize_async_op_created ? capturing_contract ? on_ready_emitted).
 
 ---
 
-## Conversation / Operator
+## Fix
 
-- GPT/tab phrasing ? browser (not `gpt tab.exe`)  
-- `Open YouTube beside ChatGPT` ? `browserOpenBeside` (Kernel `browser.open_beside` composition)  
-- Expanded intents + truthful unsupported for volume / single-tab close / minimize-all / transcription  
+- Gate Ready/Listening on Capturing (`StateChanged`)
+- `voice-sound` on SoundStarted for live activity
+- Ready UI phase + Commodity Before Reinvention permanent
+
+---
+
+## Commodity
+
+WinRT SpeechRecognizer remains **WRAP**. Continuous session **STUDY**. Custom VAD buffer **REJECT** for now.
 
 ---
 
 ## Explicit
 
-- **P16 permanently closed:** **No — awaiting Owner**  
-- **P17:** Not begun  
+- **P16 permanently closed:** **No — awaiting Owner**
+- **P17:** Not begun

@@ -66,6 +66,13 @@ Product Complete means the software naturally guides successful interaction — 
 **The software adapts to the user. The user never adapts to the software.**  
 Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
+## Commodity Before Reinvention (permanent — P16.7)
+
+Workspace owns identity, contracts, permissions, audit, Operator, and runtime authority.  
+Before substantial new capability work, research mature implementations and classify ADOPT / WRAP / ADAPT / STUDY / REJECT.  
+Prefer wrapping proven components behind Workspace contracts; never expose commodity internals on the product surface.  
+Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
 ## Permanent Provider Acceptance Standard (permanent — P14.5 Finalization)
 
 Every provider from **P15 onward** must complete this sequence before permanent acceptance:

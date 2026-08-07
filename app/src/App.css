@@ -3550,6 +3550,16 @@ html[data-shell-form="conversation"] #root {
   background: rgba(95, 208, 216, 0.1);
 }
 
+.op-shell__mic[data-phase="ready"] {
+  color: rgba(120, 220, 180, 0.95);
+  background: rgba(120, 220, 180, 0.1);
+}
+
+.op-shell__mic[data-sound="true"] .op-shell__mic-wave i {
+  background: rgba(140, 240, 200, 0.95);
+  animation-duration: 0.45s;
+}
+
 .op-shell__mic[data-preparing="true"] {
   color: rgba(232, 238, 242, 0.82);
 }

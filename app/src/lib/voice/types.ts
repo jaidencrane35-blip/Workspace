@@ -1,8 +1,9 @@
-/** Voice Input states (P16) — Conversation input device only. */
+/** Voice Input states (P16.7) — Conversation input device only. */
 
 export type VoicePhase =
   | "idle"
   | "preparing"
+  | "ready"
   | "listening"
   | "recognizing"
   | "processing"

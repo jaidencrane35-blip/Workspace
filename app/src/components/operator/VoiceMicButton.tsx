@@ -21,8 +21,10 @@ function phaseLabel(phase: VoicePhase, available: boolean): string {
   switch (phase) {
     case "preparing":
       return "Getting ready…";
+    case "ready":
+      return "Ready — speak now";
     case "listening":
-      return "Listening — speak now";
+      return "Listening";
     case "recognizing":
       return "Recognizing…";
     case "processing":
@@ -38,10 +40,8 @@ function phaseLabel(phase: VoicePhase, available: boolean): string {
 
 /**
  * Microphone control beside the Conversation composer.
- * Push-to-talk via click (start) / click again (stop). Single utterance.
- *
- * Listening indicator is shown only after the recognizer is actually capturing —
- * never during engine warm-up / create / compile.
+ * Listening / Ready indicators appear only after WinRT Capturing —
+ * never during warm-up or before the audio contract is established.
  */
 export function VoiceMicButton({
   disabled,
@@ -51,6 +51,7 @@ export function VoiceMicButton({
   const [phase, setPhase] = useState<VoicePhase>("idle");
   const [available, setAvailable] = useState(true);
   const [warmed, setWarmed] = useState(false);
+  const [soundActive, setSoundActive] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -72,15 +73,14 @@ export function VoiceMicButton({
 
   const stop = useCallback(async () => {
     await cancelListening();
+    setSoundActive(false);
     setPhase("idle");
   }, []);
 
   const start = useCallback(async () => {
-    // Preparing ≠ listening. Do not pulse until capture starts.
     setPhase("preparing");
+    setSoundActive(false);
 
-    // Finish warm-up before RecognizeAsync so the first spoken words are not
-    // lost during cold SpeechRecognizer create/compile.
     if (!warmed) {
       const status = await warmUpVoice();
       setAvailable(status.available || status.recognitionAvailable);
@@ -93,9 +93,19 @@ export function VoiceMicButton({
       }
     }
 
-    const result = await listenOnce(() => {
-      setPhase("listening");
+    const result = await listenOnce({
+      onReady: () => {
+        setPhase("ready");
+      },
+      onListening: () => {
+        setPhase("listening");
+      },
+      onSoundStarted: () => {
+        setSoundActive(true);
+      },
     });
+
+    setSoundActive(false);
 
     if (!result.ok || !result.transcript?.trim()) {
       setPhase("error");
@@ -126,6 +136,7 @@ export function VoiceMicButton({
     }
     if (
       phase === "preparing" ||
+      phase === "ready" ||
       phase === "listening" ||
       phase === "recognizing" ||
       phase === "processing"
@@ -136,11 +147,11 @@ export function VoiceMicButton({
     void start();
   };
 
-  const listening = phase === "listening";
+  const capturing = phase === "ready" || phase === "listening";
   const preparing = phase === "preparing";
   const busy =
     preparing ||
-    listening ||
+    capturing ||
     phase === "recognizing" ||
     phase === "processing";
   const label = phaseLabel(phase, available);
@@ -150,18 +161,19 @@ export function VoiceMicButton({
       type="button"
       className="op-shell__mic"
       data-phase={phase}
-      data-listening={listening ? "true" : "false"}
+      data-listening={capturing ? "true" : "false"}
       data-preparing={preparing ? "true" : "false"}
+      data-sound={soundActive ? "true" : "false"}
       data-available={available ? "true" : "false"}
       onClick={onToggle}
       disabled={disabled}
       aria-label={label}
       title={label}
-      aria-pressed={listening}
+      aria-pressed={capturing}
       aria-busy={busy}
     >
       <span className="op-shell__mic-icon" aria-hidden="true">
-        {listening
+        {capturing
           ? "●"
           : preparing
             ? "◌"
@@ -171,7 +183,7 @@ export function VoiceMicButton({
                 ? "✓"
                 : "◉"}
       </span>
-      {listening && (
+      {capturing && (
         <>
           <span className="op-shell__mic-pulse" aria-hidden="true" />
           <span className="op-shell__mic-wave" aria-hidden="true">

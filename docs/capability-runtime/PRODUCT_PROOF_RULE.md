@@ -70,6 +70,25 @@ Unsupported requests must still be **truthful**, with helpful nearby guidance â€
 
 ---
 
+## Commodity Before Reinvention (permanent â€” P16.7)
+
+Workspace owns identity, contracts, permissions, audit, Operator, and runtime authority.
+
+Before implementing substantial new capability, research mature open-source / platform implementations and classify each candidate:
+
+| Class | Meaning |
+| --- | --- |
+| **ADOPT** | Use directly under Workspace contracts |
+| **WRAP** | Own the port; wrap a proven engine |
+| **ADAPT** | Fork / reshape while keeping Workspace authority |
+| **STUDY** | Learn; do not ship yet |
+| **REJECT** | Incompatible with constitution or product identity |
+
+Prefer wrapping proven components behind Workspace contracts rather than rebuilding commodity functionality.  
+Never expose commodity implementation details (vendor APIs, HRESULT, engine names) on the product surface.
+
+---
+
 ## Frozen pipeline (no shortcuts)
 
 ```

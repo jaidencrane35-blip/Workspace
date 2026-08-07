@@ -104,6 +104,12 @@ Product Complete means Workspace guides successful interaction without hidden ti
 **The software adapts to the user. The user never adapts to the software.**  
 Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
+### P12 — Commodity Before Reinvention (permanent — P16.7)
+
+Workspace owns identity, contracts, permissions, audit, Operator, and runtime authority.  
+Before substantial new capability work, research mature implementations and classify ADOPT / WRAP / ADAPT / STUDY / REJECT. Prefer wrapping proven components behind Workspace contracts. Never expose commodity internals on the product surface.  
+Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
 ---
 
 ## 3. Presentation modes (binding intent)

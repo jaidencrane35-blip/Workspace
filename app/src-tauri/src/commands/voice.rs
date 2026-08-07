@@ -116,10 +116,18 @@ pub fn voice_warm_up() -> IpcResponse<VoiceStatusDto> {
 pub fn voice_listen_once(app: AppHandle) -> IpcResponse<VoiceListenOutcome> {
     set_input_state("preparing");
     let app_for_ready = app.clone();
-    let outcome = voice_port().listen_once_when_ready(Box::new(move || {
-        set_input_state("listening");
-        let _ = app_for_ready.emit("voice-listening", ());
-    }));
+    let app_for_sound = app.clone();
+    let outcome = voice_port().listen_once_when_ready(
+        Box::new(move || {
+            // Capturing contract established — Ready / Listening UI may show.
+            set_input_state("listening");
+            let _ = app_for_ready.emit("voice-ready", ());
+            let _ = app_for_ready.emit("voice-listening", ());
+        }),
+        Some(std::sync::Arc::new(move || {
+            let _ = app_for_sound.emit("voice-sound", ());
+        })),
+    );
     set_input_state("idle");
     match outcome {
         Ok(mut result) => {

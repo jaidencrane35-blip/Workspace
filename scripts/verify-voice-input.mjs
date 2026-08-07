@@ -138,11 +138,20 @@ for (const phase of [
 if (!micUi.includes("recognizing") || !micUi.includes("processing") || !micUi.includes("finished")) {
   fail("mic UI must expose recognizing / processing / finished states");
 }
+if (!micUi.includes("ready")) {
+  fail("mic UI must expose Ready state (Capturing contract)");
+}
 if (!micUi.includes("op-shell__mic-wave")) {
   fail("mic UI must show a listening activity waveform while capturing");
 }
+if (!micUi.includes("data-sound") || !micUi.includes("onSoundStarted")) {
+  fail("mic UI must react to SoundStarted for live speech activity");
+}
 if (!micUi.includes("warmed")) {
   fail("mic UI must wait for warm engine before listen when possible");
+}
+if (!bridge.includes("voice-ready") || !bridge.includes("voice-sound")) {
+  fail("voice bridge must subscribe to voice-ready and voice-sound");
 }
 if (micUi.includes("getVoiceStatus()") && micUi.includes("setPhase(\"preparing\")")) {
   // Hot-path status before listen reintroduces first-word loss.
@@ -154,6 +163,12 @@ if (micUi.includes("getVoiceStatus()") && micUi.includes("setPhase(\"preparing\"
 }
 if (!voiceRs.includes("warm_up") || !voiceRs.includes("listen_once_when_ready")) {
   fail("voice port must expose warm_up and listen_once_when_ready");
+}
+if (!voiceRs.includes("SpeechRecognizerState::Capturing") || !voiceRs.includes("capturing_contract")) {
+  fail("voice port must gate Listening on WinRT Capturing (P16.7 trustworthy contract)");
+}
+if (!voiceRs.includes("voice.lifecycle:")) {
+  fail("voice port must emit lifecycle timing logs for capture evidence");
 }
 if (!proof.responsiveness?.prewarm || !proof.responsiveness?.listeningIndicatorOnlyWhenCapturing) {
   fail("proof must declare P16.5 responsiveness requirements");

@@ -1,5 +1,5 @@
 /**
- * Voice Input bridge — Conversation input device (P16).
+ * Voice Input bridge — Conversation input device (P16.7).
  * Never calls Capability Providers or Kernel Operator for recognition.
  */
 
@@ -55,24 +55,58 @@ export function desktopVoiceMessage(raw: string): string {
  * previously delayed RecognizeAsync and dropped leading speech.
  */
 let listeningBridge: Promise<(() => void) | null> | null = null;
+const readyCallbacks = new Set<() => void>();
 const listeningCallbacks = new Set<() => void>();
+const soundCallbacks = new Set<() => void>();
 
 export async function ensureVoiceListeningBridge(): Promise<void> {
   if (!isTauriRuntime()) {
     return;
   }
   if (!listeningBridge) {
-    listeningBridge = listen("voice-listening", () => {
-      for (const cb of listeningCallbacks) {
-        try {
-          cb();
-        } catch {
-          // Ignore listener faults — recognition must continue.
-        }
+    listeningBridge = (async () => {
+      const unsubs: Array<() => void> = [];
+      try {
+        unsubs.push(
+          await listen("voice-ready", () => {
+            for (const cb of readyCallbacks) {
+              try {
+                cb();
+              } catch {
+                /* ignore */
+              }
+            }
+          }),
+        );
+        unsubs.push(
+          await listen("voice-listening", () => {
+            for (const cb of listeningCallbacks) {
+              try {
+                cb();
+              } catch {
+                /* ignore */
+              }
+            }
+          }),
+        );
+        unsubs.push(
+          await listen("voice-sound", () => {
+            for (const cb of soundCallbacks) {
+              try {
+                cb();
+              } catch {
+                /* ignore */
+              }
+            }
+          }),
+        );
+        return () => {
+          for (const u of unsubs) u();
+        };
+      } catch {
+        return null;
       }
-    })
-      .then((unlisten) => unlisten)
-      .catch(() => null);
+    })();
   }
   await listeningBridge;
 }
@@ -115,12 +149,19 @@ export async function warmUpVoice(): Promise<VoiceStatus> {
   }
 }
 
+export type ListenOnceHooks = {
+  onReady?: () => void;
+  onListening?: () => void;
+  onSoundStarted?: () => void;
+};
+
 /**
- * Single-utterance listen. `onListening` fires only when capture has started
- * (never during engine create/compile).
+ * Single-utterance listen.
+ * `onReady` / `onListening` fire only after WinRT Capturing (trustworthy contract).
+ * `onSoundStarted` fires when WinRT reports speech energy (SoundStarted).
  */
 export async function listenOnce(
-  onListening?: () => void,
+  onListeningOrHooks?: (() => void) | ListenOnceHooks,
 ): Promise<VoiceListenResult> {
   if (!isTauriRuntime()) {
     return {
@@ -132,13 +173,17 @@ export async function listenOnce(
     };
   }
 
+  const hooks: ListenOnceHooks =
+    typeof onListeningOrHooks === "function"
+      ? { onListening: onListeningOrHooks }
+      : (onListeningOrHooks ?? {});
+
   await ensureVoiceListeningBridge();
-  if (onListening) {
-    listeningCallbacks.add(onListening);
-  }
+  if (hooks.onReady) readyCallbacks.add(hooks.onReady);
+  if (hooks.onListening) listeningCallbacks.add(hooks.onListening);
+  if (hooks.onSoundStarted) soundCallbacks.add(hooks.onSoundStarted);
 
   try {
-    // Hot path: invoke only — event subscription is already mounted.
     const result = await invokeIpc<VoiceListenResult>("voice_listen_once");
     return { ...result, message: desktopVoiceMessage(result.message) };
   } catch (error) {
@@ -163,9 +208,9 @@ export async function listenOnce(
       message,
     };
   } finally {
-    if (onListening) {
-      listeningCallbacks.delete(onListening);
-    }
+    if (hooks.onReady) readyCallbacks.delete(hooks.onReady);
+    if (hooks.onListening) listeningCallbacks.delete(hooks.onListening);
+    if (hooks.onSoundStarted) soundCallbacks.delete(hooks.onSoundStarted);
   }
 }
 

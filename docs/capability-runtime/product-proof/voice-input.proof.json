@@ -28,18 +28,27 @@
   "responsiveness": {
     "prewarm": true,
     "listeningIndicatorOnlyWhenCapturing": true,
+    "gateListeningOnWinrtCapturingState": true,
     "noStatusRoundTripBeforeListen": true,
     "hoistedListeningEventSubscription": true,
     "warmBeforeListenWhenCold": true,
+    "soundStartedActivity": true,
     "firstWordCapture": "required"
   },
   "uiPhases": [
     "idle",
     "preparing",
+    "ready",
     "listening",
     "recognizing",
     "processing",
     "finished"
+  ],
+  "lifecycleEvidence": [
+    "voice.lifecycle: warm_done",
+    "voice.lifecycle: recognize_async_op_created",
+    "voice.lifecycle: capturing_contract",
+    "voice.lifecycle: on_ready_emitted"
   ],
   "userLanguageRules": [
     "Never expose Provider, Router, Registry, Runtime, Kernel, WinRT, or SpeechRecognizer terminology",

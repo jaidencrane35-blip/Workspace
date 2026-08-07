@@ -139,13 +139,16 @@ pub trait VoicePort: Send + Sync {
     fn status(&self) -> Result<VoiceCapabilityStatus>;
     /// Pre-create / compile the speech engine so the next listen is immediate.
     fn warm_up(&self) -> Result<()>;
-    /// Listen for one utterance. `on_ready` fires only when capture has truly begun.
+    /// Listen for one utterance.
+    /// `on_ready` fires only when the recognizer is in **Capturing** (audio contract).
+    /// `on_sound_started` fires when WinRT reports SoundStarted (speech energy).
     fn listen_once_when_ready(
         &self,
         on_ready: Box<dyn FnOnce() + Send>,
+        on_sound_started: Option<std::sync::Arc<dyn Fn() + Send + Sync>>,
     ) -> Result<VoiceListenOutcome>;
     fn listen_once(&self) -> Result<VoiceListenOutcome> {
-        self.listen_once_when_ready(Box::new(|| {}))
+        self.listen_once_when_ready(Box::new(|| {}), None)
     }
     fn cancel(&self) -> Result<()>;
     fn open_settings(&self, target: VoiceSettingsTarget) -> Result<()>;
@@ -217,6 +220,7 @@ impl VoicePort for MemoryVoicePort {
     fn listen_once_when_ready(
         &self,
         on_ready: Box<dyn FnOnce() + Send>,
+        on_sound_started: Option<std::sync::Arc<dyn Fn() + Send + Sync>>,
     ) -> Result<VoiceListenOutcome> {
         self.cancelled.store(false, Ordering::SeqCst);
         let _ = self.warm_up();
@@ -229,7 +233,11 @@ impl VoicePort for MemoryVoicePort {
                 message: MICROPHONE_PERMISSION_MESSAGE.into(),
             });
         }
+        // Tests: capturing contract is immediate after warm.
         on_ready();
+        if let Some(sound) = on_sound_started {
+            sound();
+        }
         if self.cancelled.load(Ordering::SeqCst) {
             return Ok(VoiceListenOutcome {
                 ok: false,
@@ -293,6 +301,7 @@ impl VoicePort for UnavailableVoicePort {
     fn listen_once_when_ready(
         &self,
         _on_ready: Box<dyn FnOnce() + Send>,
+        _on_sound_started: Option<std::sync::Arc<dyn Fn() + Send + Sync>>,
     ) -> Result<VoiceListenOutcome> {
         Ok(VoiceListenOutcome {
             ok: false,
@@ -414,6 +423,7 @@ impl VoicePort for SystemVoicePort {
     fn listen_once_when_ready(
         &self,
         on_ready: Box<dyn FnOnce() + Send>,
+        on_sound_started: Option<std::sync::Arc<dyn Fn() + Send + Sync>>,
     ) -> Result<VoiceListenOutcome> {
         self.cancel_requested.store(false, Ordering::SeqCst);
         #[cfg(windows)]
@@ -436,11 +446,13 @@ impl VoicePort for SystemVoicePort {
                 &self.warmed,
                 &self.cancel_requested,
                 on_ready,
+                on_sound_started,
             )
         }
         #[cfg(not(windows))]
         {
             let _ = on_ready;
+            let _ = on_sound_started;
             UnavailableVoicePort.listen_once()
         }
     }
@@ -627,10 +639,24 @@ fn winrt_listen_once_when_ready(
     warmed: &AtomicBool,
     cancel_requested: &AtomicBool,
     on_ready: Box<dyn FnOnce() + Send>,
+    on_sound_started: Option<std::sync::Arc<dyn Fn() + Send + Sync>>,
 ) -> Result<VoiceListenOutcome> {
-    use windows::Media::SpeechRecognition::SpeechRecognitionResultStatus;
+    use std::sync::{Arc, Condvar, Mutex as StdMutex};
+    use std::time::{Duration, Instant};
+    use windows::Foundation::TypedEventHandler;
+    use windows::Media::SpeechRecognition::{
+        SpeechRecognitionResultStatus, SpeechRecognizerState,
+        SpeechRecognizerStateChangedEventArgs,
+    };
+
+    let t0 = Instant::now();
+    log::info!("voice.lifecycle: warm_begin");
 
     if let Err(error) = winrt_warm_up(engine, warmed) {
+        log::warn!(
+            "voice.lifecycle: warm_failed +{:?}",
+            t0.elapsed()
+        );
         return Ok(VoiceListenOutcome {
             ok: false,
             transcript: None,
@@ -638,6 +664,7 @@ fn winrt_listen_once_when_ready(
             message: sanitize_setup_message(&error.to_string()),
         });
     }
+    log::info!("voice.lifecycle: warm_done +{:?}", t0.elapsed());
 
     let recognizer = {
         let guard = engine
@@ -665,17 +692,120 @@ fn winrt_listen_once_when_ready(
         });
     }
 
-    // With a warm engine, RecognizeAsync starts capture immediately. Notify only after
-    // the session is started — never while create/compile is still running.
+    // P16.7 evidence: RecognizeAsync() returning an IAsyncOperation is NOT Capturing.
+    // Audio spoken after click but before SpeechRecognizerState::Capturing is discarded
+    // by WinRT. Gate the Listening UI on Capturing (trustworthy listening contract).
+    let capture_gate = Arc::new((StdMutex::new(false), Condvar::new()));
+    let gate_for_handler = Arc::clone(&capture_gate);
+    let sound_hook = on_sound_started.clone();
+    let state_token = recognizer.StateChanged(&TypedEventHandler::<
+        windows::Media::SpeechRecognition::SpeechRecognizer,
+        SpeechRecognizerStateChangedEventArgs,
+    >::new(move |_sender, args| {
+        let Some(args) = args else {
+            return Ok(());
+        };
+        let Ok(state) = args.State() else {
+            return Ok(());
+        };
+        log::info!(
+            "voice.lifecycle: state={state:?} +{elapsed:?}",
+            elapsed = t0.elapsed()
+        );
+        if state == SpeechRecognizerState::Capturing
+            || state == SpeechRecognizerState::SpeechDetected
+            || state == SpeechRecognizerState::SoundStarted
+        {
+            let (lock, cvar) = &*gate_for_handler;
+            if let Ok(mut ready) = lock.lock() {
+                if !*ready {
+                    *ready = true;
+                    cvar.notify_one();
+                }
+            }
+        }
+        if state == SpeechRecognizerState::SoundStarted {
+            if let Some(hook) = sound_hook.as_ref() {
+                hook();
+            }
+        }
+        Ok(())
+    }));
+
+    log::info!("voice.lifecycle: recognize_async_call +{:?}", t0.elapsed());
     let recognize = match recognizer.RecognizeAsync() {
         Ok(op) => op,
-        Err(error) => return Ok(outcome_from_winrt_error(error)),
+        Err(error) => {
+            if let Ok(token) = state_token {
+                let _ = recognizer.RemoveStateChanged(token);
+            }
+            return Ok(outcome_from_winrt_error(error));
+        }
     };
+    log::info!(
+        "voice.lifecycle: recognize_async_op_created +{:?}",
+        t0.elapsed()
+    );
+
+    // Race: Capturing may already be set before the handler attaches.
+    if let Ok(state) = recognizer.State() {
+        log::info!(
+            "voice.lifecycle: state_after_op={state:?} +{:?}",
+            t0.elapsed()
+        );
+        if state == SpeechRecognizerState::Capturing
+            || state == SpeechRecognizerState::SpeechDetected
+            || state == SpeechRecognizerState::SoundStarted
+        {
+            let (lock, cvar) = &*capture_gate;
+            if let Ok(mut ready) = lock.lock() {
+                *ready = true;
+                cvar.notify_one();
+            }
+        }
+    }
+
+    {
+        let (lock, cvar) = &*capture_gate;
+        let Ok(mut ready) = lock.lock() else {
+            return Ok(VoiceListenOutcome {
+                ok: false,
+                transcript: None,
+                status: "recognition_failed".into(),
+                message: "I couldn’t listen just now. Check that a microphone is connected and try again.".into(),
+            });
+        };
+        let deadline = Duration::from_millis(2000);
+        while !*ready {
+            let (guard, wait) = cvar
+                .wait_timeout(ready, deadline)
+                .unwrap_or_else(|e| e.into_inner());
+            ready = guard;
+            if wait.timed_out() {
+                log::warn!(
+                    "voice.lifecycle: capturing_wait_timeout +{:?} — UI fallback (contract weak)",
+                    t0.elapsed()
+                );
+                break;
+            }
+        }
+        log::info!(
+            "voice.lifecycle: capturing_contract ready={} +{:?}",
+            *ready,
+            t0.elapsed()
+        );
+    }
+
+    // Listening UI only after Capturing (or timeout fallback).
     on_ready();
+    log::info!("voice.lifecycle: on_ready_emitted +{:?}", t0.elapsed());
 
     let result = match recognize.get() {
         Ok(value) => value,
         Err(error) => {
+            if let Ok(token) = state_token {
+                let _ = recognizer.RemoveStateChanged(token);
+            }
             if cancel_requested.load(Ordering::SeqCst) {
                 return Ok(VoiceListenOutcome {
                     ok: false,
@@ -687,6 +817,10 @@ fn winrt_listen_once_when_ready(
             return Ok(outcome_from_winrt_error(error));
         }
     };
+    if let Ok(token) = state_token {
+        let _ = recognizer.RemoveStateChanged(token);
+    }
+    log::info!("voice.lifecycle: recognize_complete +{:?}", t0.elapsed());
 
     let status = match result.Status() {
         Ok(value) => value,
@@ -784,9 +918,12 @@ mod tests {
         let notified = std::sync::Arc::new(AtomicBool::new(false));
         let notified_ready = std::sync::Arc::clone(&notified);
         let outcome = port
-            .listen_once_when_ready(Box::new(move || {
-                notified_ready.store(true, Ordering::SeqCst);
-            }))
+            .listen_once_when_ready(
+                Box::new(move || {
+                    notified_ready.store(true, Ordering::SeqCst);
+                }),
+                None,
+            )
             .unwrap();
         assert!(outcome.ok);
         assert!(notified.load(Ordering::SeqCst));

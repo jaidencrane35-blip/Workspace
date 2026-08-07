@@ -35,6 +35,8 @@ for (const token of [
   "The software adapts to the user",
   "precise capitalization",
   "rigid wording",
+  "Commodity Before Reinvention",
+  "WRAP",
 ]) {
   if (!rule.includes(token)) {
     fail(`PRODUCT_PROOF_RULE.md missing token: ${token}`);

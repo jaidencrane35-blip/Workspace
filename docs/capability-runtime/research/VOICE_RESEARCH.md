@@ -73,6 +73,30 @@ Owner found Voice “worked” but felt late: first words lost because Listening
 
 WinRT does not buffer audio before `RecognizeAsync()`. Occasional loss remained when (1) the frontend still awaited `listen("voice-listening")` on each click before invoke, and (2) the user clicked before warm completed. Remediation: hoist the listening event subscription; require warm completion before listen when cold; enlarge mic + explicit Idle/Preparing/Listening/Recognizing/Processing/Finished states. No calibrated audio-energy API on this WRAP path — listening waveform is activity indication only.
 
+### P16.7 Capturing-contract failure (measured)
+
+Owner waited ~2s after click and still lost first words → not merely frontend latency.
+
+Lifecycle evidence (logged as `voice.lifecycle:*`):
+
+1. `warm_done`  
+2. `recognize_async_call` / `recognize_async_op_created` — **IAsyncOperation exists but State is still Idle**  
+3. Gap until `SpeechRecognizerState::Capturing`  
+4. Prior code called `on_ready` at step 2 → Listening UI lied; WinRT discarded audio until Capturing  
+
+**Exact discard point:** audio spoken after click / after `RecognizeAsync()` returns the op, but **before** `SpeechRecognizerState::Capturing`.
+
+**Fix (smallest production WRAP):** wait on `StateChanged` for `Capturing` (or `SpeechDetected` / `SoundStarted`) before emitting Ready/Listening; emit `voice-sound` on `SoundStarted` for live activity. Timeout fallback 2s if state never arrives.
+
+### Commodity evaluation (P16.7)
+
+| Candidate | Class | Notes |
+| --- | --- | --- |
+| WinRT `SpeechRecognizer` (current) | **WRAP** | Keep; gate UI on Capturing |
+| WinRT ContinuousRecognitionSession | **STUDY** | Stronger for long dictation; larger product change |
+| Cloud STT / Whisper local | **REJECT** (now) | Wrong default for local-first Conversation mic |
+| Custom VAD + ring buffer | **REJECT** (now) | Rebuild commodity; revisit only if Capturing gate fails Owner Proof |
+
 ---
 
 ## Explicit non-goals
