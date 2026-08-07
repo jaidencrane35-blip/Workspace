@@ -30,6 +30,10 @@ impl CapabilityDomainId {
         Self::new("browser")
     }
 
+    pub fn screenshots() -> Self {
+        Self::new("screenshots")
+    }
+
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -64,6 +68,16 @@ pub enum CapabilityOperation {
     Dismiss,
     /// Browser Provider — Level 2 open URL / site.
     Open,
+    /// Screenshot Provider — capture primary / desktop.
+    CaptureDesktop,
+    /// Screenshot Provider — capture named / active window.
+    CaptureWindow,
+    /// Screenshot Provider — capture monitor by 1-based index.
+    CaptureMonitor,
+    /// Screenshot Provider — ensure PNG save (alias of capture when path empty).
+    SavePng,
+    /// Screenshot Provider — copy last / path PNG to clipboard.
+    CopyClipboard,
 }
 
 impl CapabilityOperation {
@@ -90,6 +104,11 @@ impl CapabilityOperation {
             Self::Show => "show",
             Self::Dismiss => "dismiss",
             Self::Open => "open",
+            Self::CaptureDesktop => "capture_desktop",
+            Self::CaptureWindow => "capture_window",
+            Self::CaptureMonitor => "capture_monitor",
+            Self::SavePng => "save_png",
+            Self::CopyClipboard => "copy_clipboard",
         }
     }
 
@@ -116,6 +135,13 @@ impl CapabilityOperation {
             "show" | "notify" | "toast" => Some(Self::Show),
             "dismiss" | "clear" | "hide" => Some(Self::Dismiss),
             "open" | "browse" | "visit" => Some(Self::Open),
+            "capture_desktop" | "capture_screen" | "screenshot_desktop" | "capture" => {
+                Some(Self::CaptureDesktop)
+            }
+            "capture_window" | "screenshot_window" => Some(Self::CaptureWindow),
+            "capture_monitor" | "screenshot_monitor" => Some(Self::CaptureMonitor),
+            "save_png" | "save_screenshot" => Some(Self::SavePng),
+            "copy_clipboard" | "copy_screenshot" => Some(Self::CopyClipboard),
             _ => None,
         }
     }

@@ -1,10 +1,11 @@
 # Rolling Capability Provider Roadmap
-## Updated after P14 permanent closure
+## Updated after P15 permanent closure
 
 UI Architecture, Desktop Operator, Conversation, and Capability Runtime pipeline remain **frozen**.  
 Providers own **operations**. Providers never call each other.  
-Every provider requires the **Permanent Provider Acceptance Standard** (P15+).  
-Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
+Every provider requires the **Permanent Provider Acceptance Standard**.  
+Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).  
+**Capability Independence Rule** is permanent (P15).
 
 ---
 
@@ -19,7 +20,8 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 | **P12.6** | Product Gravity | Closed |
 | **P12.7** / Finalization / COMPLETE | Kernel Operator series | Closed |
 | **P13** | Notifications Provider | Permanently closed |
-| **P14** | Browser Provider | **Permanently closed** (`0ed6711` + finalization) |
+| **P14** | Browser Provider | Permanently closed |
+| **P15** | Screenshot Provider | **PERMANENTLY CLOSED — ACCEPTED — DO NOT REOPEN** |
 
 ---
 
@@ -27,11 +29,11 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 
 | Program | Title | Why |
 | --- | --- | --- |
-| **P15** | Screenshot Provider | Next eligible — prep pack ready |
-| **P16** | File Provider | Scoped FS |
-| **P17** | Terminal Provider | Governed ConPTY |
-| **P18** | Voice Provider | Spoken entry |
+| **P16** | Voice Input | Next eligible — spoken entry into Conversation |
+| **P17** | File Provider | Scoped FS |
+| **P18** | Terminal Provider | Governed ConPTY |
 | **P19** | Memory Provider | Restoration |
+| **P20** | Automation Provider | Multi-step recipes |
 
 ---
 
@@ -41,5 +43,6 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 2. Providers own operations; no provider-to-provider calls.  
 3. Product Proof + Natural Language Robustness.  
 4. Provider Acceptance Standard (full sequence).  
-5. P12 series — do not reopen.  
-6. One program → Owner review → permanent closure → next.  
+5. Capability Independence Rule.  
+6. P12 / P13 / P14 / P15 series — do not reopen except bugfixes.  
+7. One program → Owner review → permanent closure → next.  

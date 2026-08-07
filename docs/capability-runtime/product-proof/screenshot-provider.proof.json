@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 2,
+  "provider": "screenshots",
+  "program": "P15",
+  "pipeline": [
+    "Conversation",
+    "Intent Layer",
+    "execute_capability_intent",
+    "Kernel Operator",
+    "Capability Runtime",
+    "Capability Router",
+    "Provider Registry",
+    "Screenshot Provider",
+    "Operating System",
+    "Conversation Response"
+  ],
+  "ipc": "execute_capability_intent",
+  "userLanguageRules": [
+    "Never expose Provider, Router, Registry, Runtime, Kernel, DXGI, WGC, or xcap terminology",
+    "Never invent capture success",
+    "Clarify missing monitors and windows",
+    "Natural Language Robustness — ordinary phrasing must work",
+    "Capability Independence — desktop language only"
+  ],
+  "examples": [
+    {
+      "category": "status",
+      "utterance": "Can you take screenshots?",
+      "expectedKind": "screenshotStatus",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "status"
+    },
+    {
+      "category": "desktop",
+      "utterance": "Take a screenshot.",
+      "expectedKind": "screenshotDesktop",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_desktop"
+    },
+    {
+      "category": "desktop",
+      "utterance": "Capture my desktop.",
+      "expectedKind": "screenshotDesktop",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_desktop"
+    },
+    {
+      "category": "desktop",
+      "utterance": "Capture my screen.",
+      "expectedKind": "screenshotDesktop",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_desktop"
+    },
+    {
+      "category": "desktop",
+      "utterance": "screenshot",
+      "expectedKind": "screenshotDesktop",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_desktop"
+    },
+    {
+      "category": "window",
+      "utterance": "Screenshot this window.",
+      "expectedKind": "screenshotWindow",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_window",
+      "expectedQuery": "this"
+    },
+    {
+      "category": "window",
+      "utterance": "Screenshot this.",
+      "expectedKind": "screenshotWindow",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_window",
+      "expectedQuery": "this"
+    },
+    {
+      "category": "window",
+      "utterance": "Capture this window.",
+      "expectedKind": "screenshotWindow",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_window",
+      "expectedQuery": "this"
+    },
+    {
+      "category": "window",
+      "utterance": "Screenshot Cursor.",
+      "expectedKind": "screenshotWindow",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_window",
+      "expectedQuery": "Cursor"
+    },
+    {
+      "category": "window",
+      "utterance": "Take a screenshot of Chrome.",
+      "expectedKind": "screenshotWindow",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_window",
+      "expectedQuery": "Chrome"
+    },
+    {
+      "category": "window",
+      "utterance": "Screenshot Chrome.",
+      "expectedKind": "screenshotWindow",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_window",
+      "expectedQuery": "Chrome"
+    },
+    {
+      "category": "monitor",
+      "utterance": "Screenshot monitor two.",
+      "expectedKind": "screenshotMonitor",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_monitor",
+      "expectedMonitorIndex": 2
+    },
+    {
+      "category": "monitor",
+      "utterance": "Capture monitor two.",
+      "expectedKind": "screenshotMonitor",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_monitor",
+      "expectedMonitorIndex": 2
+    },
+    {
+      "category": "monitor",
+      "utterance": "Take a screenshot of this monitor.",
+      "expectedKind": "screenshotMonitor",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_monitor",
+      "expectedMonitorIndex": 1
+    },
+    {
+      "category": "save",
+      "utterance": "Save a screenshot.",
+      "expectedKind": "screenshotSave",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "save_png"
+    },
+    {
+      "category": "copy",
+      "utterance": "Copy this screenshot.",
+      "expectedKind": "screenshotCopy",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "copy_clipboard"
+    },
+    {
+      "category": "composition",
+      "utterance": "Take a screenshot and copy it.",
+      "expectedKind": "screenshotCaptureAndCopy",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_and_copy"
+    },
+    {
+      "category": "alias",
+      "utterance": "TAKE A SCREENSHOT",
+      "expectedKind": "screenshotDesktop",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_desktop"
+    },
+    {
+      "category": "alias",
+      "utterance": "take  a   screenshot!",
+      "expectedKind": "screenshotDesktop",
+      "expectedDomain": "screenshots",
+      "expectedOperation": "capture_desktop"
+    }
+  ],
+  "clarifications": [
+    {
+      "category": "failure",
+      "utterance": "Screenshot monitor 99.",
+      "expectedKind": "screenshotMonitor",
+      "expectedMonitorIndex": 99,
+      "note": "Runtime must clarify missing monitor — never invent success"
+    },
+    {
+      "category": "failure",
+      "utterance": "Screenshot DefinitelyMissingWindowXYZ.",
+      "expectedKind": "screenshotWindow",
+      "expectedQuery": "DefinitelyMissingWindowXYZ",
+      "note": "Runtime must clarify missing window — never invent success"
+    }
+  ],
+  "compositionAudit": "docs/capability-runtime/product-proof/SCREENSHOT_PROVIDER_COMPOSITION_AUDIT.md",
+  "independenceRule": true
+}

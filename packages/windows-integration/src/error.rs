@@ -21,4 +21,7 @@ pub enum WindowsIntegrationError {
 
     #[error("Browser failed: {0}")]
     BrowserFailed(String),
+
+    #[error("Screenshot failed: {0}")]
+    ScreenshotFailed(String),
 }

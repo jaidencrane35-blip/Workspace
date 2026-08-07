@@ -9,6 +9,7 @@ fn strip_jargon(text: &str) -> String {
         .replace("Notification Provider", "Workspace")
         .replace("Notifications Provider", "Workspace")
         .replace("Browser Provider", "Workspace")
+        .replace("Screenshot Provider", "Workspace")
         .replace("Provider Registry", "Workspace")
         .replace("Capability Router", "Workspace")
         .replace("Kernel Operator", "Workspace")
@@ -194,6 +195,42 @@ pub fn compose_user_reply(
                             .unwrap_or("I couldn’t place that beside the other window."),
                     )
                 }
+            }
+            ("screenshots", "status") => strip_jargon(
+                last.message
+                    .as_deref()
+                    .unwrap_or(if ok {
+                        "I can take screenshots on this PC."
+                    } else {
+                        "I can’t take screenshots on this PC right now."
+                    }),
+            ),
+            ("screenshots", "capture_desktop")
+            | ("screenshots", "capture_window")
+            | ("screenshots", "capture_monitor")
+            | ("screenshots", "save_png")
+            | ("screenshots", "copy_clipboard")
+            | ("screenshots", "capture_and_copy") => {
+                let mut reply = strip_jargon(
+                    last.message
+                        .as_deref()
+                        .unwrap_or(if ok {
+                            "Screenshot ready."
+                        } else {
+                            "I couldn’t capture that."
+                        }),
+                );
+                if ok {
+                    if let Some(path) = last.text.as_deref().filter(|p| !p.is_empty()) {
+                        if !reply.to_ascii_lowercase().contains("saved")
+                            && intent.operation != "copy_clipboard"
+                            && !path.starts_with("memory://")
+                        {
+                            reply = format!("{reply} Saved to {path}.");
+                        }
+                    }
+                }
+                reply
             }
             _ => strip_jargon(
                 last.message

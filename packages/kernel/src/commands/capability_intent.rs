@@ -7,6 +7,7 @@ use crate::commands::application_capability::ExecuteApplicationOperation;
 use crate::commands::clipboard::{ReadClipboard, WriteClipboard};
 use crate::commands::browser::{BrowserStatus, OpenBrowserUrl};
 use crate::commands::notification::{DismissNotification, NotificationStatus, ShowNotification};
+use crate::commands::screenshot::{ExecuteScreenshotOperation, ScreenshotStatus};
 use crate::commands::pipeline::CommandPipeline;
 use crate::commands::window_capability::ExecuteWindowOperation;
 use crate::error::{KernelError, Result};
@@ -177,6 +178,61 @@ fn execute_step(
             }
             other => Err(KernelError::CapabilityRuntime {
                 message: format!("browser does not support '{}'", other.as_str()),
+            }),
+        },
+        "screenshots" => match step.operation {
+            CapabilityOperation::Status => {
+                let result = pipeline().execute_query(ScreenshotStatus)?;
+                Ok(ProviderInvokeResponse {
+                    domain: CapabilityDomainId::screenshots(),
+                    operation: CapabilityOperation::Status,
+                    ok: result.available,
+                    format: Some(format!("{} monitors", result.monitor_count)),
+                    bytes: Some(result.monitor_count),
+                    text: Some(format!(
+                        "window={}, clipboard={}",
+                        result.can_capture_window, result.can_copy_clipboard
+                    )),
+                    preview: Some(result.message.clone()),
+                    message: Some(result.message),
+                    status: Some(if result.available {
+                        "available".into()
+                    } else {
+                        "unavailable".into()
+                    }),
+                    target: None,
+                    items: None,
+                    monitors: None,
+                })
+            }
+            CapabilityOperation::CaptureDesktop
+            | CapabilityOperation::CaptureWindow
+            | CapabilityOperation::CaptureMonitor
+            | CapabilityOperation::SavePng
+            | CapabilityOperation::CopyClipboard => {
+                let result = pipeline().execute_mutation(ExecuteScreenshotOperation::new(
+                    step.operation,
+                    step.query.clone(),
+                    step.path.clone(),
+                    step.monitor_index,
+                ))?;
+                Ok(ProviderInvokeResponse {
+                    domain: CapabilityDomainId::screenshots(),
+                    operation: step.operation,
+                    ok: result.ok,
+                    format: Some("png".into()),
+                    bytes: None,
+                    text: result.path.clone(),
+                    preview: result.preview,
+                    message: Some(result.message),
+                    status: Some(result.status),
+                    target: result.target,
+                    items: None,
+                    monitors: None,
+                })
+            }
+            other => Err(KernelError::CapabilityRuntime {
+                message: format!("screenshots does not support '{}'", other.as_str()),
             }),
         },
         "notifications" => match step.operation {

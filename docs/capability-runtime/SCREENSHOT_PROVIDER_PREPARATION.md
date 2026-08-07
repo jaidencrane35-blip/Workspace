@@ -106,6 +106,6 @@ purpose: Capture monitor or window stills under Workspace permission.
 
 ## Explicit statements
 
-- **P14** awaits Product Owner review (Browser Provider).  
-- **P15 implementation has NOT begun.**  
+- **P14** permanently closed.
+- **P15 implementation complete** — see `SCREENSHOT_PROVIDER.md` (permanently closed).
 - This pack is documentation only.

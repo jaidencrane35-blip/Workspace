@@ -56,6 +56,18 @@ export type IntentAction =
       reply: string;
     }
   | { kind: "browserExplain"; reply: string; suggestion?: string }
+  | { kind: "screenshotStatus"; reply: string }
+  | { kind: "screenshotDesktop"; reply: string }
+  | { kind: "screenshotWindow"; query: string; reply: string }
+  | { kind: "screenshotMonitor"; monitorIndex: number; reply: string }
+  | { kind: "screenshotSave"; reply: string }
+  | { kind: "screenshotCopy"; path?: string; reply: string }
+  | {
+      kind: "screenshotCaptureAndCopy";
+      query?: string;
+      monitorIndex?: number;
+      reply: string;
+    }
   | { kind: "appOpen"; query: string; reply: string }
   | { kind: "appLaunch"; query: string; reply: string }
   | { kind: "appFocus"; query: string; reply: string }
@@ -120,6 +132,222 @@ function windowTarget(rawQuery: string | undefined): string {
     return "this";
   }
   return q.replace(/^(the|my)\s+/i, "").trim() || "this";
+}
+
+/**
+ * Screenshot intents (Conversation language → desktop capture operations).
+ * Levels 1–2 only — no OCR / recording / annotation.
+ */
+function resolveScreenshotIntent(raw: string, text: string): IntentAction | null {
+  // Leave capability-evolution phrasing alone (“add a screenshot button”).
+  if (
+    /\b(add|propose|implement|build)\b/.test(text) &&
+    /\b(screenshot|button|feature|capability)\b/.test(text)
+  ) {
+    return null;
+  }
+
+  if (
+    /\b(can you take screenshots?|are screenshots? available|screenshot support|do (you|we) support screenshots?|can you (capture|screenshot) (my )?(screen|desktop|window))\b/.test(
+      text,
+    ) ||
+    text === "screenshots?" ||
+    text === "screenshots" ||
+    text === "screenshot?"
+  ) {
+    return {
+      kind: "screenshotStatus",
+      reply: "Checking whether I can take screenshots on this PC.",
+    };
+  }
+
+  const andCopy =
+    /\b(and copy( it| (to )?(the )?clipboard)?|copy (it|this|the screenshot))\b/.test(
+      text,
+    ) || /\bcopy this screenshot\b/.test(text);
+
+  const monitorMatch = text.match(
+    /\b(?:screenshot|capture|take a screenshot of)\s+(?:monitor|display)\s+(\w+)\b/,
+  );
+  const monitorAlt = text.match(
+    /\b(?:monitor|display)\s+(\w+)\b.+\b(screenshot|capture)\b/,
+  );
+  const monitorToken = monitorMatch?.[1] ?? monitorAlt?.[1];
+  if (monitorToken) {
+    const idx = parseMonitorIndex(monitorToken);
+    if (idx == null) {
+      return {
+        kind: "unknown",
+        reply: `I couldn’t tell which monitor you meant by “${monitorToken}”. Try “screenshot monitor 1” or “screenshot monitor 2”.`,
+      };
+    }
+    if (andCopy) {
+      return {
+        kind: "screenshotCaptureAndCopy",
+        monitorIndex: idx,
+        reply: `Capturing monitor ${idx} and copying it.`,
+      };
+    }
+    return {
+      kind: "screenshotMonitor",
+      monitorIndex: idx,
+      reply: `Capturing monitor ${idx}.`,
+    };
+  }
+
+  if (
+    /\b(copy (this |the )?(screenshot|capture)|copy (it|that) to (the )?clipboard)\b/.test(
+      text,
+    ) &&
+    !/\b(take|capture|screenshot)\b.+\b(and copy|copy)\b/.test(text) &&
+    !/\b(take|capture)\b/.test(text)
+  ) {
+    return {
+      kind: "screenshotCopy",
+      reply: "Copying the latest screenshot to the clipboard.",
+    };
+  }
+
+  if (
+    /\b(save (a |the )?screenshot|save (this |the )?(screen|capture))\b/.test(
+      text,
+    )
+  ) {
+    return {
+      kind: "screenshotSave",
+      reply: "Saving a screenshot as a PNG.",
+    };
+  }
+
+  if (
+    /\b(screenshot|capture|take a screenshot of)\s+(this|the|primary)(\s+)?monitor\b/.test(
+      text,
+    ) ||
+    /\b(this|the|primary)\s+monitor\b/.test(text) &&
+      /\b(screenshot|capture)\b/.test(text)
+  ) {
+    if (andCopy) {
+      return {
+        kind: "screenshotCaptureAndCopy",
+        monitorIndex: 1,
+        reply: "Capturing monitor 1 and copying it.",
+      };
+    }
+    return {
+      kind: "screenshotMonitor",
+      monitorIndex: 1,
+      reply: "Capturing monitor 1.",
+    };
+  }
+
+  const thisWindow =
+    /\b(screenshot|capture|take a screenshot of)\s+(this|the active|the current|the foreground)(\s+window)?\b/.test(
+      text,
+    ) ||
+    (/\b(screenshot|capture)\s+this\b/.test(text) &&
+      !/\bmonitor\b/.test(text)) ||
+    text === "screenshot this" ||
+    text === "screenshot this window" ||
+    text === "capture this window" ||
+    text === "capture this";
+
+  if (thisWindow) {
+    if (andCopy) {
+      return {
+        kind: "screenshotCaptureAndCopy",
+        query: "this",
+        reply: "Capturing this window and copying it.",
+      };
+    }
+    return {
+      kind: "screenshotWindow",
+      query: "this",
+      reply: "Capturing this window.",
+    };
+  }
+
+  const namedWindow = text.match(
+    /^(?:take a screenshot of|screenshot|capture(?: a screenshot of)?)\s+(.+)$/i,
+  );
+  if (namedWindow?.[1]) {
+    let target = stripTrailingPunctuation(namedWindow[1]);
+    target = target
+      .replace(/\s+and copy( it| to( the)? clipboard)?$/i, "")
+      .replace(/^(the|my)\s+/i, "")
+      .trim();
+    if (
+      /^(desktop|screen|my desktop|my screen|the desktop|the screen)$/i.test(
+        target,
+      )
+    ) {
+      if (andCopy) {
+        return {
+          kind: "screenshotCaptureAndCopy",
+          reply: "Capturing your desktop and copying it.",
+        };
+      }
+      return {
+        kind: "screenshotDesktop",
+        reply: "Capturing your desktop.",
+      };
+    }
+    if (/^(this monitor|the monitor|primary monitor)$/i.test(target)) {
+      return {
+        kind: "screenshotMonitor",
+        monitorIndex: 1,
+        reply: "Capturing monitor 1.",
+      };
+    }
+    if (!target || /^(a screenshot|screenshot|screen)$/i.test(target)) {
+      // fall through to desktop
+    } else {
+      if (andCopy) {
+        return {
+          kind: "screenshotCaptureAndCopy",
+          query: target,
+          reply: `Capturing “${target}” and copying it.`,
+        };
+      }
+      return {
+        kind: "screenshotWindow",
+        query: target,
+        reply: `Capturing “${target}”.`,
+      };
+    }
+  }
+
+  if (
+    /^(take a screenshot|take screenshot|screenshot|capture my desktop|capture the desktop|capture my screen|capture the screen|capture screen|screen capture)$/i.test(
+      text,
+    ) ||
+    /\b(take a screenshot|capture my (desktop|screen))\b/.test(text)
+  ) {
+    if (andCopy) {
+      return {
+        kind: "screenshotCaptureAndCopy",
+        reply: "Capturing your desktop and copying it.",
+      };
+    }
+    return {
+      kind: "screenshotDesktop",
+      reply: "Capturing your desktop.",
+    };
+  }
+
+  // Bare “screenshot …” leftovers with punctuation/spacing tolerance
+  if (/^screenshot\b/.test(text) || /^capture\b/.test(text)) {
+    const rest = stripTrailingPunctuation(
+      raw.replace(/^(screenshot|capture)\s+/i, ""),
+    ).trim();
+    if (!rest || /^(please|now)$/i.test(rest)) {
+      return {
+        kind: "screenshotDesktop",
+        reply: "Capturing your desktop.",
+      };
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -893,6 +1121,11 @@ export function resolveIntent(raw: string): IntentAction {
   const browserIntent = resolveBrowserIntent(raw, text);
   if (browserIntent) {
     return browserIntent;
+  }
+
+  const screenshotIntent = resolveScreenshotIntent(raw, text);
+  if (screenshotIntent) {
+    return screenshotIntent;
   }
 
   if (isEvolutionRequest(raw)) {

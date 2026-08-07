@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T01:24:41.075Z",
+  "updatedAt": "2026-08-07T01:52:22.205Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -8,14 +8,14 @@
   "engineeringMode": "constitutional-execution",
   "protocol": {
     "document": ".cursor/rules/constitutional-execution-protocol.mdc",
-    "version": "1.7",
+    "version": "1.8",
     "machineState": "docs/project-health.json"
   },
   "currentExecutionProgram": {
-    "id": "browser-provider-p14-5-finalization",
-    "title": "P14.5 Browser Product Proof Finalization & Permanent Closure",
+    "id": "screenshot-provider-p15",
+    "title": "P15 Screenshot Provider",
     "status": "permanently_closed",
-    "note": "P14 permanently closed. P12.5 stamped DO NOT REOPEN. Provider Acceptance Standard permanent. P15 eligible."
+    "note": "P15 permanently closed. Capability Independence Rule permanent. P16 Voice Input eligible. Do not begin P16 until Owner starts it."
   },
   "completedExecutionPrograms": [
     {
@@ -294,6 +294,19 @@
         "pnpm verify:browser-provider",
         "P14_PERMANENTLY_CLOSED_P15_ELIGIBLE"
       ]
+    },
+    {
+      "id": "screenshot-provider-p15",
+      "backlogRef": "P15 Screenshot Provider",
+      "completed": "2026-08-07",
+      "artifacts": [
+        "docs/capability-runtime/SCREENSHOT_PROVIDER.md",
+        "docs/capability-runtime/product-proof/screenshot-provider.proof.json",
+        "packages/kernel/src/capability_runtime/screenshot_provider.rs",
+        "pnpm verify:screenshot-provider",
+        "Capability Independence Rule",
+        "P15_PERMANENTLY_CLOSED_P16_ELIGIBLE"
+      ]
     }
   ],
   "remainingBacklog": [
@@ -385,8 +398,10 @@
     "p12Series": "permanently_complete",
     "notificationsProvider": "permanently_complete",
     "browserProvider": "permanently_complete",
+    "screenshotProvider": "permanently_complete",
     "p12_5": "accepted_do_not_reopen",
     "providerAcceptanceStandard": "permanent",
+    "capabilityIndependenceRule": "permanent",
     "notes": [
       "UI Architecture Spec accepted/frozen (P8)",
       "Capability Runtime research accepted (P9)",
@@ -396,16 +411,18 @@
       "P12 series constitutionally complete",
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
+      "P15 Screenshot Provider PERMANENTLY CLOSED",
       "Natural Language Robustness Rule permanent",
-      "Provider Acceptance Standard permanent (P15+)",
+      "Provider Acceptance Standard permanent",
+      "Capability Independence Rule permanent (P15)",
       "Operator Authority + Kernel Authority + Composition permanent"
     ]
   },
   "currentMilestone": {
-    "id": "browser-provider-p14-5-finalization",
-    "title": "P14.5 Browser Product Proof Finalization & Permanent Closure",
+    "id": "screenshot-provider-p15",
+    "title": "P15 Screenshot Provider",
     "status": "permanently_closed",
-    "commit": "06f7d06"
+    "commit": "381f7bb"
   },
   "acceptedReviews": [
     {
@@ -491,13 +508,20 @@
       "commit": "1670822",
       "acceptedAt": "2026-08-07",
       "note": "PERMANENTLY CLOSED — ACCEPTED — DO NOT REOPEN (bugfixes only)"
+    },
+    {
+      "id": "p15",
+      "title": "P15 Screenshot Provider",
+      "commit": "381f7bb",
+      "acceptedAt": "2026-08-07",
+      "note": "PERMANENTLY CLOSED — ACCEPTED — REPOSITORY TRUTH — DO NOT REOPEN (bugfixes only)"
     }
   ],
   "outstandingProductDebt": [
     {
-      "id": "capability-providers-p15-plus",
+      "id": "capability-providers-p16-plus",
       "track": "B",
-      "summary": "Screenshot / File / Terminal providers — P15+ (P14 Browser permanently closed)"
+      "summary": "Voice / File / Terminal providers — P16+ (P15 Screenshot permanently closed)"
     },
     {
       "id": "tray-integration",
@@ -531,6 +555,8 @@
       "P12 series permanently closed",
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
+      "P15 Screenshot Provider permanently closed",
+      "Capability Independence Rule permanent",
       "Natural Language Robustness Rule permanent",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)"
@@ -652,7 +678,7 @@
     ],
     "productIpcCommandCount": 20,
     "launchStatus": "verified",
-    "readyForOwnerReview": false,
+    "readyForOwnerReview": true,
     "reviewDocument": "docs/product-proof-review.md"
   },
   "architecturalRisks": [
@@ -697,15 +723,15 @@
   "lastMilestone": {
     "date": "2026-08-07",
     "document": "docs/engineering-milestone-report.md",
-    "title": "P14.5 Finalization — P14 permanently closed; P12.5 do-not-reopen",
-    "reviewBrief": "docs/capability-runtime/PROVIDER_ACCEPTANCE_STANDARD.md"
+    "title": "P15 Screenshot Provider — permanently closed",
+    "reviewBrief": "docs/capability-runtime/product-proof/SCREENSHOT_PROVIDER_PRODUCT_PROOF.md"
   },
-  "handoffStatus": "P14_PERMANENTLY_CLOSED_P15_ELIGIBLE",
+  "handoffStatus": "P15_PERMANENTLY_CLOSED_P16_ELIGIBLE",
   "nextRecommendedExecutionProgram": {
-    "id": "screenshot-provider-p15",
-    "title": "P15 Screenshot Provider",
+    "id": "voice-input-p16",
+    "title": "P16 Voice Input",
     "blockedUntil": null,
-    "note": "P14 permanently closed. Follow Provider Acceptance Standard. Do not begin until Owner starts P15."
+    "note": "P15 permanently closed. Follow Provider Acceptance Standard + Capability Independence Rule. Do not begin until Owner starts P16."
   },
   "capabilityEvolution": {
     "document": "docs/capability-evolution/README.md",

@@ -48,6 +48,37 @@ export function toCapabilityIntent(action: IntentAction): CapabilityIntent | nul
         // Prefer matching the browser window that typically appears after URL open.
         snap: "Chrome",
       };
+    case "screenshotStatus":
+      return { domain: "screenshots", operation: "status" };
+    case "screenshotDesktop":
+      return { domain: "screenshots", operation: "capture_desktop" };
+    case "screenshotWindow":
+      return {
+        domain: "screenshots",
+        operation: "capture_window",
+        query: action.query,
+      };
+    case "screenshotMonitor":
+      return {
+        domain: "screenshots",
+        operation: "capture_monitor",
+        monitorIndex: action.monitorIndex,
+      };
+    case "screenshotSave":
+      return { domain: "screenshots", operation: "save_png" };
+    case "screenshotCopy":
+      return {
+        domain: "screenshots",
+        operation: "copy_clipboard",
+        path: action.path,
+      };
+    case "screenshotCaptureAndCopy":
+      return {
+        domain: "screenshots",
+        operation: "capture_and_copy",
+        query: action.query,
+        monitorIndex: action.monitorIndex,
+      };
     case "appEnumerate":
       return { domain: "application", operation: "enumerate" };
     case "appLaunch":

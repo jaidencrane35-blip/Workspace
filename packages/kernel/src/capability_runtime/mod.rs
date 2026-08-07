@@ -1,4 +1,4 @@
-//! Capability Runtime — P10–P14 providers (Clipboard, Application, Window, Notifications, Browser).
+//! Capability Runtime — P10–P15 providers (Clipboard, Application, Window, Notifications, Browser, Screenshot).
 //!
 //! Permanent pipeline:
 //! Conversation → Intent Layer → execute_capability_intent → Kernel Operator →
@@ -16,6 +16,7 @@ mod clipboard_provider;
 mod notification_provider;
 mod registry;
 mod router;
+mod screenshot_provider;
 mod types;
 mod window_provider;
 
@@ -25,6 +26,7 @@ pub use clipboard_provider::ClipboardProvider;
 pub use notification_provider::NotificationProvider;
 pub use registry::ProviderRegistry;
 pub use router::CapabilityRouter;
+pub use screenshot_provider::ScreenshotProvider;
 pub use types::{
     ApplicationWindowItem, CapabilityDomainId, CapabilityOperation, MonitorItem,
     ProviderDescriptor, ProviderInvokeRequest, ProviderInvokeResponse, ProviderResultSummary,
@@ -35,12 +37,12 @@ use std::sync::{Arc, OnceLock, RwLock};
 
 use workspace_windows_integration::{
     platform_desktop_capturer, platform_process_launcher, platform_window_enumerator,
-    platform_window_mutator, BrowserPort, ClipboardPort, NotificationPort,
+    platform_window_mutator, BrowserPort, ClipboardPort, NotificationPort, ScreenshotPort,
 };
 #[cfg(test)]
 use workspace_windows_integration::{
     FixtureWindowEnumerator, MemoryBrowserPort, MemoryClipboard, MemoryNotificationPort,
-    StubDesktopCapturer, StubProcessLauncher, StubWindowMutator,
+    MemoryScreenshotPort, StubDesktopCapturer, StubProcessLauncher, StubWindowMutator,
 };
 
 use crate::error::{KernelError, Result};
@@ -68,6 +70,9 @@ impl CapabilityRuntime {
         registry
             .register(Box::new(BrowserProvider::new(browser_port())))
             .expect("browser provider registers once at bootstrap");
+        registry
+            .register(Box::new(ScreenshotProvider::new(screenshot_port())))
+            .expect("screenshot provider registers once at bootstrap");
         Self {
             registry: RwLock::new(registry),
         }
@@ -163,6 +168,17 @@ fn browser_port() -> Arc<dyn BrowserPort> {
     }
 }
 
+fn screenshot_port() -> Arc<dyn ScreenshotPort> {
+    #[cfg(test)]
+    {
+        Arc::new(MemoryScreenshotPort::new())
+    }
+    #[cfg(not(test))]
+    {
+        workspace_windows_integration::platform_screenshot()
+    }
+}
+
 static RUNTIME: OnceLock<CapabilityRuntime> = OnceLock::new();
 
 /// Shared Capability Runtime for the process.
@@ -186,6 +202,9 @@ mod tests {
             .iter()
             .any(|d| d.domain.as_str() == "notifications"));
         assert!(descriptors.iter().any(|d| d.domain.as_str() == "browser"));
+        assert!(descriptors
+            .iter()
+            .any(|d| d.domain.as_str() == "screenshots"));
     }
 
     #[test]
@@ -313,5 +332,39 @@ mod tests {
         assert!(opened.ok);
         assert_eq!(opened.status.as_deref(), Some("opened"));
         assert_eq!(opened.target.as_deref(), Some("https://example.com"));
+    }
+
+    #[test]
+    fn screenshots_status_and_capture_through_router() {
+        let status = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::screenshots(),
+                operation: CapabilityOperation::Status,
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(status.ok);
+        assert_eq!(status.status.as_deref(), Some("available"));
+
+        let shot = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::screenshots(),
+                operation: CapabilityOperation::CaptureDesktop,
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(shot.ok);
+        assert!(shot.text.as_ref().is_some_and(|p| !p.is_empty()));
+
+        let copied = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::screenshots(),
+                operation: CapabilityOperation::CopyClipboard,
+                path: shot.text.clone(),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(copied.ok);
+        assert_eq!(copied.status.as_deref(), Some("copied"));
     }
 }

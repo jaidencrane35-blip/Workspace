@@ -77,5 +77,22 @@ Every future provider must satisfy **every stage** before permanent acceptance.
 - Product Gravity Rule  
 - Kernel Authority / Presentation Purity  
 - Capability Composition Rule  
+- Capability Independence Rule  
 
 NL improvements remain in Intent / Operator / replies only — **never** inside providers.
+
+---
+
+## Capability Independence Rule (permanent — P15)
+
+Every provider must satisfy three conditions:
+
+1. **Independent** — Users can directly ask for it.  
+   Example: “Take a screenshot.”
+2. **Composable** — Existing providers gain value because it exists.  
+   Composition authority belongs only to the Kernel Operator.
+3. **Invisible** — Users never know the provider exists.  
+   Conversation always presents desktop operation — never provider architecture.
+
+A provider that is only useful as an invisible dependency of another provider is incomplete.  
+A provider that exposes architecture terminology in Conversation fails Product Proof.

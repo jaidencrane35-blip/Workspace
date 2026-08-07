@@ -1,14 +1,14 @@
 # Engineering Milestone Report
-## P14.5 Browser Product Proof Finalization & Permanent Closure
+## P15 Screenshot Provider
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P14.5 Finalization & Permanent Closure |
+| **Execution program** | P15 Screenshot Provider |
 | **Date** | 2026-08-07 |
-| **Commit** | `06f7d06` |
-| **Status** | **P14 PERMANENTLY CLOSED** |
-| **Handoff** | `P14_PERMANENTLY_CLOSED_P15_ELIGIBLE` |
-| **Prior remediation** | `0ed6711` |
+| **Commit** | `381f7bb` |
+| **Status** | **P15 PERMANENTLY CLOSED** |
+| **Handoff** | `P15_PERMANENTLY_CLOSED_P16_ELIGIBLE` |
+| **Adoption** | WRAP `xcap` + arboard image clipboard behind `ScreenshotPort` |
 
 ---
 
@@ -16,25 +16,24 @@
 
 | Item | Result |
 | --- | --- |
-| P12.5 | **ACCEPTED ? REPOSITORY TRUTH ? DO NOT REOPEN** |
-| P14 | **PERMANENTLY CLOSED** |
-| Provider Acceptance Standard | Permanent (P15+) |
-| Natural Language Robustness Rule | Permanent |
+| P15 Screenshot Provider | **PERMANENTLY CLOSED ? ACCEPTED ? REPOSITORY TRUTH ? DO NOT REOPEN** |
+| Capability Independence Rule | Permanent (protocol v1.8 + Acceptance Standard) |
+| Levels | 1?2 only (`status`, capture desktop/window/monitor, `save_png`, `copy_clipboard`) |
+| Pipeline | Conversation ? Intent ? Kernel Operator ? Runtime ? Screenshot Provider ? OS |
 
 ---
 
-## Behavioural finalization
+## Explicit non-goals (unchanged)
 
-- `open my browser` / `open recent browser`  
-- `show chrome` / `bring chrome to front`  
-- Prior P14.5 NL aliases, invalid URL refusal, `browserExplain` retained  
-
-Architecture unchanged.
+OCR · annotation · editing · AI vision · image search · recording · streaming · ambient capture
 
 ---
 
 ## Explicit confirmation
 
-- **P14 Browser Provider:** PERMANENTLY CLOSED · Accepted · Repository Truth · Do Not Reopen (bugfixes only)  
-- **Next eligible program:** P15 Screenshot Provider  
-- **P15 implementation:** Not begun  
+- **P15 Engineering Complete:** Yes  
+- **P15 Product Complete:** Yes (Product Proof harness + Independence Rule)  
+- **Independently useful:** Yes  
+- **Capability Independence Rule:** Satisfied  
+- **Next eligible program:** P16 Voice Input  
+- **P16 implementation:** Not begun  

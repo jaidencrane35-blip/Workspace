@@ -19,6 +19,7 @@ A provider is **not Product Complete** until all of the following are true:
 4. Conversation returns **truthful** success and failure feedback (never invented success).
 5. Users never see Provider / Router / Registry terminology.
 6. **Natural Language Robustness** (below) is satisfied.
+7. **Capability Independence Rule** is satisfied (independent, composable, invisible).
 
 Infrastructure alone is insufficient.
 

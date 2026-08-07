@@ -17,6 +17,8 @@ log = { workspace = true }
 workspace-domain = { workspace = true }
 arboard = "3"
 webbrowser = "1"
+xcap = { version = "0.9", features = ["image"] }
+image = "0.25"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = [

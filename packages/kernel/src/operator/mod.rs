@@ -130,6 +130,7 @@ pub fn parse_domain(raw: &str) -> Result<CapabilityDomainId> {
         "window" => Ok(CapabilityDomainId::window()),
         "notifications" | "notification" | "notify" => Ok(CapabilityDomainId::notifications()),
         "browser" | "web" => Ok(CapabilityDomainId::browser()),
+        "screenshots" | "screenshot" | "capture" => Ok(CapabilityDomainId::screenshots()),
         other => Err(KernelError::CapabilityRuntime {
             message: format!("unknown capability domain '{other}'"),
         }),

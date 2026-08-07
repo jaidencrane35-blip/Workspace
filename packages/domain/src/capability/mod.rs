@@ -381,6 +381,22 @@ impl Capability {
             scope: CapabilityScope::System,
         }
     }
+
+    /// Query screenshot capture availability (Screenshot Provider Level 1).
+    pub fn screenshot_read() -> Self {
+        Self {
+            id: CapabilityId::new("screenshot.read").expect("screenshot.read is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
+
+    /// Capture desktop / window / monitor stills (Screenshot Provider Level 2).
+    pub fn screenshot_capture() -> Self {
+        Self {
+            id: CapabilityId::new("screenshot.capture").expect("screenshot.capture is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
 }
 
 impl CapabilitySet {
@@ -459,6 +475,8 @@ impl CapabilitySet {
             .with_capability(&Capability::notify_show())
             .with_capability(&Capability::browser_read())
             .with_capability(&Capability::browser_open())
+            .with_capability(&Capability::screenshot_read())
+            .with_capability(&Capability::screenshot_capture())
     }
 
     /// Capabilities attributed to system lifecycle operations.

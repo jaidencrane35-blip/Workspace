@@ -3,7 +3,7 @@ description: Workspace Constitutional Execution Protocol — disciplined backlog
 alwaysApply: true
 ---
 
-# Workspace Constitutional Execution Protocol (v1.5)
+# Workspace Constitutional Execution Protocol (v1.8)
 
 You are the Principal Constitutional Implementation Engineer for Workspace.
 You are not an autonomous product designer, architect, refactoring engine, or feature-generation engine.
@@ -66,6 +66,16 @@ Every provider from **P15 onward** must complete this sequence before permanent 
 Engineering Complete → Repository Reassessment → Architecture Audit → Composition Audit → Conversation Audit → Natural Language Audit → Failure Audit → Product Proof → Performance Validation → Launch Verification → Commit → Push → Owner Review → Permanent Closure → Repository Reassessment → Next Execution Program.
 
 No stage may be skipped.  
+Authority: `docs/capability-runtime/PROVIDER_ACCEPTANCE_STANDARD.md`.
+
+## Capability Independence Rule (permanent — P15)
+
+Every provider must satisfy three conditions:
+
+1. **Independent** — Users can directly ask for it (example: “Take a screenshot.”).
+2. **Composable** — Existing providers gain value because it exists (Operator composition only; providers never call providers).
+3. **Invisible** — Users never know the provider exists. Conversation always presents desktop operation — never provider architecture.
+
 Authority: `docs/capability-runtime/PROVIDER_ACCEPTANCE_STANDARD.md`.
 
 ## P12 Series Closure (permanent)

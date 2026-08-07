@@ -167,6 +167,34 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
         });
     }
 
+    // Screenshot capture + copy (Operator composition; providers stay independent)
+    if domain == CapabilityDomainId::screenshots() && op_raw == "capture_and_copy" {
+        let capture_op = if intent.monitor_index.is_some() {
+            CapabilityOperation::CaptureMonitor
+        } else if intent
+            .query
+            .as_deref()
+            .map(str::trim)
+            .filter(|q| !q.is_empty())
+            .is_some()
+        {
+            CapabilityOperation::CaptureWindow
+        } else {
+            CapabilityOperation::CaptureDesktop
+        };
+        return Ok(OperatorPlan {
+            composition_id: Some("screenshots.capture_and_copy".into()),
+            steps: vec![
+                step_from_intent(CapabilityDomainId::screenshots(), capture_op, intent),
+                step_from_intent(
+                    CapabilityDomainId::screenshots(),
+                    CapabilityOperation::CopyClipboard,
+                    intent,
+                ),
+            ],
+        });
+    }
+
     // Browser focus composes to Window focus (providers stay independent)
     if domain == CapabilityDomainId::browser() && op_raw == "focus" {
         let query = intent.query.as_deref().unwrap_or("").trim();
@@ -232,6 +260,15 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
         (
             "browser",
             CapabilityOperation::Status | CapabilityOperation::Open | CapabilityOperation::Focus,
+        ) => {}
+        (
+            "screenshots",
+            CapabilityOperation::Status
+            | CapabilityOperation::CaptureDesktop
+            | CapabilityOperation::CaptureWindow
+            | CapabilityOperation::CaptureMonitor
+            | CapabilityOperation::SavePng
+            | CapabilityOperation::CopyClipboard,
         ) => {}
         (d, op) => {
             return Err(KernelError::CapabilityRuntime {

@@ -3,8 +3,8 @@
 | Field | Value |
 | --- | --- |
 | **Program** | P15 Screenshot Provider |
-| **Status** | **Draft only** — harness not implemented |
-| **Blocked on** | P14 Owner acceptance + P15 engineering |
+| **Status** | **Superseded** — see `SCREENSHOT_PROVIDER_PRODUCT_PROOF.md` |
+| **Blocked on** | N/A — P15 complete |
 | **IPC (planned)** | `execute_capability_intent` |
 
 ---

@@ -5,6 +5,7 @@ mod browser;
 mod capability_intent;
 mod clipboard;
 mod notification;
+mod screenshot;
 mod window_capability;
 mod automation_contract;
 mod automation_trigger;
@@ -396,6 +397,9 @@ pub use application_capability::{ApplicationOperationResult, ExecuteApplicationO
 pub use capability_intent::execute_capability_intent;
 pub use browser::{BrowserOperationResult, BrowserStatus, BrowserStatusResult, OpenBrowserUrl};
 pub use clipboard::{ClipboardReadResult, ClipboardWriteResult, ReadClipboard, WriteClipboard};
+pub use screenshot::{
+    ExecuteScreenshotOperation, ScreenshotOperationResult, ScreenshotStatus, ScreenshotStatusResult,
+};
 pub use notification::{
     DismissNotification, NotificationOperationResult, NotificationStatus, NotificationStatusResult,
     ShowNotification,

@@ -121,15 +121,21 @@ Cross-capability message envelopes remain governed by `architecture/10_Capabilit
 
 | | |
 | --- | --- |
-| **Purpose** | Capture display/window image for user intent |
-| **Examples** | “Screenshot this window.” / “Capture the right monitor.” |
-| **Permissions** | `capture.display`, `capture.window` |
-| **Arguments** | `target` · `region?` |
-| **Results** | Image handle / path in app data |
-| **Failures** | HDR/capture API unavailable; permission |
-| **Rollback** | Delete capture file |
-| **Audit** | target type + dimensions |
-| **Future** | Annotate → OCR pipeline |
+| **Purpose** | Capture desktop / window / monitor stills (P15 Levels 1–2) |
+| **Examples** | “Take a screenshot.” / “Screenshot this window.” / “Capture monitor two.” |
+| **Permissions** | `screenshot.read`, `screenshot.capture` |
+| **Adoption** | WRAP `xcap` (+ arboard image clipboard) behind `ScreenshotPort` |
+| **Rust** | `ScreenshotProvider` + `ScreenshotStatus` / `ExecuteScreenshotOperation` |
+| **Arguments** | `query` (window) · `monitor_index` · path for copy |
+| **Operations** | `status` · `capture_desktop` · `capture_window` · `capture_monitor` · `save_png` · `copy_clipboard` |
+| **Results** | `{ ok, status, target, path, message }` — PNG under app-data captures |
+| **Failures** | Missing monitor/window; capture unavailable; permission — truthful reply |
+| **Rollback** | Delete capture file (optional cleanup) |
+| **Audit** | target type + dimensions + path id (not pixel payload) |
+| **Pipeline** | Intent → Kernel Operator → Runtime → Router → Registry → ScreenshotProvider → OS |
+| **Composition** | `capture_and_copy` via Kernel Operator; image clipboard inside port (not ClipboardProvider) |
+| **Independence** | Capability Independence Rule satisfied |
+| **Future** | OCR / annotate / region / recording — separate programs |
 
 ---
 
