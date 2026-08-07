@@ -65,6 +65,7 @@ const verifiers = {
   "verify:execution-planner": "scripts/verify-execution-planner.mjs",
   "verify:product-cognition": "scripts/verify-product-cognition.mjs",
   "verify:goal-resolution": "scripts/verify-goal-resolution.mjs",
+  "verify:workspace-context": "scripts/verify-workspace-context.mjs",
   "verify:dev-environment": "scripts/verify-dev-environment.mjs",
 };
 
@@ -464,7 +465,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16.36 Goal Resolution Architecture & Evidence Validation. Deterministic Goal Resolution Engine + ≥500 battery. Voice/aliases/grammar/Situation Goals not expanded. Canonical: VOICE_P16_36_GOAL_RESOLUTION.md. Do not mark permanently closed. Do not begin P17.",
+    note: "P16.37 Workspace Context Model & Layer Validation. Deterministic Context Model + ≥500 contextual battery + hostile layer suite + registry governance. Voice/aliases/grammar/Situation Goals/Goal Resolution not expanded. Canonical: VOICE_P16_37_WORKSPACE_CONTEXT.md. Do not mark permanently closed. Do not begin P17.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -509,7 +510,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16.36 Goal Resolution — deterministic engine + ≥500 evidence battery; Product Proof pending Owner acceptance (NOT permanently closed)",
+      "P16.37 Workspace Context — deterministic Context Model + ≥500 contextual battery; Product Proof pending Owner acceptance (NOT permanently closed)",
       "Owner Experience Before Engineering Confidence permanent (P16.21)",
       "Repository Quality Before Milestone Closure permanent (P16.21)",
       "User Adaptation Prohibition permanent (P16.6)",
@@ -531,8 +532,8 @@ const health = {
     ],
   },
   currentMilestone: {
-    id: "goal-resolution-p16-36",
-    title: "P16.36 Goal Resolution Architecture & Evidence Validation",
+    id: "workspace-context-p16-37",
+    title: "P16.37 Workspace Context Model & Layer Validation",
     status: "engineering_complete_product_proof_pending",
     commit: milestoneCommit,
   },
@@ -634,7 +635,7 @@ const health = {
       id: "p16-voice-product-proof",
       track: "B",
       summary:
-        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.36 Goal Resolution; not permanently closed)",
+        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.37 Workspace Context; not permanently closed)",
     },
     {
       id: "capability-providers-p17-plus",
@@ -675,7 +676,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16.36 Goal Resolution — Product Proof pending Owner acceptance; WinRT WRAP frozen; Voice not reopened; Owner evidence outranks engineering confidence",
+      "P16.37 Workspace Context — Product Proof pending Owner acceptance; WinRT WRAP frozen; Voice not reopened; Owner evidence outranks engineering confidence",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -757,9 +758,9 @@ const health = {
     date: "2026-08-07",
     document: "docs/engineering-milestone-report.md",
     title:
-      "P16.36 Goal Resolution — awaiting Owner live Product Proof",
+      "P16.37 Workspace Context — awaiting Owner live Product Proof",
     reviewBrief:
-      "docs/capability-runtime/product-proof/VOICE_P16_36_GOAL_RESOLUTION.md",
+      "docs/capability-runtime/product-proof/VOICE_P16_37_WORKSPACE_CONTEXT.md",
   },
   handoffStatus: "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   nextRecommendedExecutionProgram: {

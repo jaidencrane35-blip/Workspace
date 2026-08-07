@@ -7,7 +7,7 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.36 Goal Resolution Architecture & Evidence Validation (awaiting Owner live Product Proof) |
+| **Latest program** | P16.37 Workspace Context Model & Layer Validation (awaiting Owner live Product Proof) |
 | **Rule** | Ignore prior chat history. Reassess repository truth before any implementation. |
 
 **Start here before any execution program.**
@@ -108,7 +108,7 @@ One execution program
 
 Authoritative rolling list: `docs/capability-runtime/FIVE_PROGRAM_ROADMAP.md`.
 
-| Now | P16 Voice Input — **P16.36** Goal Resolution (Owner evidence > eng confidence); Product Proof pending Owner live review; P17 blocked |
+| Now | P16 Voice Input — **P16.37** Workspace Context (Owner evidence > eng confidence); Product Proof pending Owner live review; P17 blocked |
 | Next (after P16 acceptance) | **P17 File Provider** |
 | Then | P18 Terminal · P19 Memory · P20 Automation · P21 Workspace Intelligence |
 
@@ -144,7 +144,7 @@ Do not reopen except bugfixes:
 | Notifications | Closed (P13) | |
 | Browser | Closed (P14) | |
 | Screenshots | Closed (P15) | |
-| **Voice Input** | **P16.36 engineering complete** (Product Proof open) | Goal Resolution Engine + ≥500 evidence; WRAP frozen; Voice not reopened; `VOICE_P16_36_GOAL_RESOLUTION.md` |
+| **Voice Input** | **P16.37 engineering complete** (Product Proof open) | Workspace Context Model + ≥500 contextual battery; WRAP frozen; Voice not reopened; `VOICE_P16_37_WORKSPACE_CONTEXT.md` |
 | File | Not started | **P17** (blocked) |
 | Terminal / Memory / Automation | Roadmap | P18+ |
 
@@ -230,9 +230,9 @@ After Owner closes Workspace: cleanup only — **never relaunch**.
 
 ## 15. Latest commit
 
-| Tip | Use `git log -1 --oneline` on `v2-dev` after P16.28 push |
+| Tip | Use `git log -1 --oneline` on `v2-dev` after P16.37 push |
 | --- | --- |
-| Prior Voice engineering | `073d80f` (P16.27) · `23b18ba` (P16.26) |
+| Canonical Product Proof | `docs/capability-runtime/product-proof/VOICE_P16_37_WORKSPACE_CONTEXT.md` |
 
 ---
 

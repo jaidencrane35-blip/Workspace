@@ -14,7 +14,9 @@ import {
 import {
   CAPABILITY_GRAPH,
   describeCapability,
+  validateCapabilityGraphGovernance,
 } from "../app/src/lib/capabilityRegistry";
+import { resetWorkspaceContext } from "../app/src/lib/workspaceContext";
 
 const LEAD = ["", "please ", "can you ", "could you ", "would you "];
 const TAIL = ["", " please", " for me", " now"];
@@ -144,6 +146,7 @@ describe("P16.35 product cognition battery", () => {
       for (const core of group.cores) {
         for (const utterance of expand(core)) {
           total += 1;
+          resetWorkspaceContext();
           const evidence = resolveIntentWithEvidence(utterance);
           const assessment = assessCognition(
             utterance,
@@ -189,10 +192,14 @@ describe("P16.35 product cognition battery", () => {
   });
 
   it("requires Capability Graph discoverability / similar / alternatives metadata", () => {
+    expect(validateCapabilityGraphGovernance()).toEqual([]);
     for (const node of CAPABILITY_GRAPH) {
       expect(node.discoverability.length, node.id).toBeGreaterThan(8);
       expect(Array.isArray(node.similar), node.id).toBe(true);
       expect(Array.isArray(node.alternatives), node.id).toBe(true);
+      expect(node.ownership.length, node.id).toBeGreaterThan(4);
+      expect(node.permissions.length, node.id).toBeGreaterThan(0);
+      expect(node.architecturalJustification.length, node.id).toBeGreaterThan(8);
       const d = describeCapability(node.id)!;
       expect(d).toMatch(/Purpose:|Discover:|Arguments:/);
     }

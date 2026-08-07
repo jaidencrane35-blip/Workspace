@@ -34,6 +34,18 @@ export interface CapabilityNode {
   discoverability: string;
   /** Short Owner-facing note used only when generating discovery text. */
   documentation: string;
+  /** Owns / Wraps / Adapts / Studies / Rejects (constitutional ownership). */
+  ownership: string;
+  /** Permission / consent surface (Owner-facing). */
+  permissions: string[];
+  /** Runtime or OS dependencies (not provider-calls-provider). */
+  dependencies: string[];
+  /** Behaviour benchmark note (compare behaviours, not code). */
+  benchmark: string;
+  /** Deterministic test / verifier anchors. */
+  tests: string[];
+  /** Why this capability exists in the graph. */
+  architecturalJustification: string;
 }
 
 /** Live capability graph for desktop operation through Conversation. */
@@ -65,6 +77,16 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     discoverability: "Ask to open a named app, or ask what applications I can control.",
     documentation:
       "Resolved apps go through Find → Focus or Launch — never raw transcripts.",
+    ownership: "Owns product semantics; Wraps Windows process/window launch",
+    permissions: ["Desktop application launch", "Window focus"],
+    dependencies: ["Application Provider", "Window Provider", "Kernel Operator"],
+    benchmark: "Stronger than PowerToys Run on governed composition; weaker on fuzzy index",
+    tests: [
+      "tests/conversation-quality.test.ts",
+      "scripts/verify-capability-registry.mjs",
+    ],
+    architecturalJustification:
+      "Ordinary users ask to open apps; launch must stay Intent→Kernel, never Conversation→OS.",
   },
   {
     id: "focus-window",
@@ -90,6 +112,16 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     alternatives: ["open-app", "browser"],
     discoverability: "Ask what windows are open, or say you’ve got an app somewhere.",
     documentation: "Locate/focus compose to Window focus (and optional minimise).",
+    ownership: "Owns locate/focus semantics; Wraps Windows window enumeration",
+    permissions: ["Window enumeration", "Window focus"],
+    dependencies: ["Window Provider", "Kernel Operator"],
+    benchmark: "Stronger continuity than Windows Search; weaker than OS index breadth",
+    tests: [
+      "tests/goal-resolution-battery.test.ts",
+      "tests/workspace-context-battery.test.ts",
+    ],
+    architecturalJustification:
+      "Desktop cognition needs truthful focus without inventing window titles.",
   },
   {
     id: "window-state",
@@ -115,6 +147,13 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     alternatives: ["focus-window"],
     discoverability: "Name a window and a change — maximize, snap, or other monitor.",
     documentation: "Window state changes apply only to matching open windows.",
+    ownership: "Owns layout verbs; Wraps Windows placement APIs",
+    permissions: ["Window move/resize/snap"],
+    dependencies: ["Window Provider", "Kernel Operator"],
+    benchmark: "Comparable to manual snap; not a tiling WM replacement",
+    tests: ["tests/execution-planner.test.ts", "scripts/verify-execution-planner.mjs"],
+    architecturalJustification:
+      "Side-by-side / maximize are first-class desktop outcomes, not chat metaphors.",
   },
   {
     id: "browser",
@@ -139,6 +178,16 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     alternatives: ["focus-window", "open-app"],
     discoverability: "Ask to open a site, or put a site beside an app.",
     documentation: "Browser open may compose with Window focus or snap.",
+    ownership: "Owns site→URL product map; Wraps default browser launch",
+    permissions: ["Open URLs in default browser", "Compose with window layout"],
+    dependencies: ["Browser Provider", "Window Provider", "Kernel Operator"],
+    benchmark: "Stronger than ChatGPT Desktop for beside-layout; weaker for web agents",
+    tests: [
+      "tests/product-cognition-battery.test.ts",
+      "scripts/verify-browser-provider.mjs",
+    ],
+    architecturalJustification:
+      "Sites are desktop surfaces; open/beside must compose through Kernel only.",
   },
   {
     id: "screenshots",
@@ -159,6 +208,13 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     alternatives: ["folders"],
     discoverability: "Ask to take a screenshot, or to find your screenshots folder.",
     documentation: "Screenshot capture can compose with copy when you ask.",
+    ownership: "Owns capture intents; Wraps OS screenshot surfaces",
+    permissions: ["Capture desktop/window/monitor"],
+    dependencies: ["Screenshot Provider", "Kernel Operator"],
+    benchmark: "Comparable to Win+PrtSc for capture; Folder open for file find",
+    tests: ["scripts/verify-screenshot-provider.mjs"],
+    architecturalJustification:
+      "Capture is an independent desktop verb that also composes with clipboard/folders.",
   },
   {
     id: "clipboard",
@@ -178,6 +234,13 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     alternatives: ["screenshots"],
     discoverability: "Ask what’s on the clipboard.",
     documentation: "Clipboard is a first-class capability domain.",
+    ownership: "Owns clipboard product verbs; Wraps OS clipboard",
+    permissions: ["Read clipboard", "Write clipboard text"],
+    dependencies: ["Clipboard port", "Kernel Operator"],
+    benchmark: "Narrower than clipboard managers; truthful read/write only",
+    tests: ["scripts/verify-capability-runtime-foundation.mjs"],
+    architecturalJustification:
+      "Clipboard is independently useful and composes with screenshots/copy flows.",
   },
   {
     id: "notifications",
@@ -197,6 +260,13 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     alternatives: [],
     discoverability: "Ask to show a notification with your message text.",
     documentation: "Notifications are shown under Workspace governance.",
+    ownership: "Owns notification wording; Wraps OS toast surface",
+    permissions: ["Show notification", "Dismiss notification"],
+    dependencies: ["Notifications Provider", "Kernel Operator"],
+    benchmark: "Not Action Center replacement; governed toasts only",
+    tests: ["scripts/verify-notifications-provider.mjs"],
+    architecturalJustification:
+      "Users ask to be notified; delivery stays under Workspace permission semantics.",
   },
   {
     id: "voice",
@@ -218,6 +288,16 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     discoverability: "Use the microphone beside Conversation, then Send.",
     documentation:
       "Voice is an input device — transcript follows the same Intent path as typing.",
+    ownership: "Owns Voice as Conversation input; Wraps WinRT speech (frozen WRAP)",
+    permissions: ["Microphone", "Speech privacy"],
+    dependencies: ["WinRT speech", "Conversation composer", "Intent Layer"],
+    benchmark: "Input path parity with typing; not a voice agent",
+    tests: [
+      "scripts/verify-voice-input.mjs",
+      "scripts/verify-voice-regression.mjs",
+    ],
+    architecturalJustification:
+      "Speech must enter the same Intent→Kernel path as typed text — no Voice-only ops.",
   },
   {
     id: "folders",
@@ -245,8 +325,49 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     alternatives: ["open-app"],
     discoverability: "Ask for Downloads, Pictures, Desktop, or Documents.",
     documentation: "Folders open via Windows shell: URIs.",
+    ownership: "Owns known-folder product map; Wraps shell: URIs",
+    permissions: ["Open File Explorer to known folders"],
+    dependencies: ["Application / shell open", "Kernel Operator"],
+    benchmark: "Narrower than full filesystem search (P17 / Outside)",
+    tests: ["tests/conversation-quality.test.ts"],
+    architecturalJustification:
+      "Common folders are discoverable desktop destinations without a File Provider yet.",
   },
 ];
+
+/** Reject graph nodes that fail P16.37 governance (used by verifiers/tests). */
+export function assertCapabilityGovernance(node: CapabilityNode): string[] {
+  const errors: string[] = [];
+  const requiredArrays: Array<keyof CapabilityNode> = [
+    "arguments",
+    "permissions",
+    "dependencies",
+    "limitations",
+    "examples",
+    "tests",
+  ];
+  for (const key of requiredArrays) {
+    const value = node[key];
+    if (!Array.isArray(value) || value.length === 0) {
+      errors.push(`${node.id}: ${String(key)} must be non-empty`);
+    }
+  }
+  for (const key of [
+    "ownership",
+    "failureRecovery",
+    "benchmark",
+    "architecturalJustification",
+  ] as const) {
+    if (!node[key] || !String(node[key]).trim()) {
+      errors.push(`${node.id}: ${key} must be non-empty`);
+    }
+  }
+  return errors;
+}
+
+export function validateCapabilityGraphGovernance(): string[] {
+  return CAPABILITY_GRAPH.flatMap(assertCapabilityGovernance);
+}
 
 export type DiscoveryScope =
   | "all"

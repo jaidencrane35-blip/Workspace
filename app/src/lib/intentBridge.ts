@@ -31,6 +31,10 @@ import {
   resolveWindowQuery,
 } from "./semanticIntentEngine";
 import { applyGoalResolution } from "./goalResolution";
+import {
+  commitWorkspaceContext,
+  resolveFromWorkspaceContext,
+} from "./workspaceContext";
 
 export type IntentAction =
   | { kind: "navigate"; view: PilotPrimaryView; reply: string }
@@ -1873,11 +1877,19 @@ export function resolveIntentBeforeGoalResolution(raw: string): IntentAction {
 }
 
 /**
- * Public Intent entry — Goal Resolution finalizes underspecified goals
- * before CapabilityIntent / Kernel (P16.36).
+ * Public Intent entry:
+ * Workspace Context (continuity) → Intent core → Goal Resolution → commit context.
+ * Context-owned actions are final (Goal Resolution must not re-unbind referents).
  */
 export function resolveIntent(raw: string): IntentAction {
-  return applyGoalResolution(raw, resolveIntentCore(raw));
+  const fromContext = resolveFromWorkspaceContext(raw);
+  if (fromContext) {
+    commitWorkspaceContext(raw, fromContext.action);
+    return fromContext.action;
+  }
+  const action = applyGoalResolution(raw, resolveIntentCore(raw));
+  commitWorkspaceContext(raw, action);
+  return action;
 }
 
 /** Progressive reveal for reply text (not model streaming). */

@@ -245,12 +245,20 @@ export function resolveGoal(
     refined = true;
     evidence.push("underspecified_resume→continue");
   } else if (
-    isUnderspecifiedLocate(text) ||
     (action.kind === "winFocus" &&
       "query" in action &&
-      /^(it|that|this|something|one)$/i.test(action.query))
+      /^(it|that|this|something|one)$/i.test(action.query)) ||
+    (isUnderspecifiedLocate(text) &&
+      !(
+        action.kind === "winFocus" &&
+        "query" in action &&
+        typeof action.query === "string" &&
+        action.query.length > 0 &&
+        !/^(it|that|this|something|one)$/i.test(action.query)
+      ))
   ) {
     // Pronoun / empty locate targets must clarify — never focus “it”.
+    // If Workspace Context already bound a concrete query, keep it.
     if (action.kind !== "unknown" || isUnderspecifiedLocate(text)) {
       const alreadyClarify =
         action.kind === "unknown" &&

@@ -9,6 +9,7 @@ import {
 } from "../app/src/lib/intentBridge";
 import { resolveIntentWithEvidence } from "../app/src/lib/intentPipeline";
 import { resolveGoal } from "../app/src/lib/goalResolution";
+import { resetWorkspaceContext } from "../app/src/lib/workspaceContext";
 
 const LEAD = ["", "please ", "can you ", "could you ", "i think "];
 const TAIL = ["", " please", " for me", " now", ""];
@@ -117,9 +118,12 @@ describe("P16.36 Goal Resolution battery", () => {
       for (const core of group.cores) {
         for (const utterance of expand(core)) {
           total += 1;
+          // Single-turn Goal Resolution evidence — isolate from session Context.
+          resetWorkspaceContext();
           const before = resolveIntentBeforeGoalResolution(utterance);
           const goal = resolveGoal(utterance, before);
           const action = resolveIntent(utterance);
+          resetWorkspaceContext();
           const evidence = resolveIntentWithEvidence(utterance);
 
           if (goal.refined) refined += 1;

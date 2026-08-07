@@ -1,8 +1,8 @@
 /**
- * Intent pipeline evidence (P16.32–P16.36).
+ * Intent pipeline evidence (P16.32–P16.37).
  *
- * Speech → Normalize → Grammar → Situation/Semantic → Goal Resolution
- * → Execution Plan → Capability Registry → Kernel → Evidence.
+ * Speech → Normalize → Grammar → Situation/Semantic → Workspace Context
+ * → Goal Resolution → Execution Plan → Capability Registry → Kernel → Evidence.
  */
 
 import { parseDesktopIntent } from "./intentGrammar";
@@ -12,6 +12,7 @@ import {
   type IntentAction,
 } from "./intentBridge";
 import {
+  buildExecutionPlan,
   summarizeExecutionPlan,
   type ExecutionPlan,
 } from "./executionPlanner";
@@ -22,6 +23,10 @@ import {
 import { resolveDesktopEntity, resolveSemanticIntent } from "./semanticIntentEngine";
 import { resolveSituationGoal } from "./situationGoals";
 import { isCapabilityDiscoveryUtterance } from "./capabilityRegistry";
+import {
+  getWorkspaceContext,
+  resolveFromWorkspaceContext,
+} from "./workspaceContext";
 
 export interface PipelineStageEvidence {
   stage:
@@ -30,6 +35,7 @@ export interface PipelineStageEvidence {
     | "intent_grammar"
     | "situation_goal"
     | "semantic_engine"
+    | "workspace_context"
     | "goal_resolution"
     | "execution_plan"
     | "resolve_intent"
@@ -93,7 +99,18 @@ export function resolveIntentWithEvidence(raw: string): IntentPipelineEvidence {
     detail: semantic ? `kind=${semantic.kind}` : "semantic deferred",
   });
 
-  const beforeGoal = resolveIntentBeforeGoalResolution(utterance);
+  const contextHit = resolveFromWorkspaceContext(utterance);
+  stages.push({
+    stage: "workspace_context",
+    hit: Boolean(contextHit),
+    detail: contextHit
+      ? `kind=${contextHit.action.kind}; ${contextHit.evidence.join(",")}`
+      : `turn=${getWorkspaceContext().turn}; no continuity match`,
+  });
+
+  const beforeGoal =
+    contextHit?.action ?? resolveIntentBeforeGoalResolution(utterance);
+  // Evidence only — Context-final actions skip applyGoalResolution in resolveIntent.
   const goalFromPre = resolveGoal(utterance, beforeGoal);
   const action = resolveIntent(utterance);
 
@@ -105,11 +122,15 @@ export function resolveIntentWithEvidence(raw: string): IntentPipelineEvidence {
 
   stages.push({
     stage: "goal_resolution",
-    hit: true,
-    detail: `outcome=${goalFromPre.intendedOutcome.slice(0, 60)}; candidates=${goalFromPre.candidates.length}; clarify=${goalFromPre.needsClarification}; refined=${goalFromPre.refined}; ${goalFromPre.evidence.join(",")}`,
+    hit: !contextHit,
+    detail: contextHit
+      ? "skipped_context_owns_continuity"
+      : `outcome=${goalFromPre.intendedOutcome.slice(0, 60)}; candidates=${goalFromPre.candidates.length}; clarify=${goalFromPre.needsClarification}; refined=${goalFromPre.refined}; ${goalFromPre.evidence.join(",")}`,
   });
 
-  const plan = goalFromPre.selectedPlan;
+  const plan = contextHit
+    ? buildExecutionPlan(utterance, action)
+    : goalFromPre.selectedPlan;
   stages.push({
     stage: "execution_plan",
     hit: plan.steps.length > 0,
