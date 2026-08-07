@@ -1,5 +1,5 @@
 # Voice Input — Regression Matrix
-## P16.15 Product Completion
+## P16.16 Final Product Proof Resolution
 
 Engineering verification only. Does **not** equal Owner Product Complete.
 
@@ -13,8 +13,9 @@ Engineering verification only. Does **not** equal Owner Product Complete.
 | R6 | “Couldn’t listen” after success | MediaCapture during warm raced SpeechRecognizer | No MediaCapture in `warm_up` | `verify-voice-regression` |
 | R7 | Cold recompile every quiet click | `engine_reset` on `no_speech` / `cancelled` | Keep engine on idle outcomes | `listen_idle_keep_engine` |
 | R8 | Stale frontend warm skipped re-warm | Frontend `warmed` after native reset | No listen-path warm gate; clear on poison | `VoiceMicButton` + regression |
-| R9 | Ready lag after Capturing | 45ms settle | 20ms settle once Capturing confirmed | proof `settleBeforeReadyMs` |
+| R9 | Ready lag after Capturing | Overlong settle | 20ms settle once Capturing confirmed | proof `settleBeforeReadyMs` |
 | R10 | Repeated warm IPC on click | Extra `warmUpVoice` before listen | Mount warm only; listen warms cheaply | `noListenPathWarmGate` |
+| R11 | Ready UI without capture (first-word) | `capturing_wait_timeout` still emitted Ready | Fail listen if Capturing never confirmed; log `capturing_contract_failed` | `verify-voice-regression` P16.16 |
 
 ### Engineering stress (non-Owner)
 
@@ -23,8 +24,17 @@ Engineering verification only. Does **not** equal Owner Product Complete.
 | 100 consecutive listens | `memory_voice_survives_100_consecutive_listen_sessions` | Pass |
 | Cancel / no_speech recovery | Keep engine; next Ready must be hot | Manual Owner + R7 |
 | Permission once-per-cycle | Settings open only on mic click while denied | Manual Owner + R4 |
+| Capturing timeout honesty | No Ready without Capturing | R11 |
 
-### Commodity foundation (revalidated P16.15)
+### Permanent readiness (WinRT constraint)
+
+| Layer | Permanently alive while Workspace runs? | Notes |
+| --- | --- | --- |
+| Compiled `SpeechRecognizer` | **Yes** (after warm; kept across idle) | WRAP keep-warm |
+| `ContinuousRecognitionSession` | **No** | Starts per mic turn — ambient continuous listen is REJECT (Product Gravity / consent) |
+| MediaCapture probe | **No on hot path** | Recheck only after Settings |
+
+### Commodity foundation (revalidated P16.16)
 
 | Candidate | Class | Notes |
 | --- | --- | --- |
@@ -32,4 +42,13 @@ Engineering verification only. Does **not** equal Owner Product Complete.
 | Windows App SDK Speech | STUDY | Overlap with WinRT; no migration win |
 | whisper.cpp / Sherpa-ONNX / Vosk | STUDY | Bundle / VAD cost |
 | Azure / Web Speech | REJECT as default | Cloud / CSP |
-| Kiro / VS Code / PowerToys | STUDY terminology | Aliases only — no code copy |
+| Kiro / VS Code / PowerToys / Windows Terminal | STUDY behaviour | Push-to-talk / permission once — aliases & UX patterns only |
+
+### Adopted behavioural patterns (not code)
+
+| Pattern | Source | Workspace adoption |
+| --- | --- | --- |
+| Push-to-talk, not ambient | PowerToys / desktop norms | Mic toggle starts/stops session |
+| Explain permission once | Mature Windows apps | Permission state machine |
+| Keep engine warm after first use | Local ASR practise | Compiled recognizer retained |
+| Honest failure when capture missing | Production STT | R11 — no fake Ready |

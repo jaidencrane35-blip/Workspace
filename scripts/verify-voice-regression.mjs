@@ -72,6 +72,9 @@ if (!research.includes("P16.14") || !research.includes("MediaCapture warm race")
 if (!research.includes("P16.15") || !research.includes("Production Before Expansion")) {
   fail("VOICE_RESEARCH must document P16.15 Product Completion + Production Before Expansion");
 }
+if (!research.includes("P16.16") || !research.includes("capturing_contract_failed")) {
+  fail("VOICE_RESEARCH must document P16.16 Capturing-contract honesty fix");
+}
 if (!proof.responsiveness?.noStickyMediaCaptureDeny) {
   fail("proof must declare noStickyMediaCaptureDeny");
 }
@@ -87,6 +90,12 @@ if (!proof.responsiveness?.noListenPathWarmGate) {
 if (!proof.responsiveness?.productionBeforeExpansion) {
   fail("proof must declare productionBeforeExpansion (P16.15)");
 }
+if (!proof.responsiveness?.readyOnlyWhenCapturingConfirmed) {
+  fail("proof must declare readyOnlyWhenCapturingConfirmed (P16.16)");
+}
+if (!proof.responsiveness?.capturingTimeoutFailsHonestly) {
+  fail("proof must declare capturingTimeoutFailsHonestly (P16.16)");
+}
 if (!protocol.includes("Engineering Completion Gate")) {
   fail("protocol must adopt Engineering Completion Gate permanently");
 }
@@ -96,8 +105,33 @@ if (!protocol.includes("Capability Regression Prevention")) {
 if (!protocol.includes("Production Before Expansion")) {
   fail("protocol must adopt Production Before Expansion permanently");
 }
+if (!protocol.includes("Evidence Before Modification")) {
+  fail("protocol must adopt Evidence Before Modification permanently");
+}
+if (!protocol.includes("Root Cause Before Rewrite")) {
+  fail("protocol must adopt Root Cause Before Rewrite permanently");
+}
 if (!voiceRs.includes("from_millis(20)")) {
   fail("voice port Ready settle must be 20ms after Capturing (P16.15)");
+}
+if (!voiceRs.includes("capturing_contract_failed")) {
+  fail("voice port must fail honestly when Capturing never confirms (P16.16)");
+}
+// Ready must not be emitted on the timeout path without a capturing check.
+const readyBlock = voiceRs.match(
+  /if !ready_emitted\.load[\s\S]*?on_ready_emitted[\s\S]*?\n        \}/,
+);
+if (!readyBlock) {
+  fail("could not locate Ready emission block for Capturing contract audit");
+}
+if (!readyBlock[0].includes("if !capturing") && !readyBlock[0].includes("if !*ready")) {
+  fail("Ready emission must gate on capturing confirmation (P16.16)");
+}
+if (
+  readyBlock[0].includes("capturing_wait_timeout") &&
+  !readyBlock[0].includes("capturing_contract_failed")
+) {
+  fail("capturing_wait_timeout must lead to capturing_contract_failed, not Ready");
 }
 const micUi = fs.readFileSync(
   path.join(root, "app/src/components/operator/VoiceMicButton.tsx"),
@@ -119,6 +153,9 @@ if (!fs.existsSync(matrixPath)) {
 const matrix = fs.readFileSync(matrixPath, "utf8");
 if (!matrix.includes("R8") || !matrix.includes("noListenPathWarmGate")) {
   fail("regression matrix must cover P16.15 listen-path warm gate");
+}
+if (!matrix.includes("R11") || !matrix.includes("capturing_contract_failed")) {
+  fail("regression matrix must cover P16.16 Capturing-contract honesty (R11)");
 }
 
 console.log("verify-voice-regression: ok");

@@ -151,8 +151,9 @@ pub async fn voice_listen_once(app: AppHandle) -> IpcResponse<VoiceListenOutcome
     set_input_state("preparing");
     let app_for_ready = app.clone();
     let app_for_sound = app.clone();
+    log::info!("voice.lifecycle: stage=ipc_listen_enter");
     let joined = tauri::async_runtime::spawn_blocking(move || {
-        log::info!("voice.lifecycle: ipc_listen_blocking_begin");
+        log::info!("voice.lifecycle: stage=ipc_listen_blocking_begin");
         let t0 = std::time::Instant::now();
         let outcome = voice_port().listen_once_when_ready(
             Box::new(move || {
@@ -166,7 +167,7 @@ pub async fn voice_listen_once(app: AppHandle) -> IpcResponse<VoiceListenOutcome
             })),
         );
         log::info!(
-            "voice.lifecycle: ipc_listen_blocking_end +{:?}",
+            "voice.lifecycle: stage=ipc_listen_blocking_end +{:?}",
             t0.elapsed()
         );
         outcome

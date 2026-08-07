@@ -43,6 +43,8 @@ for (const token of [
   "Engineering Verification Separation",
   "Owner Directed Product Proof",
   "Production Before Expansion",
+  "Evidence Before Modification",
+  "Root Cause Before Rewrite",
 ]) {
   if (!rule.includes(token)) {
     fail(`PRODUCT_PROOF_RULE.md missing token: ${token}`);
@@ -112,6 +114,12 @@ if (!constitution.includes("User Adaptation Prohibition")) {
 }
 if (!constitution.includes("Production Before Expansion")) {
   fail("PRODUCT_CONSTITUTION must record Production Before Expansion");
+}
+if (!constitution.includes("Evidence Before Modification")) {
+  fail("PRODUCT_CONSTITUTION must record Evidence Before Modification");
+}
+if (!constitution.includes("Root Cause Before Rewrite")) {
+  fail("PRODUCT_CONSTITUTION must record Root Cause Before Rewrite");
 }
 if (!bridge.includes("Open a/another/new browser") && !bridge.includes("another browser")) {
   fail("intentBridge must support open another/new browser phrasing");

@@ -56,7 +56,11 @@
     "noMediaCaptureDuringWarm": true,
     "keepEngineOnNoSpeechOrCancel": true,
     "noListenPathWarmGate": true,
-    "productionBeforeExpansion": true
+    "productionBeforeExpansion": true,
+    "readyOnlyWhenCapturingConfirmed": true,
+    "capturingTimeoutFailsHonestly": true,
+    "evidenceBeforeModification": true,
+    "rootCauseBeforeRewrite": true
   },
   "uiPhases": [
     "idle",
@@ -78,7 +82,10 @@
     "voice.lifecycle: continuous_complete",
     "voice.lifecycle: permission_recheck_begin",
     "voice.lifecycle: permission_recheck_done",
-    "voice.lifecycle: mic_probe_begin"
+    "voice.lifecycle: mic_probe_begin",
+    "voice.lifecycle: capturing_contract_failed",
+    "voice.lifecycle: stage=ipc_listen_enter",
+    "voice.lifecycle: on_ready_emitted click_to_ready="
   ],
   "userLanguageRules": [
     "Never expose Provider, Router, Registry, Runtime, Kernel, WinRT, or SpeechRecognizer terminology",
@@ -186,6 +193,12 @@
       "utterance": "Open another browser.",
       "expectedKind": "browserOpen",
       "expectedDomain": "browser"
+    },
+    {
+      "category": "typed_equivalence",
+      "utterance": "Open Edge.",
+      "expectedKind": "appOpen",
+      "expectedDomain": "application"
     },
     {
       "category": "typed_equivalence",

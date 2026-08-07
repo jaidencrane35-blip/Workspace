@@ -164,6 +164,17 @@ No additional capability may be introduced while an existing capability still fa
 Perfect the open capability first. Expansion waits for Owner Product Complete (or an explicit Owner waiver).  
 Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
+### P23 — Evidence Before Modification (permanent — P16.16)
+
+Every engineering modification begins with observed behaviour and measured evidence.  
+Do not invent fixes for unproven defects.  
+Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
+### P24 — Root Cause Before Rewrite (permanent — P16.16)
+
+Observed behaviour → Measured evidence → Root cause → Minimal correction → Regression verification → Product Proof verification.  
+Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
 ---
 
 ## 3. Presentation modes (binding intent)

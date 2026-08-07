@@ -331,6 +331,44 @@ Indefinite keep-warm after compile is the WRAP strategy (engine retained across 
 
 Regression matrix: `docs/capability-runtime/product-proof/VOICE_REGRESSION_MATRIX.md`.
 
+### P16.16 Final Product Proof Resolution
+
+#### Objective
+
+Remove uncertainty with measured evidence. Not feature expansion.
+
+#### Foundation revalidation
+
+| Candidate | Verdict |
+| --- | --- |
+| WinRT ContinuousRecognitionSession | **WRAP — remains correct** |
+| Windows App SDK Speech | STUDY — no objective migration win |
+| whisper.cpp / Sherpa / Vosk | STUDY — packaging / VAD cost |
+| Azure / Web Speech | REJECT as default |
+| Kiro / VS Code / PowerToys | Behavioural patterns only |
+
+**Permanently alive session?** WinRT does not expose a consent-safe always-on capture service suitable for Conversation. Workspace keeps the **compiled recognizer** alive; each mic turn starts a **ContinuousRecognitionSession**. Ambient continuous listen remains REJECT.
+
+#### Lifecycle timing (healthy hot path)
+
+| Stage | Log marker | Expected |
+| --- | --- | --- |
+| UI click → IPC enter | `stage=ipc_listen_enter` | &lt; 50ms |
+| spawn_blocking begin | `stage=ipc_listen_blocking_begin` | immediate |
+| Warm (already compiled) | `stage=warm_done` | &lt; 20ms |
+| Continuous start | `continuous_started` | typically &lt; 500ms |
+| Capturing contract | `capturing_contract ready=true` | ≤ 2.5s |
+| Ready emit | `on_ready_emitted click_to_ready=` | Capturing + 20ms |
+| Sound / Listening UI | `speech_detected` / `voice-sound` | event-driven |
+
+#### P16.16 measured defect
+
+| Failure | Evidence | Root cause | Correction |
+| --- | --- | --- | --- |
+| First-word loss after “Ready” | Code path after `capturing_wait_timeout` still called `on_ready` | Ready lied when Capturing never confirmed | Abort listen with `capturing_contract_failed`; never emit Ready without Capturing |
+
+Principles adopted: **Evidence Before Modification**, **Root Cause Before Rewrite**.
+
 ---
 
 ## Explicit non-goals

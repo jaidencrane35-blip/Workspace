@@ -140,6 +140,17 @@ No additional capability may be introduced while an existing capability still fa
 Perfect the open capability first. Expansion waits for Owner Product Complete (or an explicit Owner waiver).  
 Engineering confidence is not Product Completion. Objective Product Proof is Product Completion.
 
+## Evidence Before Modification (permanent — P16.16)
+
+Every engineering modification begins with observed behaviour and measured evidence.  
+Do not change code to satisfy intuition, polish pressure, or speculative completeness.  
+If evidence cannot prove a defect, do not invent a fix.
+
+## Root Cause Before Rewrite (permanent — P16.16)
+
+Corrections follow: Observed behaviour → Measured evidence → Root cause → Minimal correction → Regression verification → Product Proof verification.  
+Symptom-only patches and speculative rewrites are forbidden. Prefer the smallest change that removes the proven root cause.
+
 ## Commodity Before Reinvention — survey obligation
 
 Before major capability work, perform a Commodity Survey (ADOPT / WRAP / ADAPT / STUDY / REJECT) and record it under capability research. Workspace owns identity, contracts, Operator, permissions, conversation, and runtime; commodity stays an implementation detail.

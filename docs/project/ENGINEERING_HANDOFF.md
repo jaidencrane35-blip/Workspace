@@ -7,7 +7,7 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.15 Product Completion, Production Hardening & Final Technology Validation (awaiting Owner) |
+| **Latest program** | P16.16 Final Product Proof Resolution & Production Readiness (awaiting Owner) |
 | **Rule** | Ignore prior chat history. Reassess repository truth before any implementation. |
 
 **Start here before any execution program.**
@@ -59,12 +59,14 @@ Conversation
 | --- | --- |
 | Architectural Constitution | `architecture/ARCHITECTURAL_CONSTITUTION_V2.md` (**v2.0**) |
 | Product Constitution | `docs/00-Constitution/PRODUCT_CONSTITUTION.md` |
-| Execution protocol | `.cursor/rules/constitutional-execution-protocol.mdc` (**v1.12**) |
+| Execution protocol | `.cursor/rules/constitutional-execution-protocol.mdc` (**v1.13**) |
 | Machine state | `docs/project-health.json` (synced to `app/public/project-health.json`) |
 | Product Gravity | `docs/ui/PRODUCT_GRAVITY_RULE.md` |
 | Product Proof | `docs/capability-runtime/PRODUCT_PROOF_RULE.md` |
 | User Adaptation Prohibition | Permanent (P16.6) — same Product Proof authority |
 | Production Before Expansion | Permanent (P16.15) — same Product Proof authority |
+| Evidence Before Modification | Permanent (P16.16) — same Product Proof authority |
+| Root Cause Before Rewrite | Permanent (P16.16) — same Product Proof authority |
 | Provider Acceptance Standard | `docs/capability-runtime/PROVIDER_ACCEPTANCE_STANDARD.md` |
 | Capability Independence Rule | Recorded in Provider Acceptance Standard + protocol |
 | UI Architecture | Accepted / frozen (P8) |
@@ -103,7 +105,7 @@ One execution program
 
 Authoritative rolling list: `docs/capability-runtime/FIVE_PROGRAM_ROADMAP.md`.
 
-| Now | P16 Voice Input — Engineering Complete (through **P16.15** Product Completion); Product Proof pending Owner |
+| Now | P16 Voice Input — Engineering Complete (through **P16.16** Final Product Proof Resolution); Product Proof pending Owner |
 | Next (after P16 acceptance) | **P17 File Provider** |
 | Then | P18 Terminal · P19 Memory · P20 Automation · P21 Workspace Intelligence |
 
@@ -139,7 +141,7 @@ Do not reopen except bugfixes:
 | Notifications | Closed (P13) | |
 | Browser | Closed (P14) | |
 | Screenshots | Closed (P15) | |
-| **Voice Input** | **Engineering Complete** (P16.15) | Conversation input device — **not** a Runtime desktop provider; **Product Proof pending Owner** |
+| **Voice Input** | **Engineering Complete** (P16.16) | Conversation input device — **not** a Runtime desktop provider; **Product Proof pending Owner** |
 | File | Not started | **P17** (blocked) |
 | Terminal / Memory / Automation | Roadmap | P18+ |
 
@@ -179,6 +181,7 @@ Do not redesign without a new constitutional program:
 6. Capability Independence Rule  
 7. User Adaptation Prohibition  
 8. Production Before Expansion  
+9. Evidence Before Modification / Root Cause Before Rewrite  
 
 ---
 
@@ -203,7 +206,7 @@ Do not redesign without a new constitutional program:
 | Harness / verifiers for Voice + conversation quality | Green (engineering) — do not treat as Owner acceptance |
 | P10–P15 Product Proof | Accepted / closed |
 
-Voice remediations through P16.15 (Product Completion / production hardening) do **not** equal permanent closure.  
+Voice remediations through P16.16 (Capturing-contract honesty) do **not** equal permanent closure.  
 After Owner closes Workspace: cleanup only — **never relaunch**.
 
 ---
@@ -216,9 +219,9 @@ After Owner closes Workspace: cleanup only — **never relaunch**.
 
 ## 15. Latest commit
 
-| Tip | Use `git log -1 --oneline` on `v2-dev` after P16.15 push |
+| Tip | Use `git log -1 --oneline` on `v2-dev` after P16.16 push |
 | --- | --- |
-| Prior Voice engineering | `77b3b4d` (P16.14) · `bb8ab78` (P16.13) |
+| Prior Voice engineering | `f287364` (P16.15) · `77b3b4d` (P16.14) |
 
 ---
 
@@ -229,7 +232,7 @@ After Owner closes Workspace: cleanup only — **never relaunch**.
 | Machine state | `docs/project-health.json` |
 | Handoff status | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
 | Engineering mode | `constitutional-execution` |
-| Protocol | v1.12 |
+| Protocol | v1.13 |
 | Constitution | v2.0 |
 | Sync | `node scripts/sync-project-health.mjs` |
 | Verify | `node scripts/verify-project-health.mjs` |

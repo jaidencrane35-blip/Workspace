@@ -1,5 +1,5 @@
 # Rolling Capability Provider Roadmap
-## Updated for P16.15 (Product Completion — Owner Product Proof pending)
+## Updated for P16.16 (Final Product Proof Resolution — Owner Product Proof pending)
 
 UI Architecture, Desktop Operator, Conversation, and Capability Runtime pipeline remain **frozen**.  
 Providers own **operations**. Providers never call each other.  
@@ -7,6 +7,7 @@ Voice Input is a Conversation **input device** (not a desktop provider domain).
 Every provider / input capability requires the **Permanent Provider Acceptance Standard**.  
 **User Adaptation Prohibition** is permanent (P16.6).  
 **Production Before Expansion** is permanent (P16.15).  
+**Evidence Before Modification** / **Root Cause Before Rewrite** are permanent (P16.16).  
 Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).  
 **Capability Independence Rule** is permanent.
 
@@ -32,7 +33,7 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 
 | Program | Title | Status |
 | --- | --- | --- |
-| **P16** | Voice Input | **Engineering Complete** (through **P16.15** Product Completion). Live Product Owner Product Proof **pending final acceptance**. **Not permanently closed.** Production Before Expansion blocks P17. |
+| **P16** | Voice Input | **Engineering Complete** (through **P16.16** Final Product Proof Resolution). Live Product Owner Product Proof **pending final acceptance**. **Not permanently closed.** Production Before Expansion blocks P17. |
 
 ---
 

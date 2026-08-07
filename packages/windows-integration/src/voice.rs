@@ -850,10 +850,10 @@ fn winrt_listen_continuous_when_ready(
 
     const MAX_WALL: Duration = Duration::from_secs(5 * 60);
     let t0 = Instant::now();
-    log::info!("voice.lifecycle: click_to_warm_begin");
+    log::info!("voice.lifecycle: stage=click_to_warm_begin");
 
     if let Err(error) = winrt_warm_up(engine, warmed) {
-        log::warn!("voice.lifecycle: warm_failed +{:?}", t0.elapsed());
+        log::warn!("voice.lifecycle: stage=warm_failed +{:?}", t0.elapsed());
         return Ok(VoiceListenOutcome {
             ok: false,
             transcript: None,
@@ -861,7 +861,7 @@ fn winrt_listen_continuous_when_ready(
             message: sanitize_setup_message(&error.to_string()),
         });
     }
-    log::info!("voice.lifecycle: warm_done +{:?}", t0.elapsed());
+    log::info!("voice.lifecycle: stage=warm_done +{:?}", t0.elapsed());
 
     let recognizer = {
         let guard = engine
@@ -1068,36 +1068,69 @@ fn winrt_listen_continuous_when_ready(
         }
 
         if !ready_emitted.load(Ordering::SeqCst) {
-            let (lock, cvar) = &*capture_gate;
-            if let Ok(mut ready) = lock.lock() {
-                let deadline = Duration::from_millis(2500);
-                while !*ready {
-                    let (guard, wait) = cvar
-                        .wait_timeout(ready, deadline)
-                        .unwrap_or_else(|e| e.into_inner());
-                    ready = guard;
-                    if wait.timed_out() {
-                        log::warn!(
-                            "voice.lifecycle: capturing_wait_timeout +{:?}",
-                            t0.elapsed()
-                        );
-                        break;
+            // P16.16: Ready must never emit without Capturing.
+            // Prior path logged capturing_wait_timeout then still called on_ready —
+            // UI showed Ready while audio was not retained (first-word loss).
+            let mut capturing = false;
+            {
+                let (lock, cvar) = &*capture_gate;
+                if let Ok(mut ready) = lock.lock() {
+                    let deadline = Duration::from_millis(2500);
+                    while !*ready {
+                        let (guard, wait) = cvar
+                            .wait_timeout(ready, deadline)
+                            .unwrap_or_else(|e| e.into_inner());
+                        ready = guard;
+                        if wait.timed_out() {
+                            log::warn!(
+                                "voice.lifecycle: capturing_wait_timeout +{:?}",
+                                t0.elapsed()
+                            );
+                            break;
+                        }
                     }
+                    capturing = *ready;
+                    log::info!(
+                        "voice.lifecycle: capturing_contract ready={} +{:?}",
+                        capturing,
+                        t0.elapsed()
+                    );
                 }
-                log::info!(
-                    "voice.lifecycle: capturing_contract ready={} +{:?}",
-                    *ready,
+            }
+            if !capturing {
+                log::warn!(
+                    "voice.lifecycle: capturing_contract_failed +{:?}",
                     t0.elapsed()
                 );
+                let _ = session.StopAsync().and_then(|op| op.get());
+                if let Ok(mut guard) = active_session.lock() {
+                    *guard = None;
+                }
+                if let Ok(token) = result_token {
+                    let _ = session.RemoveResultGenerated(token);
+                }
+                if let Ok(token) = complete_token {
+                    let _ = session.RemoveCompleted(token);
+                }
+                hard_fail = Some(VoiceListenOutcome {
+                    ok: false,
+                    transcript: None,
+                    status: "recognition_unavailable".into(),
+                    message: "I couldn’t start listening just now. Try the microphone again."
+                        .into(),
+                });
+                break;
             }
             // Minimal settle after Capturing — Ready means speech will be retained.
-            // P16.15: 20ms (was 45ms) once Capturing is confirmed.
             std::thread::sleep(Duration::from_millis(20));
             if let Ok(mut cell) = on_ready_cell.lock() {
                 if let Some(cb) = cell.take() {
                     cb();
                     ready_emitted.store(true, Ordering::SeqCst);
-                    log::info!("voice.lifecycle: on_ready_emitted +{:?}", t0.elapsed());
+                    log::info!(
+                        "voice.lifecycle: on_ready_emitted click_to_ready={:?}",
+                        t0.elapsed()
+                    );
                 }
             }
         }
