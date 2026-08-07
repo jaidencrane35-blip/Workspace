@@ -513,14 +513,34 @@ function stripOpenDeterminers(value: string): string {
   return value.replace(/^(my|the|our|a|an)\s+/i, "").trim();
 }
 
+/**
+ * Collapse ordinary browser phrasing (“a new GPT tab”, “ChatGPT in a new tab”)
+ * so site aliases match without memorized command forms.
+ */
+function canonicalizeOpenTarget(value: string): string {
+  let t = stripTrailingPunctuation(value);
+  t = t.replace(/\s+in\s+(a\s+)?new\s+tab$/i, "");
+  t = t.replace(/\s+on\s+(a\s+)?new\s+tab$/i, "");
+  t = t.replace(/^(a\s+|the\s+)?new\s+/i, "");
+  t = t.replace(/\s+tab$/i, "");
+  t = stripOpenDeterminers(t);
+  return t.trim();
+}
+
 const SITE_ALIASES: Record<string, string> = {
   chatgpt: "https://chatgpt.com",
   "chat gpt": "https://chatgpt.com",
   "chat g p t": "https://chatgpt.com",
+  gpt: "https://chatgpt.com",
+  "g p t": "https://chatgpt.com",
+  openai: "https://chatgpt.com",
+  "open ai": "https://chatgpt.com",
   "latest chat": "https://chatgpt.com",
   "recent chat": "https://chatgpt.com",
   "latest chatgpt": "https://chatgpt.com",
   "recent chatgpt": "https://chatgpt.com",
+  "latest gpt": "https://chatgpt.com",
+  "recent gpt": "https://chatgpt.com",
   google: "https://www.google.com",
   github: "https://github.com",
   "git hub": "https://github.com",
@@ -530,7 +550,7 @@ const SITE_ALIASES: Record<string, string> = {
 };
 
 function resolveSiteAlias(name: string): string | null {
-  const key = normalizeAliasKey(stripOpenDeterminers(name));
+  const key = normalizeAliasKey(canonicalizeOpenTarget(name));
   return SITE_ALIASES[key] ?? null;
 }
 
@@ -653,16 +673,19 @@ function isPlausibleWebsite(raw: string): boolean {
 }
 
 function resolveOpenWebsiteTarget(target: string): IntentAction | null {
-  const cleaned = stripTrailingPunctuation(target);
-  if (!cleaned || /^(workspace|conversation)$/i.test(cleaned)) {
+  const rawClean = stripTrailingPunctuation(target);
+  const cleaned = canonicalizeOpenTarget(target);
+  if (!rawClean || /^(workspace|conversation)$/i.test(cleaned || rawClean)) {
     return null;
   }
-  if (APP_OPEN_EXCLUSIONS.test(normalizeAliasKey(cleaned))) {
+  // Known desktop apps → leave for application intents (never invent a site).
+  if (APP_OPEN_EXCLUSIONS.test(normalizeAliasKey(cleaned || rawClean))) {
     return null;
   }
 
   // open browser / my browser / current|latest|recent browser
   if (
+    /^(my\s+)?(current\s+|latest\s+|recent\s+)?browsers?$/i.test(rawClean) ||
     /^(my\s+)?(current\s+|latest\s+|recent\s+)?browsers?$/i.test(cleaned) ||
     /^(current|latest|recent)\s+browser$/i.test(cleaned)
   ) {
@@ -673,25 +696,28 @@ function resolveOpenWebsiteTarget(target: string): IntentAction | null {
     };
   }
 
-  const alias = resolveSiteAlias(cleaned);
+  const alias = resolveSiteAlias(rawClean) ?? resolveSiteAlias(cleaned);
   if (alias) {
+    const label = cleaned || stripOpenDeterminers(rawClean);
     return {
       kind: "browserOpen",
       url: alias,
-      reply: `Opening ${stripOpenDeterminers(cleaned)}.`,
+      reply: `Opening ${label}.`,
     };
   }
 
   const looksLikeUrl =
-    /^https?:\/\//i.test(cleaned) ||
-    /^www\./i.test(cleaned) ||
-    cleaned.includes(".");
+    /^https?:\/\//i.test(rawClean) ||
+    /^www\./i.test(rawClean) ||
+    rawClean.includes(".");
 
   if (looksLikeUrl) {
-    if (!isPlausibleWebsite(cleaned)) {
+    if (!isPlausibleWebsite(rawClean)) {
       return invalidWebsiteReply();
     }
-    const url = /^https?:\/\//i.test(cleaned) ? cleaned : `https://${cleaned}`;
+    const url = /^https?:\/\//i.test(rawClean)
+      ? rawClean
+      : `https://${rawClean}`;
     return {
       kind: "browserOpen",
       url,
@@ -1465,7 +1491,15 @@ export function resolveIntent(raw: string): IntentAction {
 
   const appOpen = matchFirst(raw, softRaw, /^open\s+(.+)$/i);
   if (appOpen?.[1]) {
-    const query = stripTrailingPunctuation(appOpen[1]);
+    const rawQuery = stripTrailingPunctuation(appOpen[1]);
+    const query = canonicalizeOpenTarget(rawQuery) || rawQuery;
+    // Never treat GPT / site aliases as executable names (User Adaptation).
+    if (resolveSiteAlias(rawQuery) || resolveSiteAlias(query)) {
+      const site = resolveOpenWebsiteTarget(rawQuery);
+      if (site) {
+        return site;
+      }
+    }
     if (query && !/^(workspace|conversation)$/i.test(query)) {
       return {
         kind: "appOpen",

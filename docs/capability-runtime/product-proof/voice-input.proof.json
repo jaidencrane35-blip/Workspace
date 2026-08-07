@@ -84,6 +84,19 @@
     },
     {
       "category": "typed_equivalence",
+      "utterance": "Open a new GPT tab",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser",
+      "note": "Must not launch gpt tab.exe — browser alias"
+    },
+    {
+      "category": "typed_equivalence",
+      "utterance": "Open GPT in a new tab",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser"
+    },
+    {
+      "category": "typed_equivalence",
       "utterance": "Take a screenshot.",
       "expectedKind": "screenshotDesktop",
       "expectedDomain": "screenshots"

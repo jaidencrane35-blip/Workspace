@@ -100,8 +100,8 @@ No onboarding cards, feature tours, or capability quizzes. The user discovers by
 ### P11 — User Adaptation Prohibition (permanent — P16.6)
 
 A capability is not Product Complete if the user must adapt their behaviour to accommodate implementation details.  
-Product Complete means Workspace guides successful interaction without hidden timing, workarounds, memorized phrasing, undocumented OS knowledge, or rigid command wording.  
-**The software adapts to the user. The user does not adapt to the software.**  
+Product Complete means Workspace guides successful interaction without hidden timing, workarounds, memorized commands, undocumented OS knowledge, precise capitalization, or rigid wording.  
+**The software adapts to the user. The user never adapts to the software.**  
 Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
 ---

@@ -33,8 +33,8 @@ const rule = fs.readFileSync(
 for (const token of [
   "User Adaptation Prohibition",
   "The software adapts to the user",
-  "memorized phrasing",
-  "rigid command wording",
+  "precise capitalization",
+  "rigid wording",
 ]) {
   if (!rule.includes(token)) {
     fail(`PRODUCT_PROOF_RULE.md missing token: ${token}`);

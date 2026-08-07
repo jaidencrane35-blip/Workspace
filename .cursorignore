@@ -1,0 +1,43 @@
+﻿# Cursor indexing / search exclusions — keep IDE memory and watchers lean.
+# Does not affect product runtime. Complements .gitignore.
+
+# Dependencies & package stores
+node_modules/
+.pnpm-store/
+**/.pnpm/
+
+# Rust / Tauri build artifacts (very large; never product source)
+target/
+**/target/
+app/src-tauri/gen/
+app/src-tauri/WixTools/
+
+# Frontend build outputs
+dist/
+build/
+out/
+coverage/
+test-results/
+playwright-report/
+*.tsbuildinfo
+
+# Local caches & temp
+tmp/
+temp/
+*.tmp
+*.log
+logs/
+.turbo/
+.cache/
+
+# Local research screenshot dumps (binary-heavy)
+architecture/research/experience/screenshots/snapshot-*/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.pdb
+*.exe
+*.dll
+*.so
+*.dylib

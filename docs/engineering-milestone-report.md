@@ -1,9 +1,9 @@
 # Engineering Milestone Report
-## P16.6 Voice Conversation Product Proof Finalization
+## Development Environment Recovery + P16 Final Product Proof
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.6 Voice Conversation Product Proof Finalization |
+| **Execution program** | Development Environment Recovery + P16 Final Product Proof |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — live Product Owner Product Proof **pending** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
@@ -18,31 +18,48 @@
 | Item | Result |
 | --- | --- |
 | P10–P15 | Permanently closed |
-| P16 Voice Input | Engineering Complete (P16.5 + P16.6) — **not** permanently closed |
+| P16 Voice Input | Engineering Complete — **not** permanently closed |
 | Product Proof | Pending final Product Owner acceptance |
-| Kind | Conversation **input device** (not a desktop Capability Provider) |
-| Next after Owner acceptance | P17 File Provider (**blocked** until closure) |
+| P17 | **Blocked** until P16 Owner acceptance |
 
 ---
 
-## What shipped (P16.6)
+## Development environment (measured)
 
-1. **User Adaptation Prohibition** — permanent product principle (`PRODUCT_PROOF_RULE.md`, Product Constitution P11, execution protocol).  
-2. **Conversation quality** — varied truthful unsupported guidance; mic-check acknowledgements; near-miss desktop suggestions (`conversationGuidance.ts`).  
-3. **Intent robustness** — polite wrappers, spacing/punctuation tolerance, synonym expansions; deterministic only (no AI).  
-4. **Verifier** — `pnpm verify:conversation-quality` wired into `pnpm test`.
+| Finding | Evidence |
+| --- | --- |
+| Cursor ~3.3 GB | **17× Cursor.exe** totaling ~3260 MB Working Set |
+| Largest consumers | Chromium **renderer** (~0.6 GB), **node.mojom.NodeService** utilities (~0.4 + 0.3 GB), main process, GPU |
+| Prior agents still executing? | **No** — no separate agent PIDs; only the current Cursor session process tree |
+| Orphaned Workspace/Vite/Tauri | **None** at measurement time |
+| Conversation history | Not a process defect |
+
+### Prevention shipped
+
+- `.cursorignore` — exclude `target/`, `node_modules/`, `dist/`, screenshot dumps from Cursor indexing  
+- `pnpm dev:cleanup` (`scripts/dev-env-cleanup.mjs`) — clear orphaned `workspace-app` / port 1420 after Product Proof  
+- `pnpm verify:dev-environment` — machine check for hygiene artifacts  
+
+---
+
+## P16 conversation / intent (this program)
+
+- “Open a new GPT tab” ? `browserOpen` chatgpt.com (**not** `gpt tab.exe`)  
+- GPT / ChatGPT / new-tab wrappers canonicalized deterministically  
+- User Adaptation Prohibition retained (precise capitalization forbidden)  
 
 ---
 
 ## Explicit confirmation
 
-- **P16 Engineering Complete:** Yes (incl. P16.6)  
 - **P16 Product Complete / permanently closed:** **No — awaiting Owner**  
-- **Does Voice feel like natural desktop interaction?** Engineering judgment: **ready for Owner live review** — Owner decides  
-- **P17 implementation:** Not begun — **blocked**  
+- **Ready for final Owner acceptance:** **Yes (engineering)** — Owner decides live  
+- **P17:** Not begun  
 
 ---
 
 ## Artifact obligation
 
-New verifier: `scripts/verify-conversation-quality.mjs` (`pnpm verify:conversation-quality`).
+- `scripts/verify-dev-environment.mjs`  
+- `scripts/dev-env-cleanup.mjs`  
+- `.cursorignore`  

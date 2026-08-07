@@ -144,4 +144,29 @@ describe("intent bridge", () => {
     expect(resolveIntent("Open this website.").kind).toBe("unknown");
     expect(resolveIntent("Open Notepad.").kind).not.toBe("browserOpen");
   });
+
+  it("routes GPT / tab phrasing to browser — never gpt tab.exe", () => {
+    for (const utterance of [
+      "Open a new GPT tab",
+      "Open GPT",
+      "Open GPT in a new tab",
+      "Open ChatGPT in a new tab",
+      "open gpt",
+    ]) {
+      const action = resolveIntent(utterance);
+      expect(action.kind, utterance).toBe("browserOpen");
+      expect(action).toMatchObject({ url: "https://chatgpt.com" });
+      expect(JSON.stringify(action).toLowerCase()).not.toMatch(/gpt tab\.exe/);
+    }
+    expect(resolveIntent("Open Chrome.")).toMatchObject({
+      kind: "appOpen",
+      query: "Chrome",
+    });
+    expect(resolveIntent("Open my recent browser.")).toMatchObject({
+      kind: "browserOpen",
+    });
+    expect(resolveIntent("What can you do with browsers?").kind).toBe(
+      "browserExplain",
+    );
+  });
 });

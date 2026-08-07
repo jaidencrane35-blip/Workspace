@@ -57,11 +57,12 @@ Product Complete means the software naturally guides the user through successful
 
 - hidden timing  
 - workarounds  
-- memorized phrasing  
+- memorized commands or phrasing  
 - undocumented operating system knowledge  
-- rigid command wording  
+- precise capitalization  
+- rigid wording  
 
-**The software adapts to the user. The user does not adapt to the software.**
+**The software adapts to the user. The user never adapts to the software.**
 
 This principle sits alongside Natural Language Robustness and the Product Proof philosophy.  
 Unsupported requests must still be **truthful**, with helpful nearby guidance — never repetitive mechanical fallbacks or invented success.

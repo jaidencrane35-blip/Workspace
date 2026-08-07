@@ -62,6 +62,10 @@ describe("conversation quality (P16.6)", () => {
       kind: "browserOpen",
       url: "https://chatgpt.com",
     });
+    expect(resolveIntent("Open a new GPT tab")).toMatchObject({
+      kind: "browserOpen",
+      url: "https://chatgpt.com",
+    });
     expect(resolveIntent("Open my browser.")).toMatchObject({
       kind: "browserOpen",
     });
@@ -69,6 +73,9 @@ describe("conversation quality (P16.6)", () => {
       kind: "browserOpenBeside",
       beside: "Cursor",
     });
+    expect(resolveIntent("Take a screenshot and copy it.").kind).toBe(
+      "screenshotCaptureAndCopy",
+    );
     expect(resolveIntent("What windows are open?").kind).toBe("winEnumerate");
     expect(resolveIntent("Bring Chrome to the front.")).toMatchObject({
       kind: "winFocus",
