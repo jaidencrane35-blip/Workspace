@@ -65,9 +65,12 @@ if (!registry.includes("node.requirements")) {
 if (!grammar.includes("next\\s+to") && !grammar.includes("next to")) {
   fail("grammar must reason beside/next to (not open-only)");
 }
-// Beside must be parsed before bare “I want X”
+// Beside must be parsed before bare “I want/need X”
 const besideIdx = grammar.indexOf("beside|next");
-const goalIdx = grammar.indexOf("take\\s+me\\s+to|go\\s+to|i\\s+want");
+const goalIdx = Math.max(
+  grammar.indexOf("take\\s+me\\s+to|go\\s+to|i\\s+want"),
+  grammar.indexOf("take\\s+me\\s+to|go\\s+to|i\\s+(?:want|need)"),
+);
 if (besideIdx < 0 || goalIdx < 0 || besideIdx > goalIdx) {
   fail("beside/next-to must be parsed before bare goal phrasing");
 }

@@ -1,10 +1,10 @@
 /**
- * Capability Registry (P16.31 / P16.32) — single source of truth for discovery.
+ * Capability Registry (P16.31–P16.34) — single source of truth for discovery.
  *
  * If a Conversation-facing desktop capability exists, it is declared here.
  * If it is not declared here, discovery must not claim it.
  *
- * Discovery replies are generated only from this graph — never hard-coded catalogues.
+ * Discovery / recovery / related guidance are generated only from this graph.
  * Providers never see this registry.
  */
 
@@ -17,9 +17,15 @@ export interface CapabilityNode {
   aliases: string[];
   objects: string[];
   modifiers: string[];
+  /** Supported argument shapes (Owner-facing). */
+  arguments: string[];
   requirements: string[];
   limitations: string[];
   examples: string[];
+  /** How Conversation recovers when this capability cannot complete. */
+  failureRecovery: string;
+  /** Related capability ids in this graph. */
+  related: string[];
   /** Short Owner-facing note used only when generating discovery text. */
   documentation: string;
 }
@@ -34,6 +40,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     aliases: ["run", "start up", "take me to"],
     objects: ["apps", "Microsoft Store", "Cursor", "Notepad", "File Explorer"],
     modifiers: ["to the front", "full size", "beside"],
+    arguments: ["app name", "optional layout (full size / beside)"],
     requirements: ["Windows can find or launch the app"],
     limitations: [
       "Unknown app names are never invented as programs",
@@ -44,7 +51,11 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
       "Open Cursor to full size",
       "Open Notepad",
     ],
-    documentation: "Resolved apps go through Find → Focus or Launch — never raw transcripts.",
+    failureRecovery:
+      "Say a known app name, or ask what applications I can control — I won’t invent a program.",
+    related: ["focus-window", "browser", "folders"],
+    documentation:
+      "Resolved apps go through Find → Focus or Launch — never raw transcripts.",
   },
   {
     id: "focus-window",
@@ -54,6 +65,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     aliases: ["activate", "put in front", "take me to"],
     objects: ["Chrome", "Edge", "Cursor", "ChatGPT", "YouTube"],
     modifiers: ["browser with …", "application with …"],
+    arguments: ["window title hint", "optional follow-up (minimize)"],
     requirements: ["A matching window is open"],
     limitations: ["Matches window titles — not deep browser-tab APIs"],
     examples: [
@@ -62,6 +74,9 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
       "Focus Edge",
       "Locate the browser with YouTube open",
     ],
+    failureRecovery:
+      "Ask what windows are open, or name the app/site window you want — I won’t invent a window.",
+    related: ["window-state", "browser", "open-app"],
     documentation: "Locate/focus compose to Window focus (and optional minimise).",
   },
   {
@@ -72,6 +87,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     aliases: ["full size", "unminimize"],
     objects: ["Cursor", "Chrome", "this window"],
     modifiers: ["left", "right", "to monitor"],
+    arguments: ["window target", "state or edge", "optional monitor number"],
     requirements: ["A matching window is open"],
     limitations: ["Bulk “minimise all apps” is not supported"],
     examples: [
@@ -80,7 +96,10 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
       "Minimize ChatGPT",
       "Snap Chrome left",
     ],
-    documentation: "Window state changes are Kernel Window operations only.",
+    failureRecovery:
+      "Name the window and the change (maximize, snap left, other monitor) — or ask what windows are open.",
+    related: ["focus-window", "browser"],
+    documentation: "Window state changes apply only to matching open windows.",
   },
   {
     id: "browser",
@@ -90,6 +109,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     aliases: ["browse", "launch site", "take me to"],
     objects: ["ChatGPT", "YouTube", "GitHub", "Google"],
     modifiers: ["beside", "in a new tab", "and bring to the front"],
+    arguments: ["site name or URL", "optional beside target", "optional focus"],
     requirements: ["A browser is available on this PC"],
     limitations: ["Site names resolve to known URLs — not arbitrary search"],
     examples: [
@@ -97,6 +117,9 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
       "Open YouTube beside Cursor",
       "Open GPT and bring it to the front",
     ],
+    failureRecovery:
+      "Name a known site (ChatGPT, YouTube, GitHub) or ask what I can do with browsers.",
+    related: ["focus-window", "window-state", "open-app"],
     documentation: "Browser open may compose with Window focus or snap.",
   },
   {
@@ -107,10 +130,14 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     aliases: ["snap a picture of"],
     objects: ["desktop", "window", "monitor"],
     modifiers: ["and copy"],
+    arguments: ["capture target (desktop / window / monitor index)"],
     requirements: ["Screenshot capability available"],
     limitations: ["Does not edit images after capture"],
     examples: ["Take a screenshot", "Capture this window"],
-    documentation: "Screenshot capture/copy is Kernel composition across screenshot ops.",
+    failureRecovery:
+      "Try “take a screenshot” or “capture this window”. Finding old screenshot files uses Folders (Pictures).",
+    related: ["folders", "clipboard"],
+    documentation: "Screenshot capture can compose with copy when you ask.",
   },
   {
     id: "clipboard",
@@ -120,9 +147,12 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     aliases: ["what’s on the clipboard"],
     objects: ["clipboard text"],
     modifiers: [],
+    arguments: ["optional text to copy"],
     requirements: ["Clipboard access allowed"],
     limitations: ["Does not scrape arbitrary app UIs"],
     examples: ["What’s on my clipboard?", "Copy this text"],
+    failureRecovery: "Ask what’s on the clipboard, or tell me the text to copy.",
+    related: ["screenshots"],
     documentation: "Clipboard is a first-class capability domain.",
   },
   {
@@ -133,9 +163,12 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     aliases: ["toast", "alert me"],
     objects: ["notification"],
     modifiers: [],
+    arguments: ["notification text", "optional title"],
     requirements: ["Notifications available"],
     limitations: ["Does not replace the Windows Action Center"],
     examples: ["Show me a notification: Done"],
+    failureRecovery: "Say “show me a notification: …” with the message text.",
+    related: [],
     documentation: "Notifications are shown under Workspace governance.",
   },
   {
@@ -146,10 +179,15 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     aliases: ["talk", "voice"],
     objects: ["microphone"],
     modifiers: ["review then Send"],
+    arguments: ["spoken words → same Intent path as typing"],
     requirements: ["Microphone and speech privacy allowed"],
     limitations: ["Recognition quality follows Windows dictation"],
     examples: ["Can you hear me?", "What can you do with voice?"],
-    documentation: "Voice is an input device — transcript follows the same Intent path as typing.",
+    failureRecovery:
+      "Use the microphone, review the transcript, then Send — or type the same request.",
+    related: [],
+    documentation:
+      "Voice is an input device — transcript follows the same Intent path as typing.",
   },
   {
     id: "folders",
@@ -159,13 +197,20 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     aliases: ["go to folder", "take me to"],
     objects: ["Pictures", "Documents", "Downloads", "Desktop"],
     modifiers: ["in File Explorer", "to folder"],
+    arguments: ["known folder name (Pictures, Downloads, …)"],
     requirements: ["File Explorer available"],
-    limitations: ["Uses known shell folders — not arbitrary paths"],
+    limitations: [
+      "Uses known shell folders — not arbitrary paths",
+      "Cannot filter folder contents by date from Conversation",
+    ],
     examples: [
       "Open File Explorer and locate Pictures",
       "Locate Downloads",
       "Show my Desktop",
     ],
+    failureRecovery:
+      "Name a common folder (Downloads, Pictures, Desktop, Documents) — I won’t invent paths.",
+    related: ["open-app", "screenshots"],
     documentation: "Folders open via Windows shell: URIs.",
   },
 ];
@@ -195,7 +240,7 @@ export function isCapabilityDiscoveryUtterance(text: string): boolean {
     /^(show( me)?( your)? capabilities|list (your )?capabilities|list desktop (actions|commands)|what are your capabilities|capabilities)$/i.test(
       t,
     ) ||
-    /^(show me everything you can control|what can you control|everything you can control)$/i.test(
+    /^(show me everything you can (control|do)|what can you control|everything you can (control|do))$/i.test(
       t,
     ) ||
     /^(what (desktop )?tasks can you perform|what can you do on (the )?desktop|desktop (help|capabilities)|help with (the )?desktop)$/i.test(
@@ -250,9 +295,37 @@ function nodesForScope(scope: DiscoveryScope): CapabilityNode[] {
   }
 }
 
+export function getCapabilityById(id: string): CapabilityNode | undefined {
+  return CAPABILITY_GRAPH.find((n) => n.id === id);
+}
+
+/** Full self-description of one capability — Registry only. */
+export function describeCapability(id: string): string | null {
+  const node = getCapabilityById(id);
+  if (!node) {
+    return null;
+  }
+  const related = node.related
+    .map((rid) => getCapabilityById(rid)?.domain)
+    .filter(Boolean)
+    .join(", ");
+  return [
+    `${node.domain}: ${node.summary}`,
+    `Does: ${node.documentation}`,
+    `Arguments: ${node.arguments.join("; ") || "none"}`,
+    `Needs: ${node.requirements.join("; ")}`,
+    `Won’t: ${node.limitations.join("; ")}`,
+    `If it fails: ${node.failureRecovery}`,
+    related ? `Related: ${related}` : "",
+    `Example — “${node.examples[0] ?? node.summary}”`,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 /**
  * Generate a Conversation reply from the live capability graph only.
- * Self-describing: can / cannot / requirements / examples — never a separate hard-coded catalogue.
+ * Self-describing: can / cannot / why / arguments / recovery / related.
  */
 export function generateCapabilityDiscovery(scope: DiscoveryScope = "all"): {
   reply: string;
@@ -271,13 +344,18 @@ export function generateCapabilityDiscovery(scope: DiscoveryScope = "all"): {
 
   const canLines = nodes.map((node) => {
     const example = node.examples[0] ?? node.summary;
+    const args = node.arguments[0] ? ` Args — ${node.arguments[0]}.` : "";
     const need = node.requirements[0] ? ` Needs — ${node.requirements[0]}.` : "";
-    return `• ${node.domain}: ${node.summary}. Example — “${example}”.${need}`;
+    return `• ${node.domain}: ${node.summary}. Example — “${example}”.${args}${need}`;
   });
 
   const cannotLines = nodes.flatMap((node) =>
     node.limitations.map((limit) => `• ${node.domain}: ${limit}`),
   );
+
+  const recoveryLines = nodes
+    .slice(0, 4)
+    .map((node) => `• ${node.domain}: ${node.failureRecovery}`);
 
   const why =
     "I only claim actions the Capability graph declares — I won’t invent apps, folders, or success.";
@@ -289,8 +367,10 @@ export function generateCapabilityDiscovery(scope: DiscoveryScope = "all"): {
     ...canLines,
     cannotLines.length > 0 ? "What I won’t overclaim:" : "",
     ...cannotLines.slice(0, 8),
+    recoveryLines.length > 0 ? "If something doesn’t work:" : "",
+    ...recoveryLines,
     `Why: ${why}`,
-    "Say what you want in ordinary words — I’ll turn it into desktop actions.",
+    "Say what you want in ordinary words — I’ll plan desktop actions before I run them.",
   ]
     .filter((line) => line !== "")
     .join("\n");
@@ -314,32 +394,61 @@ export function suggestNearbyCapabilities(seed: string, limit = 3): string {
       if (key && e.includes(key.slice(0, Math.min(6, key.length)))) score += 2;
       if (node.objects.some((o) => o.toLowerCase().includes(key))) score += 3;
       if (node.verbs.some((v) => key.includes(v))) score += 1;
-      return { example, score };
+      return { example, score, node };
     }),
   )
-    .sort((a, b) => b.score - a.score)
-    .map((x) => x.example);
+    .sort((a, b) => b.score - a.score);
 
-  const unique = [...new Set(scored)].slice(0, limit);
+  const unique = [...new Set(scored.map((x) => x.example))].slice(0, limit);
   if (unique.length === 0) {
     return CAPABILITY_GRAPH.flatMap((n) => n.examples).slice(0, limit).join("”, “");
   }
   return unique.join("”, “");
 }
 
-/** Truthful recovery reply built only from registry limitations + nearby examples. */
+function bestMatchingNode(seed: string): CapabilityNode | null {
+  const key = seed.trim().toLowerCase();
+  if (!key) {
+    return null;
+  }
+  let best: { node: CapabilityNode; score: number } | null = null;
+  for (const node of CAPABILITY_GRAPH) {
+    let score = 0;
+    if (node.objects.some((o) => key.includes(o.toLowerCase()) || o.toLowerCase().includes(key))) {
+      score += 3;
+    }
+    if (node.verbs.some((v) => key.includes(v))) score += 2;
+    if (node.domain.toLowerCase().includes(key) || key.includes(node.domain.toLowerCase())) {
+      score += 2;
+    }
+    if (score > 0 && (!best || score > best.score)) {
+      best = { node, score };
+    }
+  }
+  return best?.node ?? null;
+}
+
+/** Truthful recovery reply built only from registry recovery + nearby examples. */
 export function generateRecoveryGuidance(seed: string): {
   reply: string;
   suggestion: string;
 } {
   const nearby = suggestNearbyCapabilities(seed, 3);
-  const limits = CAPABILITY_GRAPH.flatMap((n) =>
-    n.limitations.slice(0, 1).map((l) => `${n.domain}: ${l}`),
-  ).slice(0, 3);
+  const matched = bestMatchingNode(seed);
+  const recovery =
+    matched?.failureRecovery ??
+    "Ask what I can do, or name a desktop action in ordinary words.";
+  const related = matched?.related
+    .map((id) => getCapabilityById(id)?.examples[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("”, “");
+
   const reply = [
     `I can’t do that exactly as asked — and I won’t invent a desktop action.`,
-    limits.length > 0 ? `Related limits: ${limits.join("; ")}.` : "",
-    nearby ? `Closest things I can try: “${nearby}”.` : "",
+    `Recovery: ${recovery}`,
+    related ? `Related I can try: “${related}”.` : "",
+    nearby && !related ? `Closest things I can try: “${nearby}”.` : "",
   ]
     .filter(Boolean)
     .join(" ");

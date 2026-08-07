@@ -507,6 +507,49 @@ function reasonCognitiveDesktop(text: string): IntentAction | null {
     };
   }
 
+  // Previous browser / browser I had before — honest: no full history, focus common browser
+  if (
+    /^(open|bring\s+back|show|find|get)\s+(the\s+)?browser\s+(i\s+had\s+before|from\s+before|i\s+was\s+using)$/i.test(
+      text,
+    ) ||
+    /^browser\s+(i\s+had\s+before|from\s+before)$/i.test(text)
+  ) {
+    return {
+      kind: "winFocus",
+      query: "Chrome",
+      reply:
+        "Looking for your browser. I don’t keep a full history of which browser window was last — I’ll bring forward the one I can find.",
+    };
+  }
+
+  // Take me where I was / take me back — Continue surface (Owner approves restore)
+  if (
+    /^take\s+me\s+where\s+i\s+was$|^where\s+i\s+was$|^take\s+me\s+back(?:\s+there)?$/i.test(
+      text,
+    )
+  ) {
+    return {
+      kind: "navigate",
+      view: "resume",
+      reply:
+        "Opening Continue. I can’t reconstruct an unspoken session from memory — restore only runs after you approve a saved Moment.",
+    };
+  }
+
+  // Work setup — truthful path through Continue / Save, not invented multi-app automation
+  if (
+    /^(i\s+need\s+)?(my\s+)?work\s+setup$|^(open|restore|bring\s+back)\s+(my\s+)?work\s+setup$/i.test(
+      text,
+    )
+  ) {
+    return {
+      kind: "navigate",
+      view: "resume",
+      reply:
+        "Opening Continue for your work setup. If you’ve saved a Moment, approve a restore plan there — I won’t invent a multi-app layout.",
+    };
+  }
+
   // Other / second / next monitor (commodity: monitor 2 — primary is usually 1)
   const otherMonitor = text.match(
     /^(?:put|move|send)\s+(.+?)\s+(?:on|to)\s+(?:the\s+)?(other|second|next)\s+monitor$/i,

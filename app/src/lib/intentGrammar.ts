@@ -265,9 +265,9 @@ export function parseDesktopIntent(raw: string): DesktopIntent | null {
     };
   }
 
-  // Open / put / place / I want X beside|next to|alongside Y — before bare “I want X”
+  // Open / put / place / I want|need X beside|next to|alongside Y — before bare goal phrasing
   const beside = text.match(
-    /^(?:open|launch|put|place|i\s+want)\s+(.+?)\s+(?:beside|next\s+to|alongside)\s+(.+)$/i,
+    /^(?:open|launch|put|place|i\s+(?:want|need))\s+(.+?)\s+(?:beside|next\s+to|alongside)\s+(.+)$/i,
   );
   if (beside?.[1] && beside[2]) {
     return {
@@ -283,7 +283,7 @@ export function parseDesktopIntent(raw: string): DesktopIntent | null {
 
   // Goal phrasing for desktop entities only — do not steal “show me a notification / windows”.
   const goal = text.match(
-    /^(?:take\s+me\s+to|go\s+to|i\s+want)\s+(.+)$/i,
+    /^(?:take\s+me\s+to|go\s+to|i\s+(?:want|need))\s+(.+)$/i,
   );
   if (goal?.[1]) {
     const target = goal[1].trim();

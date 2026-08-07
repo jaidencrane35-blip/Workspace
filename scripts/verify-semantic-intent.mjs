@@ -21,8 +21,11 @@ const required = [
   "docs/capability-runtime/product-proof/VOICE_P16_31_SEMANTIC_INTENT.md",
   "docs/capability-runtime/product-proof/VOICE_P16_32_TRUST_VALIDATION.md",
   "docs/capability-runtime/product-proof/VOICE_P16_33_COGNITIVE_DESKTOP.md",
+  "docs/capability-runtime/product-proof/VOICE_P16_34_DESKTOP_COGNITION.md",
   "tests/semantic-hostile-nl.test.ts",
   "tests/cognitive-desktop-nl.test.ts",
+  "tests/execution-planner.test.ts",
+  "app/src/lib/executionPlanner.ts",
 ];
 
 for (const rel of required) {

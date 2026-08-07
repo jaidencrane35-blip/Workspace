@@ -1,12 +1,17 @@
 /**
- * Intent pipeline evidence (P16.32).
+ * Intent pipeline evidence (P16.32–P16.34).
  *
- * Every utterance resolution must be attributable to stages.
+ * Goal → Intent → Capabilities → Execution Plan → Execution → Evidence.
  * Conversation never bypasses Intent → CapabilityIntent for desktop effects.
  */
 
 import { parseDesktopIntent } from "./intentGrammar";
 import { resolveIntent, type IntentAction } from "./intentBridge";
+import {
+  buildExecutionPlan,
+  summarizeExecutionPlan,
+  type ExecutionPlan,
+} from "./executionPlanner";
 import { resolveDesktopEntity, resolveSemanticIntent } from "./semanticIntentEngine";
 import { isCapabilityDiscoveryUtterance } from "./capabilityRegistry";
 
@@ -16,6 +21,7 @@ export interface PipelineStageEvidence {
     | "capability_discovery"
     | "intent_grammar"
     | "semantic_engine"
+    | "execution_plan"
     | "resolve_intent"
     | "executable_guard";
   hit: boolean;
@@ -26,6 +32,7 @@ export interface IntentPipelineEvidence {
   utterance: string;
   stages: PipelineStageEvidence[];
   action: IntentAction;
+  plan: ExecutionPlan;
   /** True when Semantic Engine produced the final action (or discovery). */
   semanticOwned: boolean;
   /** True when an unknown open/launch was refused instead of inventing .exe. */
@@ -75,9 +82,16 @@ export function resolveIntentWithEvidence(raw: string): IntentPipelineEvidence {
     detail: `kind=${action.kind}`,
   });
 
+  const plan = buildExecutionPlan(utterance, action);
+  stages.push({
+    stage: "execution_plan",
+    hit: plan.steps.length > 0,
+    detail: `${plan.steps.length} steps; multi=${plan.multiStep}; ${summarizeExecutionPlan(plan)}`,
+  });
+
   const looksLikeOpen =
     /^(open|launch|start)\b/i.test(utterance) ||
-    /^(take me to|show me|go to|i want)\b/i.test(utterance);
+    /^(take me to|show me|go to|i want|i need)\b/i.test(utterance);
   const entity = grammar?.target
     ? resolveDesktopEntity(grammar.target)
     : null;
@@ -107,6 +121,7 @@ export function resolveIntentWithEvidence(raw: string): IntentPipelineEvidence {
     utterance,
     stages,
     action,
+    plan,
     semanticOwned: discovery || semanticOwned || Boolean(semantic && action.kind === semantic.kind),
     refusedExecutableGuess: refused,
   };
