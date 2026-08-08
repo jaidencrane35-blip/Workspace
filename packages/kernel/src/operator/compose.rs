@@ -394,6 +394,51 @@ fn compose_completion(
                 "partial",
             ))
         }
+        "window.wait_condition" => {
+            let subject = intent
+                .text
+                .as_deref()
+                .or(intent.title.as_deref())
+                .or(intent.query.as_deref())
+                .unwrap_or("that condition");
+            let wait_ok = step_ok(results, 0);
+            if results.len() == 1 {
+                if wait_ok {
+                    let msg = results
+                        .first()
+                        .and_then(|r| r.message.clone())
+                        .unwrap_or_else(|| format!("Condition met for “{subject}”."));
+                    return Some((true, sanitize_owner_message(&msg), "completed"));
+                }
+                let msg = results
+                    .first()
+                    .and_then(|r| r.message.as_deref())
+                    .unwrap_or("The expected condition never occurred.");
+                return Some((false, sanitize_owner_message(msg), "failed"));
+            }
+            let observe_ok = step_ok(results, 1);
+            if wait_ok && observe_ok {
+                return Some((
+                    true,
+                    format!("Confirmed “{subject}” after waiting."),
+                    "completed",
+                ));
+            }
+            if wait_ok && !observe_ok {
+                return Some((
+                    false,
+                    format!(
+                        "The wait succeeded for “{subject}”, but I couldn’t confirm it afterward."
+                    ),
+                    "partial",
+                ));
+            }
+            let msg = results
+                .first()
+                .and_then(|r| r.message.as_deref())
+                .unwrap_or("The expected condition never occurred.");
+            Some((false, sanitize_owner_message(msg), "failed"))
+        }
         "screenshots.capture_and_copy" => {
             let capture_ok = step_ok(results, 0);
             let copy_ok = step_ok(results, 1);
@@ -674,6 +719,13 @@ pub fn compose_user_reply(
                     .as_deref()
                     .unwrap_or("I couldn’t type into that field."),
             ),
+            ("window", "wait_condition") | ("window", "wait") | ("window", "wait_until") => {
+                strip_jargon(
+                    last.message
+                        .as_deref()
+                        .unwrap_or("The expected condition never occurred."),
+                )
+            }
             ("application", "enumerate") => {
                 let titles = last
                     .items

@@ -86,6 +86,8 @@ pub enum CapabilityOperation {
     InvokeControl,
     /// Window Provider — C-ACT-005 Keyboard Input (UIA set value).
     SetControlValue,
+    /// Window Provider — C-VER-003 Wait Conditions (bounded observe poll).
+    WaitCondition,
 }
 
 impl CapabilityOperation {
@@ -121,6 +123,7 @@ impl CapabilityOperation {
             Self::FindControl => "find_control",
             Self::InvokeControl => "invoke_control",
             Self::SetControlValue => "set_control_value",
+            Self::WaitCondition => "wait_condition",
         }
     }
 
@@ -167,6 +170,7 @@ impl CapabilityOperation {
             "set_control_value" | "type_control" | "keyboard_input" => {
                 Some(Self::SetControlValue)
             }
+            "wait_condition" | "wait" | "wait_until" => Some(Self::WaitCondition),
             _ => None,
         }
     }

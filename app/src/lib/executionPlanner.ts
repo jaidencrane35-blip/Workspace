@@ -211,6 +211,27 @@ export function buildExecutionPlan(
           step("verify", "Confirm the field is still observable", "keyboard-input"),
         ],
       };
+    case "winWaitCondition":
+      return {
+        goal,
+        capabilities: caps("wait-conditions", "window-control-discovery"),
+        multiStep: true,
+        action,
+        steps: [
+          step(
+            "verify",
+            "Wait for the expected desktop condition (bounded timeout)",
+            "wait-conditions",
+            "delegated_to_kernel",
+          ),
+          step(
+            "observe",
+            "Re-check the observable state when applicable",
+            "window-control-discovery",
+          ),
+          step("complete", "Report completed or timeout truthfully", null),
+        ],
+      };
     case "winFindControl":
       return {
         goal,

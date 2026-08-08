@@ -1,4 +1,5 @@
-//! UI Automation port — observation (C-OBS-003/004) + interaction (C-ACT-004/005).
+//! UI Automation port — observation (C-OBS-003/004) + interaction (C-ACT-004/005)
+//! + wait fixtures (C-VER-003).
 //!
 //! WRAP Windows UI Automation. Providers never invent success: locate → act → verify.
 
@@ -117,9 +118,11 @@ impl UiAutomationPort for StubUiAutomationPort {
     }
 }
 
-/// In-memory fixture for Kernel unit tests (mutable interaction state).
+/// In-memory fixture for Kernel unit tests (mutable interaction + wait scheduling).
 pub struct MemoryUiAutomationPort {
-    pub controls: Vec<UiControlSnapshot>,
+    controls: Mutex<Vec<UiControlSnapshot>>,
+    appear_at: Mutex<Vec<(std::time::Instant, UiControlSnapshot)>>,
+    disappear_at: Mutex<Vec<(std::time::Instant, String)>>,
     values: Mutex<HashMap<String, String>>,
     invoked: Mutex<HashSet<String>>,
 }
@@ -127,7 +130,7 @@ pub struct MemoryUiAutomationPort {
 impl MemoryUiAutomationPort {
     pub fn fixture() -> Self {
         Self {
-            controls: vec![
+            controls: Mutex::new(vec![
                 UiControlSnapshot {
                     name: "File".into(),
                     control_type: "MenuItem".into(),
@@ -143,16 +146,79 @@ impl MemoryUiAutomationPort {
                     control_type: "Button".into(),
                     automation_id: "SaveBtn".into(),
                 },
-            ],
+            ]),
+            appear_at: Mutex::new(Vec::new()),
+            disappear_at: Mutex::new(Vec::new()),
             values: Mutex::new(HashMap::new()),
             invoked: Mutex::new(HashSet::new()),
+        }
+    }
+
+    /// Schedule a control to become discoverable after `delay_ms` (C-VER-003 tests).
+    pub fn schedule_appear(&self, control: UiControlSnapshot, delay_ms: u64) {
+        let at = std::time::Instant::now() + std::time::Duration::from_millis(delay_ms);
+        self.appear_at
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .push((at, control));
+    }
+
+    /// Schedule a control to leave the live set after `delay_ms`.
+    pub fn schedule_disappear(&self, name: &str, delay_ms: u64) {
+        let at = std::time::Instant::now() + std::time::Duration::from_millis(delay_ms);
+        self.disappear_at
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .push((at, name.to_string()));
+    }
+
+    /// Remove a control from the live set immediately (for control_gone waits).
+    pub fn remove_control_named(&self, name: &str) {
+        let mut controls = self.controls.lock().unwrap_or_else(|e| e.into_inner());
+        controls.retain(|c| !c.name.eq_ignore_ascii_case(name));
+    }
+
+    fn flush_scheduled(&self) {
+        let now = std::time::Instant::now();
+        {
+            let mut pending = self.appear_at.lock().unwrap_or_else(|e| e.into_inner());
+            let mut controls = self.controls.lock().unwrap_or_else(|e| e.into_inner());
+            let mut remain = Vec::new();
+            for (at, control) in pending.drain(..) {
+                if at <= now {
+                    if !controls
+                        .iter()
+                        .any(|c| c.name.eq_ignore_ascii_case(&control.name))
+                    {
+                        controls.push(control);
+                    }
+                } else {
+                    remain.push((at, control));
+                }
+            }
+            *pending = remain;
+        }
+        {
+            let mut pending = self.disappear_at.lock().unwrap_or_else(|e| e.into_inner());
+            let mut controls = self.controls.lock().unwrap_or_else(|e| e.into_inner());
+            let mut remain = Vec::new();
+            for (at, name) in pending.drain(..) {
+                if at <= now {
+                    controls.retain(|c| !c.name.eq_ignore_ascii_case(&name));
+                } else {
+                    remain.push((at, name));
+                }
+            }
+            *pending = remain;
         }
     }
 }
 
 impl UiAutomationPort for MemoryUiAutomationPort {
     fn enumerate_controls(&self, _hwnd: &str, limit: usize) -> Result<Vec<UiControlSnapshot>> {
-        Ok(self.controls.iter().take(limit.max(1)).cloned().collect())
+        self.flush_scheduled();
+        let controls = self.controls.lock().unwrap_or_else(|e| e.into_inner());
+        Ok(controls.iter().take(limit.max(1)).cloned().collect())
     }
 
     fn invoke_control(&self, hwnd: &str, control_query: &str) -> Result<UiInteractionOutcome> {

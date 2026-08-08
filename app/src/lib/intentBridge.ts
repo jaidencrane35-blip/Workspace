@@ -127,6 +127,18 @@ export type IntentAction =
       text: string;
       reply: string;
     }
+  | {
+      kind: "winWaitCondition";
+      condition:
+        | "control_available"
+        | "control_gone"
+        | "window_available"
+        | "window_active";
+      control?: string;
+      query: string;
+      duration?: string;
+      reply: string;
+    }
   | { kind: "winActive"; reply: string }
   | { kind: "winMonitors"; reply: string }
   | { kind: "winBounds"; query: string; reply: string }
@@ -1083,6 +1095,126 @@ function resolveWindowControlDiscovery(text: string): IntentAction | null {
   };
 }
 
+/** C-VER-003 — bounded wait for an observable desktop condition. */
+function resolveWindowWaitCondition(text: string): IntentAction | null {
+  const gone =
+    text.match(
+      /^(?:wait\s+(?:for|until)\s+)(?:the\s+)?(.+?)\s+(?:to\s+)?(?:disappear(?:s|ed)?|go(?:es|ing)?\s+away|be\s+gone|vanish(?:es|ed)?)(?:\s+(?:in|inside|on|within)\s+(.+))?$/i,
+    ) ??
+    text.match(
+      /^(?:wait\s+(?:until|for)\s+)(?:the\s+)?(.+?)\s+(?:is\s+)?gone(?:\s+(?:in|inside|on|within)\s+(.+))?$/i,
+    );
+  if (gone) {
+    const control = gone[1]
+      .trim()
+      .replace(/[.!?]+$/g, "")
+      .replace(/^(the|a|an)\s+/i, "")
+      .replace(/\s+(button|menu|control|field|item|window)$/i, "")
+      .trim();
+    const windowRaw = (gone[2] ?? "this").trim().replace(/[.!?]+$/g, "");
+    const query = /^(this|it|the window|this window|active|current)?$/i.test(
+      windowRaw,
+    )
+      ? "this"
+      : windowRaw || "this";
+    if (control) {
+      return {
+        kind: "winWaitCondition",
+        condition: "control_gone",
+        control,
+        query,
+        reply:
+          query === "this"
+            ? `Waiting until “${control}” is gone in the active window.`
+            : `Waiting until “${control}” is gone in “${query}”.`,
+      };
+    }
+  }
+
+  const active = text.match(
+    /^(?:wait\s+(?:for|until)\s+)(.+?)\s+(?:is\s+)?(?:active|focused|in\s+front|foreground)(?:\s+window)?$/i,
+  );
+  if (active) {
+    const windowRaw = active[1].trim().replace(/[.!?]+$/g, "");
+    const query = /^(this|it|the window|this window|active|current)?$/i.test(
+      windowRaw,
+    )
+      ? "this"
+      : windowRaw;
+    if (query) {
+      return {
+        kind: "winWaitCondition",
+        condition: "window_active",
+        query,
+        reply: `Waiting until “${query}” is active.`,
+      };
+    }
+  }
+
+  const windowAvail = text.match(
+    /^(?:wait\s+(?:for|until)\s+)(.+?)\s+(?:window\s+)?(?:is\s+)?(?:available|open|ready)$/i,
+  );
+  if (windowAvail) {
+    const windowRaw = windowAvail[1]
+      .trim()
+      .replace(/[.!?]+$/g, "")
+      .replace(/\s+window$/i, "");
+    const query = /^(this|it|the window|this window|active|current)?$/i.test(
+      windowRaw,
+    )
+      ? "this"
+      : windowRaw;
+    if (query && !/\b(button|menu|control|field|item)\b/i.test(query)) {
+      return {
+        kind: "winWaitCondition",
+        condition: "window_available",
+        query,
+        reply: `Waiting until “${query}” is available.`,
+      };
+    }
+  }
+
+  if (/\b(disappear|vanish|go(?:es)?\s+away|be\s+gone)\b/i.test(text)) {
+    return null;
+  }
+
+  const appear =
+    text.match(
+      /^(?:wait\s+(?:for|until)\s+)(?:the\s+)?(.+?)\s+(?:to\s+)?(?:appear|show\s+up|be\s+available|become\s+available)(?:\s+(?:in|inside|on|within)\s+(.+))?$/i,
+    ) ??
+    text.match(
+      /^(?:wait\s+(?:for|until)\s+)(?:the\s+)?(.+?)(?:\s+(?:button|menu|control|field|item))?(?:\s+(?:in|inside|on|within)\s+(.+))$/i,
+    );
+  if (appear) {
+    const control = appear[1]
+      .trim()
+      .replace(/[.!?]+$/g, "")
+      .replace(/^(the|a|an)\s+/i, "")
+      .replace(/\s+(button|menu|control|field|item)$/i, "")
+      .trim();
+    const windowRaw = (appear[2] ?? "this").trim().replace(/[.!?]+$/g, "");
+    const query = /^(this|it|the window|this window|active|current)?$/i.test(
+      windowRaw,
+    )
+      ? "this"
+      : windowRaw || "this";
+    if (control) {
+      return {
+        kind: "winWaitCondition",
+        condition: "control_available",
+        control,
+        query,
+        reply:
+          query === "this"
+            ? `Waiting for “${control}” in the active window.`
+            : `Waiting for “${control}” in “${query}”.`,
+      };
+    }
+  }
+
+  return null;
+}
+
 /** C-ACT-004 / C-ACT-005 — click / type named controls (before semantic soft-miss). */
 function resolveWindowControlInteraction(text: string): IntentAction | null {
   const click =
@@ -1469,6 +1601,14 @@ function resolveIntentCore(raw: string): IntentAction {
 
   if (isVoiceCheckUtterance(text) || isVoiceCheckUtterance(matchText)) {
     return voiceCheckReply(raw);
+  }
+
+  // C-VER-003 before click/type so “wait for Save…” is not misread as click.
+  const waitCondition =
+    resolveWindowWaitCondition(text) ??
+    (matchText !== text ? resolveWindowWaitCondition(matchText) : null);
+  if (waitCondition) {
+    return waitCondition;
   }
 
   // C-ACT-004/005 before C-OBS-004 / semantic soft-miss.

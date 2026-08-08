@@ -656,13 +656,24 @@ Overall .................  57%
 | --- | --- |
 | **Name** | Wait Conditions |
 | **Layer** | L6 Verification |
-| **Status** | **PLANNED** |
-| **Lifecycle** | Planned |
-| **Dependencies** | C-ACT-004 / C-ACT-005 |
-| **Verification** | Planned |
-| **Product Proof** | With UI action slice |
-| **Priority** | P0 (with click/type) |
-| **Engineering Notes** | DesktopCtl-style wait/verify ADAPT |
+| **Status** | **IMPLEMENTED** (engineering) |
+| **Lifecycle** | Verifying → **Product Proof required** |
+| **Dependencies** | C-OBS-003/004; C-ACT-004/005 (compose path; click/type unchanged); C-VER-001 |
+| **Verification** | `verify-wait-conditions`, `tests/wait-conditions.test.ts`, kernel `wait_condition_*` + `window_wait_condition_through_router` |
+| **Product Proof** | `P22_S5_WAIT_CONDITIONS.md` — Owner session required |
+| **Priority** | P0 (PP pending) |
+| **Engineering Notes** | Bounded poll (default 2s / max 8s / 50ms). Conditions: control_available, control_gone, window_available, window_active. Operator composition `window.wait_condition`: Wait → Find (when control_available). Not a retry/agent/workflow engine. Uses existing Window/UIA observe primitives. |
+| **Readiness** | Overall **57%** |
+| | ```text
+Architecture ............ 100%
+Dependencies ............ 100%
+Implementation .......... 100%
+Verification ............ 100%
+Product Proof ...........   0%
+Trusted .................   0%
+Production ..............   0%
+Overall .................  57%
+``` |
 
 ---
 
@@ -933,8 +944,9 @@ C-CON-001 Conversation
                └─ C-WF-002 Moments
 
 PLANNED spine:
-  C-OBS-003/004 + C-ACT-004/005 (eng done → PP) ──► C-VER-003 Wait
-                                                       └─► C-PROC / C-WF (later)
+  C-OBS-003/004 + C-ACT-004/005 (eng done → PP)
+       └─► C-VER-003 Wait (eng done → PP) ──► C-VER-002 Retry
+                                              └─► C-PROC / C-WF (later)
 
 BLOCKED spine:
   B-PP-001 Voice Accept ──► C-ACT-011 File Provider
@@ -958,6 +970,7 @@ BLOCKED spine:
 | **B-PP-003** | C-OBS-003 Desktop UI Tree Product Proof pending | High | C-OBS-003 Trusted | Owner live session per P22.S2 |
 | **B-PP-004** | C-OBS-004 Window Control Discovery Product Proof pending | High | C-OBS-004 Trusted | Owner live session per P22.S3 |
 | **B-PP-005** | C-ACT-004/005 Desktop Control Interaction Product Proof pending | High | C-ACT-004 + C-ACT-005 Trusted | Joint Owner session per P22.S4 |
+| **B-PP-006** | C-VER-003 Wait Conditions Product Proof pending | High | C-VER-003 Trusted | Owner live session per P22.S5 |
 | **B-PLAT-001** | Windows-only product | Low | All desktop | Accepted scope |
 
 ---
@@ -969,6 +982,7 @@ BLOCKED spine:
 | Desktop UI Tree | UIA port + Window Provider | `verify-desktop-ui-tree` | Owner P22.S2 |
 | Window Control Discovery | `find_control` + Intent | `verify-window-control-discovery` | Owner P22.S3 |
 | Desktop Control Interaction | Invoke/SetValue + Operator compose | `verify-desktop-control-interaction` | Owner P22.S4 (joint) |
+| Wait Conditions | Bounded WaitCondition + compose | `verify-wait-conditions` | Owner P22.S5 |
 | Providers | `cargo` + verify scripts | `pnpm test` | Owner NL |
 | Composition | Kernel + completion/compound | Hostile NL | Live confirm |
 | Reasoning | intelligence-routing | verify script | Owner re-proof |
@@ -987,6 +1001,7 @@ BLOCKED spine:
 | C-OBS-004 Window Control Discovery | **Yes** | **Required — pending Owner** |
 | C-ACT-004 Mouse Click | **Yes** | **Required — joint with C-ACT-005** |
 | C-ACT-005 Keyboard Input | **Yes** | **Required — joint with C-ACT-004** |
+| C-VER-003 Wait Conditions | **Yes** | **Required — pending Owner** |
 | Core desktop providers | Yes | Mixed Owner trust |
 | Voice | Yes | Pending Accept |
 | Intelligence routing | Yes | Owner re-proof |
@@ -1025,7 +1040,8 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 | C-ACT-012 | Terminal | FUTURE | ~14% |
 | C-ACT-013 | Agent Loop | REJECTED | 0% |
 | C-VER-001 / C-CMP-001 | Completion | IMPLEMENTED | ~71% |
-| C-VER-002 / C-VER-003 | Retry / Wait | PLANNED | ~29% |
+| C-VER-002 | Retry | PLANNED | ~29% |
+| **C-VER-003** | **Wait Conditions** | **IMPLEMENTED (eng)** | **57%** |
 | C-CMP-002..004 | Composition | IMPLEMENTED | ~71% |
 | C-PROC-* / C-WF-* | Procedures / Workflows | Mixed | see records |
 | C-INT-001..003 | Intelligence | IMPLEMENTED | ~57–71% |
@@ -1039,34 +1055,34 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 
 | Rank | ID | Capability | Status | Why |
 | --- | --- | --- | --- | --- |
-| **1** | **C-VER-003** | Wait Conditions | **PLANNED** | Strengthens click/type verify |
+| **1** | **C-VER-002** | Retry | **PLANNED** | Bounded retry after wait/verify |
 | 2 | C-REL-002 | Code Signing A2 | BLOCKED (cert) | Parallel release track |
 | 3 | C-ACT-011 | File Provider | BLOCKED (Voice) | Production Before Expansion |
 | 4 | C-OBS-007 | Tokenized perception | FUTURE | After interaction PP |
 | 5 | C-REA-004 | In-Conversation Model | FUTURE | Research |
-| 6 | C-PROC-002 / C-WF-001 | Coding procedures | FUTURE | After interaction Trusted |
+| 6 | C-PROC-002 / C-WF-001 | Coding procedures | FUTURE | After wait/retry Trusted |
 
 **Rejected (do not queue):** C-ACT-013; C-INT-004; C-INT-005.
 
-**Just completed eng:** C-ACT-004 + C-ACT-005 Desktop Control Interaction pair → **joint Product Proof** required.
+**Just completed eng:** C-VER-003 Wait Conditions → **Owner Product Proof** required (`P22_S5`).
 
 ---
 
 ## 9. Current highest remaining executable capability
 
-### **C-VER-003 Wait Conditions** (next executable after interaction eng)
+### **C-VER-002 Retry** (next executable after Wait eng)
 
 | Factor | Assessment |
 | --- | --- |
-| Owner Value | High (stronger post-click/type certainty) |
-| Dependencies | C-ACT-004 / C-ACT-005 eng complete |
+| Owner Value | High (bounded recovery after wait/timeout) |
+| Dependencies | C-VER-001; C-VER-003 eng; control actions |
 | Effort | S–M |
-| Risk | Med |
-| Pair note | Complements interaction; not merged into C-ACT IDs |
+| Risk | Med (must not become silent loops) |
+| Pair note | Complements Wait; keep separate IDs |
 
-**Do not begin in the same session that completed C-ACT-004/005.**
+**Do not begin in the same session that completed C-VER-003.**
 
-Parallel: Owner Product Proof for C-OBS-003/004 and C-ACT-004/005; Authenticode → A2.
+Parallel: Owner Product Proof for C-OBS-003/004, C-ACT-004/005, and C-VER-003; Authenticode → A2.
 
 ---
 
@@ -1089,12 +1105,12 @@ LOOP:
 
 ## 11. Atlas maintenance checklist (per program)
 
-- [x] Capability rows updated (C-ACT-004 + C-ACT-005)  
-- [x] Separate Readiness Scores (both 57%)  
-- [x] Shared verification + joint Product Proof doc  
-- [x] Blockers register (B-PP-005)  
-- [x] Priority queue re-ranked  
-- [ ] Owner Product Proof for C-OBS-003 / C-OBS-004 / C-ACT-004+005  
+- [x] Capability row updated (C-VER-003)  
+- [x] Readiness Score 57% (eng)  
+- [x] Verification + Product Proof harness (`P22_S5`)  
+- [x] Blockers register (B-PP-006)  
+- [x] Priority queue re-ranked → C-VER-002  
+- [ ] Owner Product Proof for C-OBS-003 / C-OBS-004 / C-ACT-004+005 / C-VER-003  
 
 ---
 
@@ -1103,7 +1119,8 @@ LOOP:
 - Replacing Conversation, Kernel Operator, or Moments  
 - Adopting VLM computer-use runtimes  
 - Spec / constitutional redesign via Atlas  
-- Starting C-VER-003 or procedures in the same slice as C-ACT-004/005  
+- Starting C-VER-002 Retry or Operator Procedures in the same slice as C-VER-003  
+- Turning Wait into an agent loop, OCR, or workflow engine  
 
 ---
 
@@ -1128,5 +1145,5 @@ Two-digit IDs are **retired**. Meanings remapped to permanent three-digit IDs (*
 ## Stop
 
 **Workspace Capability Atlas v2.0** is the authoritative capability roadmap.  
-C-ACT-004 + C-ACT-005 engineering pair complete → **joint Product Proof required**.  
-Do not begin C-VER-003 or procedures in this iteration.
+C-VER-003 Wait Conditions engineering complete → **Owner Product Proof required** (`P22_S5`).  
+Do not begin C-VER-002 Retry or Operator Procedures in this iteration.

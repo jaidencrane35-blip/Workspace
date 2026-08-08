@@ -363,6 +363,37 @@ mod tests {
     }
 
     #[test]
+    fn window_wait_condition_through_router() {
+        let met = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::WaitCondition,
+                query: Some("Fixture Focus".into()),
+                text: Some("Save".into()),
+                category: Some("control_available".into()),
+                duration: Some("400ms".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(met.ok);
+        assert_eq!(met.status.as_deref(), Some("condition_met"));
+
+        let timed_out = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::WaitCondition,
+                query: Some("Fixture Focus".into()),
+                text: Some("NoSuchControlZZZ".into()),
+                category: Some("control_available".into()),
+                duration: Some("150ms".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(!timed_out.ok);
+        assert_eq!(timed_out.status.as_deref(), Some("condition_timeout"));
+    }
+
+    #[test]
     fn notifications_status_and_show_through_router() {
         let status = runtime()
             .invoke(ProviderInvokeRequest {

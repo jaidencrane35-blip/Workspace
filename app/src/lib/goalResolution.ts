@@ -125,6 +125,8 @@ function outcomeFor(action: IntentAction): string {
       return "Click a named control inside a window";
     case "winTypeControl":
       return "Type text into a named control inside a window";
+    case "winWaitCondition":
+      return "Wait for an observable desktop condition before continuing";
     case "unknown":
       return "Clarify or recover without inventing desktop actions";
     default:

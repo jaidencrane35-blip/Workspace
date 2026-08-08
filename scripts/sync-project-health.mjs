@@ -75,6 +75,7 @@ const verifiers = {
   "verify:desktop-ui-tree": "scripts/verify-desktop-ui-tree.mjs",
   "verify:window-control-discovery": "scripts/verify-window-control-discovery.mjs",
   "verify:desktop-control-interaction": "scripts/verify-desktop-control-interaction.mjs",
+  "verify:wait-conditions": "scripts/verify-wait-conditions.mjs",
   "verify:semantic-intent": "scripts/verify-semantic-intent.mjs",
   "verify:capability-registry": "scripts/verify-capability-registry.mjs",
   "verify:cognitive-desktop": "scripts/verify-cognitive-desktop.mjs",

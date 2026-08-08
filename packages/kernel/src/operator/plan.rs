@@ -452,6 +452,72 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
         });
     }
 
+    // Bounded wait for an observable desktop condition (C-VER-003).
+    // Does not alter click_control / type_control compositions.
+    if domain == CapabilityDomainId::window()
+        && (op_raw == "wait_condition" || op_raw == "wait" || op_raw == "wait_until")
+    {
+        let kind_raw = intent
+            .category
+            .as_deref()
+            .map(str::trim)
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        let control = intent
+            .text
+            .as_deref()
+            .or(intent.title.as_deref())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string());
+        let kind = match kind_raw.as_str() {
+            "control_gone" | "gone" | "disappear" | "disappears" => "control_gone",
+            "window_available" | "window" => "window_available",
+            "window_active" | "active" | "foreground" => "window_active",
+            "control_available" | "available" | "appear" | "appears" => "control_available",
+            _ if control.is_some() => "control_available",
+            _ => "window_available",
+        };
+        if matches!(kind, "control_available" | "control_gone") && control.is_none() {
+            return Err(KernelError::CapabilityRuntime {
+                message: "Name the control to wait for (for example Save).".into(),
+            });
+        }
+        let mut wait = intent.clone();
+        wait.operation = "wait_condition".into();
+        wait.category = Some(kind.into());
+        // Re-observe after wait when waiting for a control to become available.
+        if kind == "control_available" {
+            let mut find = intent.clone();
+            find.operation = "find_control".into();
+            find.text = control;
+            find.title = None;
+            return Ok(OperatorPlan {
+                composition_id: Some("window.wait_condition".into()),
+                steps: vec![
+                    step_from_intent(
+                        CapabilityDomainId::window(),
+                        CapabilityOperation::WaitCondition,
+                        &wait,
+                    ),
+                    step_from_intent(
+                        CapabilityDomainId::window(),
+                        CapabilityOperation::FindControl,
+                        &find,
+                    ),
+                ],
+            });
+        }
+        return Ok(OperatorPlan {
+            composition_id: Some("window.wait_condition".into()),
+            steps: vec![step_from_intent(
+                CapabilityDomainId::window(),
+                CapabilityOperation::WaitCondition,
+                &wait,
+            )],
+        });
+    }
+
     // Locate → type → re-locate (C-ACT-005; value verified inside set_control_value).
     if domain == CapabilityDomainId::window()
         && (op_raw == "type_control" || op_raw == "set_control_value")
@@ -574,6 +640,7 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
             | CapabilityOperation::FindControl
             | CapabilityOperation::InvokeControl
             | CapabilityOperation::SetControlValue
+            | CapabilityOperation::WaitCondition
             | CapabilityOperation::Focus
             | CapabilityOperation::Minimize
             | CapabilityOperation::Restore

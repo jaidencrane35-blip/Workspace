@@ -212,6 +212,115 @@ impl WindowProvider {
             .filter(|s| !s.is_empty())
     }
 
+    /// C-VER-003 — bounded timeout (default 2s, max 8s). Never indefinite.
+    fn wait_timeout_ms(request: &ProviderInvokeRequest) -> u64 {
+        const DEFAULT_MS: u64 = 2_000;
+        const MAX_MS: u64 = 8_000;
+        let raw = request
+            .duration
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .unwrap_or("");
+        if raw.is_empty() {
+            return DEFAULT_MS;
+        }
+        let lower = raw.to_ascii_lowercase();
+        let parsed = match lower.as_str() {
+            "short" => Some(2_000),
+            "long" => Some(5_000),
+            s if s.ends_with("ms") => s.trim_end_matches("ms").parse::<u64>().ok(),
+            s if s.ends_with('s') => s
+                .trim_end_matches('s')
+                .parse::<u64>()
+                .ok()
+                .map(|secs| secs.saturating_mul(1_000)),
+            s => s.parse::<u64>().ok(),
+        };
+        parsed.unwrap_or(DEFAULT_MS).clamp(1, MAX_MS)
+    }
+
+    fn wait_kind(request: &ProviderInvokeRequest) -> &'static str {
+        let raw = request
+            .category
+            .as_deref()
+            .map(str::trim)
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        match raw.as_str() {
+            "control_gone" | "gone" | "disappear" | "disappears" => "control_gone",
+            "window_available" | "window" => "window_available",
+            "window_active" | "active" | "foreground" => "window_active",
+            "control_available" | "available" | "appear" | "appears" | "" => {
+                if Self::control_name(request).is_some() {
+                    "control_available"
+                } else {
+                    "window_available"
+                }
+            }
+            _ => {
+                if Self::control_name(request).is_some() {
+                    "control_available"
+                } else {
+                    "window_available"
+                }
+            }
+        }
+    }
+
+    fn wait_condition_met(
+        &self,
+        request: &ProviderInvokeRequest,
+        kind: &str,
+    ) -> Result<bool> {
+        match kind {
+            "control_available" => {
+                let Some(control_query) = Self::control_name(request) else {
+                    return Ok(false);
+                };
+                let Some(window) = self.resolve_one(request)? else {
+                    return Ok(false);
+                };
+                Ok(self
+                    .ports
+                    .ui_automation
+                    .find_control(&window.hwnd, control_query)
+                    .map_err(|error| KernelError::WindowsIntegration {
+                        message: error.to_string(),
+                    })?
+                    .is_some())
+            }
+            "control_gone" => {
+                let Some(control_query) = Self::control_name(request) else {
+                    return Ok(false);
+                };
+                let Some(window) = self.resolve_one(request)? else {
+                    // Window gone ⇒ control gone for this wait.
+                    return Ok(true);
+                };
+                Ok(self
+                    .ports
+                    .ui_automation
+                    .find_control(&window.hwnd, control_query)
+                    .map_err(|error| KernelError::WindowsIntegration {
+                        message: error.to_string(),
+                    })?
+                    .is_none())
+            }
+            "window_available" => Ok(self.resolve_one(request)?.is_some()),
+            "window_active" => {
+                let Some(wanted) = self.resolve_one(request)? else {
+                    return Ok(false);
+                };
+                let fg = self.foreground_window()?;
+                Ok(fg
+                    .as_ref()
+                    .is_some_and(|active| active.hwnd == wanted.hwnd || active.focused))
+            }
+            _ => Ok(false),
+        }
+    }
+
     fn effect(
         operation: CapabilityOperation,
         status: &str,
@@ -320,6 +429,7 @@ impl CapabilityProvider for WindowProvider {
                 "find_control",
                 "invoke_control",
                 "set_control_value",
+                "wait_condition",
                 "focus",
                 "minimize",
                 "restore",
@@ -656,6 +766,129 @@ impl CapabilityProvider for WindowProvider {
                         monitors: None,
                     })
                     }
+                }
+            }
+            CapabilityOperation::WaitCondition => {
+                let kind = Self::wait_kind(&request);
+                if matches!(kind, "control_available" | "control_gone")
+                    && Self::control_name(&request).is_none()
+                {
+                    return Ok(ProviderInvokeResponse {
+                        domain: CapabilityDomainId::window(),
+                        operation: CapabilityOperation::WaitCondition,
+                        ok: false,
+                        format: None,
+                        bytes: None,
+                        text: None,
+                        preview: None,
+                        message: Some(
+                            "Name the control to wait for (for example Save).".into(),
+                        ),
+                        status: Some("need_control_name".into()),
+                        target: request.query.clone(),
+                        items: None,
+                        monitors: None,
+                    });
+                }
+                if matches!(kind, "window_available" | "window_active")
+                    && request
+                        .query
+                        .as_deref()
+                        .map(str::trim)
+                        .filter(|s| !s.is_empty())
+                        .is_none()
+                {
+                    return Ok(ProviderInvokeResponse {
+                        domain: CapabilityDomainId::window(),
+                        operation: CapabilityOperation::WaitCondition,
+                        ok: false,
+                        format: None,
+                        bytes: None,
+                        text: None,
+                        preview: None,
+                        message: Some("Which window should I wait for?".into()),
+                        status: Some("need_window".into()),
+                        target: None,
+                        items: None,
+                        monitors: None,
+                    });
+                }
+
+                let timeout_ms = Self::wait_timeout_ms(&request);
+                const POLL_MS: u64 = 50;
+                let started = std::time::Instant::now();
+                let deadline = started + std::time::Duration::from_millis(timeout_ms);
+                let mut polls: u32 = 0;
+                let mut met = false;
+                loop {
+                    polls = polls.saturating_add(1);
+                    if self.wait_condition_met(&request, kind)? {
+                        met = true;
+                        break;
+                    }
+                    if std::time::Instant::now() >= deadline {
+                        break;
+                    }
+                    let remaining = deadline.saturating_duration_since(std::time::Instant::now());
+                    let sleep_for = std::time::Duration::from_millis(POLL_MS).min(remaining);
+                    if sleep_for.is_zero() {
+                        break;
+                    }
+                    std::thread::sleep(sleep_for);
+                }
+                let _elapsed_ms = started.elapsed().as_millis() as u64;
+
+                let subject = Self::control_name(&request)
+                    .map(|c| c.to_string())
+                    .or_else(|| request.query.clone())
+                    .unwrap_or_else(|| "condition".into());
+                let resolved = self.resolve_one(&request)?;
+                let target = resolved
+                    .as_ref()
+                    .map(|w| w.title.clone())
+                    .or_else(|| request.query.clone());
+                let items = resolved.as_ref().map(|w| vec![Self::item(w)]);
+
+                if met {
+                    Ok(ProviderInvokeResponse {
+                        domain: CapabilityDomainId::window(),
+                        operation: CapabilityOperation::WaitCondition,
+                        ok: true,
+                        format: Some("wait_condition".into()),
+                        bytes: Some(polls as usize),
+                        text: Some(kind.into()),
+                        preview: Some(text_preview(&subject, 80)),
+                        message: Some(match kind {
+                            "control_available" => {
+                                format!("“{subject}” is available.")
+                            }
+                            "control_gone" => format!("“{subject}” is no longer available."),
+                            "window_available" => format!("“{subject}” is available."),
+                            "window_active" => format!("“{subject}” is active."),
+                            _ => format!("Condition met for “{subject}”."),
+                        }),
+                        status: Some("condition_met".into()),
+                        target,
+                        items,
+                        monitors: None,
+                    })
+                } else {
+                    Ok(ProviderInvokeResponse {
+                        domain: CapabilityDomainId::window(),
+                        operation: CapabilityOperation::WaitCondition,
+                        ok: false,
+                        format: Some("wait_condition".into()),
+                        bytes: Some(polls as usize),
+                        text: Some(kind.into()),
+                        preview: Some(text_preview(&subject, 80)),
+                        message: Some(format!(
+                            "I waited {timeout_ms} ms, but “{subject}” never reached the expected state."
+                        )),
+                        status: Some("condition_timeout".into()),
+                        target,
+                        items,
+                        monitors: None,
+                    })
                 }
             }
             CapabilityOperation::Enumerate => {
@@ -1020,5 +1253,140 @@ impl CapabilityProvider for WindowProvider {
                 ),
             }),
         }
+    }
+}
+
+#[cfg(test)]
+mod wait_condition_tests {
+    use super::*;
+    use super::super::registry::CapabilityProvider;
+    use std::sync::Arc;
+    use std::time::Instant;
+    use workspace_windows_integration::{
+        FixtureWindowEnumerator, MemoryUiAutomationPort, StubDesktopCapturer, StubWindowMutator,
+        UiControlSnapshot,
+    };
+
+    fn provider_with(ui: Arc<MemoryUiAutomationPort>) -> WindowProvider {
+        WindowProvider::new(WindowPorts {
+            enumerator: Arc::new(FixtureWindowEnumerator),
+            mutator: Arc::new(StubWindowMutator::fixture_dual_monitor()),
+            capturer: Arc::new(StubDesktopCapturer::fixture_dual_monitor()),
+            ui_automation: ui,
+        })
+    }
+
+    #[test]
+    fn wait_condition_already_true() {
+        let ui = Arc::new(MemoryUiAutomationPort::fixture());
+        let provider = provider_with(ui);
+        let started = Instant::now();
+        let response = provider
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::WaitCondition,
+                query: Some("Fixture Focus".into()),
+                text: Some("Save".into()),
+                category: Some("control_available".into()),
+                duration: Some("500ms".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(response.ok);
+        assert_eq!(response.status.as_deref(), Some("condition_met"));
+        assert!(started.elapsed().as_millis() < 400);
+    }
+
+    #[test]
+    fn wait_condition_becomes_true_after_delay() {
+        let ui = Arc::new(MemoryUiAutomationPort::fixture());
+        ui.remove_control_named("Later");
+        ui.schedule_appear(
+            UiControlSnapshot {
+                name: "Later".into(),
+                control_type: "Button".into(),
+                automation_id: "Later".into(),
+            },
+            120,
+        );
+        let provider = provider_with(ui);
+        let started = Instant::now();
+        let response = provider
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::WaitCondition,
+                query: Some("Fixture Focus".into()),
+                text: Some("Later".into()),
+                category: Some("control_available".into()),
+                duration: Some("1000ms".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(response.ok);
+        assert_eq!(response.status.as_deref(), Some("condition_met"));
+        let elapsed = started.elapsed().as_millis();
+        assert!(elapsed >= 100, "elapsed={elapsed}");
+        assert!(elapsed < 900, "elapsed={elapsed}");
+    }
+
+    #[test]
+    fn wait_condition_timeout_never_true() {
+        let ui = Arc::new(MemoryUiAutomationPort::fixture());
+        let provider = provider_with(ui);
+        let started = Instant::now();
+        let response = provider
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::WaitCondition,
+                query: Some("Fixture Focus".into()),
+                text: Some("NoSuchControlZZZ".into()),
+                category: Some("control_available".into()),
+                duration: Some("200ms".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(!response.ok);
+        assert_eq!(response.status.as_deref(), Some("condition_timeout"));
+        let elapsed = started.elapsed().as_millis();
+        assert!(elapsed >= 180, "elapsed={elapsed}");
+        assert!(elapsed < 600, "elapsed={elapsed} — no indefinite poll");
+    }
+
+    #[test]
+    fn wait_condition_control_gone() {
+        let ui = Arc::new(MemoryUiAutomationPort::fixture());
+        ui.schedule_disappear("Save", 80);
+        let provider = provider_with(ui);
+        let response = provider
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::WaitCondition,
+                query: Some("Fixture Focus".into()),
+                text: Some("Save".into()),
+                category: Some("control_gone".into()),
+                duration: Some("800ms".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(response.ok);
+        assert_eq!(response.status.as_deref(), Some("condition_met"));
+    }
+
+    #[test]
+    fn wait_condition_window_available() {
+        let ui = Arc::new(MemoryUiAutomationPort::fixture());
+        let provider = provider_with(ui);
+        let response = provider
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::WaitCondition,
+                query: Some("Fixture Focus".into()),
+                category: Some("window_available".into()),
+                duration: Some("300ms".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(response.ok);
+        assert_eq!(response.status.as_deref(), Some("condition_met"));
     }
 }

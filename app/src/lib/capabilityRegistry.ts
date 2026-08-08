@@ -226,7 +226,12 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     ],
     failureRecovery:
       "Ask what controls are in the window, or name a different control.",
-    related: ["window-control-discovery", "keyboard-input", "desktop-ui-tree"],
+    related: [
+      "window-control-discovery",
+      "keyboard-input",
+      "desktop-ui-tree",
+      "wait-conditions",
+    ],
     similar: ["window-control-discovery"],
     alternatives: ["window-control-discovery"],
     discoverability: "Ask to click a named control in an open window.",
@@ -264,7 +269,12 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     ],
     failureRecovery:
       "Find an editable control first, or name the field and window again.",
-    related: ["window-control-discovery", "mouse-click", "desktop-ui-tree"],
+    related: [
+      "window-control-discovery",
+      "mouse-click",
+      "desktop-ui-tree",
+      "wait-conditions",
+    ],
     similar: ["mouse-click"],
     alternatives: ["window-control-discovery"],
     discoverability: "Ask to type text into a named field in an open window.",
@@ -280,6 +290,51 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     ],
     architecturalJustification:
       "Typing is independent interaction that composes with discovery under Operator.",
+  },
+  {
+    id: "wait-conditions",
+    domain: "Windows",
+    summary: "Wait for an observable desktop condition with a bounded timeout",
+    purpose:
+      "Pause until a control or window reaches an expected state — then continue or report honestly",
+    verbs: ["wait", "wait for", "wait until"],
+    aliases: ["when available", "until it appears"],
+    objects: ["Save", "OK", "Notepad"],
+    modifiers: ["appear", "disappear", "active", "available"],
+    arguments: ["condition", "control or window", "optional timeout"],
+    requirements: ["Observable window or control via existing discovery"],
+    limitations: [
+      "Bounded timeout only — never waits forever",
+      "Not a retry engine, agent loop, or workflow planner",
+      "Success requires the expected condition, not a prior action",
+    ],
+    examples: [
+      "Wait for Save in Notepad",
+      "Wait until Save appears in Notepad",
+      "Wait until Notepad is active",
+    ],
+    failureRecovery:
+      "Name a different control or window, or check what controls are available.",
+    related: ["window-control-discovery", "mouse-click", "keyboard-input"],
+    similar: ["window-control-discovery"],
+    alternatives: ["window-control-discovery"],
+    discoverability: "Ask to wait for a control or window state after an action.",
+    documentation:
+      "Polls existing observation primitives until the condition is met or the timeout expires.",
+    ownership: "Owns wait/verify semantics; uses Window observation only",
+    permissions: ["Window read", "UI Automation observe"],
+    dependencies: [
+      "Desktop UI Tree",
+      "Window Control Discovery",
+      "Mouse Click / Keyboard Input (compose)",
+    ],
+    benchmark: "Deterministic bounded poll — not an automation scheduler",
+    tests: [
+      "tests/wait-conditions.test.ts",
+      "scripts/verify-wait-conditions.mjs",
+    ],
+    architecturalJustification:
+      "Verification wait strengthens Locate → Interact → Verify without becoming an agent runtime.",
   },
   {
     id: "window-state",

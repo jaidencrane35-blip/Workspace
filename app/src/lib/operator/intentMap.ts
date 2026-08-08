@@ -160,6 +160,15 @@ export function toCapabilityIntent(action: IntentAction): CapabilityIntent | nul
         title: action.control,
         text: action.text,
       };
+    case "winWaitCondition":
+      return {
+        domain: "window",
+        operation: "wait_condition",
+        query: action.query,
+        text: action.control,
+        category: action.condition,
+        duration: action.duration,
+      };
     case "winActive":
       return { domain: "window", operation: "active" };
     case "winMonitors":

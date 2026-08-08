@@ -1,4 +1,22 @@
 ﻿# Engineering Milestone Report
+## P22.S5 - Wait Conditions (C-VER-003)
+
+| Field | Value |
+| --- | --- |
+| **Capability ID** | C-VER-003 |
+| **Artifacts** | `P22_S5_WAIT_CONDITIONS.md`, `verify-wait-conditions.mjs`, `tests/wait-conditions.test.ts` |
+| **Date** | 2026-08-08 |
+| **Status** | Engineering complete — Product Proof required |
+| **Max layer** | Window Provider wait + Kernel Operator compose + Intent |
+| **Readiness** | Overall **57%** (Arch/Deps/Impl/Ver 100%; PP/Trusted/Production 0%) |
+| **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) |
+
+### Summary
+
+Bounded Wait Conditions: poll existing Window/UIA observation until control/window state matches or timeout (default 2s, max 8s). Operator composition `window.wait_condition` with Completion Contract. Does not alter click/type compositions. Not a retry engine, agent loop, or workflow. Owner Product Proof per P22.S5.
+
+---
+
 ## P22.S4 - Desktop Control Interaction (C-ACT-004 + C-ACT-005)
 
 | Field | Value |
