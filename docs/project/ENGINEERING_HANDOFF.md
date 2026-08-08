@@ -13,11 +13,11 @@
 | **Current priority** | Owner Product Proof (C-OBS-003/004 + C-ACT-004/005 + C-VER-003 + C-VER-002 + **C-PROC-002**); C-PROC-002 **IMPLEMENTED (eng)** — Product Proof required |
 | **Resume triggers** | `docs/production/R2_RELEASE_HOLD.md` + Capability Atlas Execution Loop |
 | **Capability Atlas** | `docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md` (**v2.0** — Pair Rule §0.1 active) |
-| **Latest program** | **P24.S1 Conflict A Resolution** — Language Faculty Boundary **ACCEPTED** (`ADR-P24-CONFLICT-A-LANGUAGE-FACULTY.md`); **no model installed**; Faculty implementation not started |
-| **P24 authorities** | Experience Contract · Visual Spec · **ADR-P24-CONFLICT-A** · Nova art (character #8) |
-| **Prior slices** | P24 architecture reset; P23.S6–S1 intelligence slices — engineering complete where applicable |
-| **Intelligence design** | Conflict A **RESOLVED** (probabilistic comprehension/expression permitted behind Option C validator). Conflict C **open** (generative multi-step binding). Next recommended: P24.S2 Faculty boundary scaffolding **without** a model, or B-RES-001 research |
-| **Capability pause** | New capability programs still require Owner authorization naming a P24 roadmap item or waiver; Conflict A no longer blocks Faculty *architecture* |
+| **Latest program** | **P24.S2 Language Faculty Boundary Scaffolding** — `languageFaculty.ts` + validator + verifier; deterministic `comprehend()` is the sole Faculty; **no model** |
+| **P24 authorities** | Experience Contract · Visual Spec · ADR-P24-CONFLICT-A · Faculty module `app/src/lib/languageFaculty.ts` |
+| **Prior slices** | P24.S1 Conflict A ACCEPT; P24 architecture reset; P23.S6–S1 |
+| **Intelligence design** | Conflict A **RESOLVED**. Faculty **seam EXISTS** (Option C). Conflict C **open**. Model backend still blocked by **B-RES-001**. Cascade/regex system preserved as fallback |
+| **Capability pause** | New capability programs still require Owner authorization naming a P24 roadmap item or waiver |
 | **Prior program** | C-PROC-002 Prepare Coding Workspace runtime implementation — engineering complete; Owner Product Proof not started |
 | **P22.S7 report** | `docs/capability-runtime/product-proof/P22_S7_PREPARE_CODING_WORKSPACE_BLOCKED.md` |
 | **P22.S6 report** | `docs/capability-runtime/product-proof/P22_S6_BOUNDED_RETRY.md` |

@@ -107,14 +107,19 @@ const declaration = bridge.indexOf("export function resolveIntentWithGoal");
 const after = bridge.slice(declaration);
 const nextDeclaration = after.indexOf("\nexport ", 1);
 const withGoal = nextDeclaration > 0 ? after.slice(0, nextDeclaration) : after;
-// Meaning comes first. P23.S5 grounding may refine that meaning against the
-// conversation before anything reads it; nothing else may come between.
+// Meaning comes first through the Language Faculty Boundary (P24.S2), then
+// P23.S5 grounding may refine it. Nothing else may come between.
 if (
-  !/^\s*const goal = (?:groundGoalInContext\()?comprehend\(raw\)\)?;/m.test(withGoal)
+  !/^\s*const goal = (?:groundGoalInContext\()?(?:comprehendViaFaculty|comprehend)\(raw\)\)?;/m.test(
+    withGoal,
+  )
 ) {
   fail("resolveIntentWithGoal must comprehend before resolving an action");
 }
-if (withGoal.indexOf("comprehend(raw)") > withGoal.indexOf("resolveIntentCore(raw)")) {
+const meaningCall = withGoal.includes("comprehendViaFaculty(raw)")
+  ? "comprehendViaFaculty(raw)"
+  : "comprehend(raw)";
+if (withGoal.indexOf(meaningCall) > withGoal.indexOf("resolveIntentCore(raw)")) {
   fail("meaning must be comprehended before desktop matching runs");
 }
 if (!/commitWorkspaceContext\([^)]*goal\)/s.test(bridge)) {

@@ -169,13 +169,13 @@ Three gates make this enforceable rather than aspirational:
 
 The essential insight: **the model is never asked to supply content, only to supply words for content Workspace already established.** A system that cannot invent facts cannot hallucinate them. This preserves every truthfulness guarantee Workspace has earned while removing the two limits that make it feel mechanical.
 
-**Status: MISSING — Conflict A cleared; implementation still blocked on engineering + B-RES-001.**
+**Status: PARTIAL — boundary scaffold EXISTS (P24.S2); model backend MISSING (B-RES-001).**
 
 Conflict A is **RESOLVED** by [`ADR-P24-CONFLICT-A-LANGUAGE-FACULTY.md`](ADR-P24-CONFLICT-A-LANGUAGE-FACULTY.md)
-(**ACCEPT**, Option C). Probabilistic comprehension/expression is constitutionally
-permitted behind the Language Faculty Boundary. A concrete model backend is
-still blocked by **B-RES-001** (Evidence Before Commitment). Nothing in this
-contract installs or selects a vendor.
+(**ACCEPT**, Option C). Runtime seam: `app/src/lib/languageFaculty.ts`
+(`proposeMeaning` → `validateMeaningProposal` → `GoalContract`; deterministic
+`comprehend()` is the sole Faculty). A concrete model backend is still blocked
+by **B-RES-001**. Nothing in this contract installs or selects a vendor.
 
 ### 2.3 What Workspace is not
 
@@ -1106,8 +1106,8 @@ Nova personality refinement; motion quality; conversation surface refinements (S
 
 | Domain | EXISTING | PARTIAL | MISSING | BLOCKED | REJECTED |
 | --- | --- | --- | --- | --- | --- |
-| Conversation understanding | Deterministic cascade | Ordinary phrasing | Language faculty | B-RES-001 + Faculty scaffold (Conflict A **ACCEPTED**) | Probabilistic *authority* |
-| Conversation expression | Canned replies | — | Generated wording from Fact Set | B-RES-001 + Faculty scaffold | Invented facts |
+| Conversation understanding | Deterministic cascade + Faculty seam (P24.S2) | Ordinary phrasing / model Faculty | Model-backed Faculty | B-RES-001 | Probabilistic *authority* |
+| Conversation expression | Canned replies | — | Generated wording from Fact Set | B-RES-001 | Invented facts |
 | Desktop observation | Windows, active, app, monitors, controls | Device facts | Storage, installed apps | — | Screen scraping |
 | Desktop action | 10 providers | Control interaction PP | — | File, Terminal | Agent loops |
 | Multi-step | 12 fixed compositions | Hybrid goals | Generative binding | Conflict C | Autonomous loops |

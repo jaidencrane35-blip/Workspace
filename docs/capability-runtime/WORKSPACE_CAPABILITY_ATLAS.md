@@ -40,6 +40,11 @@ Faculty comprehension/expression is constitutionally permitted behind a
 deterministic validator. **No Atlas capability was created.** C-REA-004 remains
 FUTURE pending B-RES-001; do not treat the ADR as implementation or Trusted.
 
+**P24.S2 (2026-08-08):** Language Faculty **boundary scaffold** shipped
+(`app/src/lib/languageFaculty.ts`, `verify-language-faculty`). Deterministic
+`comprehend()` is the only Faculty implementation. **Not Product Complete. No
+model. No new Atlas ID.** C-REA-004 still FUTURE / B-RES-001. Conflict C unchanged.
+
 ---
 
 ## 0. How to use this Atlas

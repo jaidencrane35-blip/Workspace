@@ -1,4 +1,32 @@
 ﻿# Engineering Milestone Report
+## P24.S2 - Language Faculty Boundary Scaffolding
+
+| Field | Value |
+| --- | --- |
+| **Capability ID** | None — Intent-layer architectural scaffold; C-REA-004 still FUTURE (B-RES-001) |
+| **Artifacts** | `app/src/lib/languageFaculty.ts`; `scripts/verify-language-faculty.mjs`; `tests/language-faculty.test.ts`; intentBridge → `comprehendViaFaculty` |
+| **Date** | 2026-08-08 |
+| **Status** | **Engineering scaffold complete** — not Product Complete; no model; no Owner PP |
+| **Max layer** | Intent Layer (Meaning only) |
+| **Readiness** | Architecture/Verification for boundary: present; Product Proof / Trusted / Production: **0%** |
+| **Handoff** | Conflict C still open; next optional: B-RES-001 or Faculty Product Proof only after a backend |
+
+### Summary
+
+Inserts ADR Option C as a runtime seam without changing Owner-visible behaviour:
+`LanguageFaculty.proposeMeaning` → `validateMeaningProposal` → `GoalContract`, with
+deterministic `comprehend()` as the sole Faculty and cascade fallback on rejection.
+`MeaningProposal` is exactly `GoalContract`. No Kernel GoalContract interface, no
+regex deletion, no LLM, no memory writes. Verifier falsified (CapabilityIntent,
+capabilityRegistry, IPC, steps intersection, context write, rewritten proposeMeaning).
+
+### Validation
+
+- Focused Faculty + GoalContract + substitution + answer-source + observation suites
+- `verify-language-faculty`, `verify-goal-contract`, full `pnpm test` / typecheck
+
+---
+
 ## P24.S1 - Conflict A Resolution / Language Faculty Authority
 
 | Field | Value |

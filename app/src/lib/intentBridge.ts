@@ -43,7 +43,8 @@ import {
 } from "./compoundOpen";
 import { resolvePrepareCodingWorkspace } from "./prepareCodingWorkspace";
 import { resolveIntelligenceRoute } from "./intelligenceRouting";
-import { comprehend, type GoalContract } from "./goalContract";
+import type { GoalContract } from "./goalContract";
+import { comprehendViaFaculty } from "./languageFaculty";
 import {
   enforceSubstitutionProhibition,
   isIndependentInformationRoute,
@@ -2339,9 +2340,11 @@ export function resolveIntentWithGoal(raw: string): {
   goal: GoalContract;
   action: IntentAction;
 } {
-  // P23.S5: an elliptical question is grounded against the previous turn before
-  // anything reads the meaning, so resolution and the answer agree on it.
-  const goal = groundGoalInContext(comprehend(raw));
+  // P24.S2: Meaning enters through the Language Faculty Boundary (propose →
+  // validate → GoalContract; deterministic comprehend() is the sole Faculty
+  // today). P23.S5 grounding then refines that meaning against the conversation
+  // before anything reads it — grounding is not Faculty authority.
+  const goal = groundGoalInContext(comprehendViaFaculty(raw));
   const fromContext = resolveFromWorkspaceContext(raw);
   if (fromContext) {
     const contextual = enforceSubstitutionProhibition(goal, fromContext.action);

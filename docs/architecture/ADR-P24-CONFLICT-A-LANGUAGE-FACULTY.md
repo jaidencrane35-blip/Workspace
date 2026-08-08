@@ -488,19 +488,15 @@ This ACCEPT authorizes the **architecture**. It does **not** authorize installin
 
 ---
 
-## 24. Recommended P24.S2
+## 24. Recommended P24.S2 — DONE
 
-**Language Faculty Boundary scaffolding — still without a model:**
+Shipped as P24.S2: `app/src/lib/languageFaculty.ts`, `validateMeaningProposal`,
+`comprehendViaFaculty`, `scripts/verify-language-faculty.mjs`,
+`tests/language-faculty.test.ts`. Deterministic `comprehend()` is the sole Faculty.
+No model. Conflict C untouched.
 
-- `MeaningProposal` / validator module
-- Fact Set type used by observation/completion expression path (optional thin)
-- Faculty port interface with deterministic `comprehend()` as the only implementation
-- `scripts/verify-language-faculty.mjs` enforcing boundary imports/forbidden tokens
-- Tests for validator reject paths (capability leak, bad enum, etc.)
-
-**Do not** in S2: install LLM, add API keys, resolve Conflict C, Nova, memory writes, ambient listening.
-
-Alternatively, if Owner prioritizes vendor choice first: **B-RES-001 research ADR** (ADOPT/WRAP/ADAPT/STUDY/REJECT) with no runtime wiring — but Boundary scaffolding unblocks value sooner and keeps authority proofs green before a model arrives.
+**Recommended next:** B-RES-001 model-backend research (ADOPT/WRAP/…) **or** a
+thin Fact-Set expression port still without a model — Owner selects.
 
 ---
 
