@@ -32,7 +32,12 @@ export interface OperatorTurnResult {
   target?: string | null;
   preview?: string | null;
   text?: string | null;
-  items?: Array<{ title: string; focused?: boolean }> | null;
+  items?: Array<{
+    title: string;
+    focused?: boolean;
+    /** Owning application as Windows named it, or absent when it did not say. */
+    processName?: string | null;
+  }> | null;
   monitors?: Array<{
     index: number;
     name: string;

@@ -56,6 +56,7 @@ impl CapturedDesktopWindow {
             hwnd: self.hwnd.clone(),
             title: self.title.clone(),
             process_id: self.process_id,
+            process_name: self.process_name.clone(),
             visible: self.visible,
             focused: self.focused,
             minimized: self.minimized,
@@ -250,6 +251,37 @@ mod tests {
             z_order: Some(0),
         };
         assert_eq!((window.x, window.y, window.width, window.height), (100, 200, 640, 480));
+    }
+
+    /// P23.S6 — the conversion that feeds every window capability. It silently
+    /// dropped the observed application until now, which is why nothing above
+    /// it could name one.
+    #[test]
+    fn legacy_snapshot_keeps_the_observed_application() {
+        let window = CapturedDesktopWindow {
+            hwnd: "0x3".into(),
+            title: "Quokka Ledger".into(),
+            process_id: 11,
+            process_name: Some("quokka-editor.exe".into()),
+            visible: true,
+            minimized: false,
+            focused: true,
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            monitor_index: Some(0),
+            z_order: Some(0),
+        };
+
+        let snapshot = window.to_legacy_snapshot();
+        assert_eq!(snapshot.process_name.as_deref(), Some("quokka-editor.exe"));
+
+        let unreported = CapturedDesktopWindow {
+            process_name: None,
+            ..window
+        };
+        assert_eq!(unreported.to_legacy_snapshot().process_name, None);
     }
 
     #[test]

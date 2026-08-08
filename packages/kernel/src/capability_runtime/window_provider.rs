@@ -6,8 +6,9 @@
 use std::sync::Arc;
 
 use workspace_windows_integration::{
-    CapturedDesktopMonitor, DesktopCapturer, DesktopWindowSnapshot, MutatorEffectOutcome,
-    UiAutomationPort, WindowEnumerator, WindowMutator, WindowPlacementRequest,
+    CapturedDesktopMonitor, CapturedDesktopWindow, DesktopCapturer, DesktopWindowSnapshot,
+    MutatorEffectOutcome, UiAutomationPort, WindowEnumerator, WindowMutator,
+    WindowPlacementRequest,
 };
 
 use super::registry::CapabilityProvider;
@@ -39,6 +40,7 @@ impl WindowProvider {
             hwnd: window.hwnd.clone(),
             title: window.title.clone(),
             process_id: window.process_id,
+            process_name: window.process_name.clone(),
             minimized: window.minimized,
             focused: window.focused,
             x: window.x,
@@ -113,22 +115,11 @@ impl WindowProvider {
         let Some(hwnd) = capture.foreground_hwnd.as_ref() else {
             return Ok(None);
         };
-        Ok(capture.windows.iter().find(|w| &w.hwnd == hwnd).map(|w| {
-            DesktopWindowSnapshot {
-                hwnd: w.hwnd.clone(),
-                title: w.title.clone(),
-                process_id: w.process_id,
-                visible: w.visible,
-                focused: w.focused,
-                minimized: w.minimized,
-                x: w.x,
-                y: w.y,
-                width: w.width,
-                height: w.height,
-                monitor_index: w.monitor_index,
-                monitor_name: None,
-            }
-        }))
+        Ok(capture
+            .windows
+            .iter()
+            .find(|w| &w.hwnd == hwnd)
+            .map(CapturedDesktopWindow::to_legacy_snapshot))
     }
 
     fn match_windows(&self, request: &ProviderInvokeRequest) -> Result<Vec<DesktopWindowSnapshot>> {
@@ -951,20 +942,7 @@ impl CapabilityProvider for WindowProvider {
                         .windows
                         .iter()
                         .find(|w| &w.hwnd == hwnd)
-                        .map(|w| DesktopWindowSnapshot {
-                            hwnd: w.hwnd.clone(),
-                            title: w.title.clone(),
-                            process_id: w.process_id,
-                            visible: w.visible,
-                            focused: w.focused,
-                            minimized: w.minimized,
-                            x: w.x,
-                            y: w.y,
-                            width: w.width,
-                            height: w.height,
-                            monitor_index: w.monitor_index,
-                            monitor_name: None,
-                        })
+                        .map(CapturedDesktopWindow::to_legacy_snapshot)
                 });
                 match window {
                     Some(window) => Ok(ProviderInvokeResponse {
@@ -1388,5 +1366,118 @@ mod wait_condition_tests {
             .unwrap();
         assert!(response.ok);
         assert_eq!(response.status.as_deref(), Some("condition_met"));
+    }
+}
+
+/// P23.S6 — the owning application travels with the window it was observed on.
+///
+/// Windows reports the executable image basename during the same capture that
+/// produces the title. These prove it survives the whole provider path instead
+/// of being dropped on the way out, and that an unreported application stays
+/// unreported — the only honest alternative is guessing from the title.
+#[cfg(test)]
+mod application_identity_tests {
+    use super::super::registry::CapabilityProvider;
+    use super::*;
+    use std::sync::Arc;
+    use workspace_windows_integration::{
+        dual_monitor_fixture, DesktopObservationCapture, MemoryUiAutomationPort,
+        StubDesktopCapturer, StubWindowMutator,
+    };
+
+    /// Enumerates whatever the capture holds, so both operations observe one desktop.
+    struct CaptureEnumerator(DesktopObservationCapture);
+
+    impl WindowEnumerator for CaptureEnumerator {
+        fn enumerate_windows(
+            &self,
+        ) -> std::result::Result<
+            Vec<DesktopWindowSnapshot>,
+            workspace_windows_integration::WindowsIntegrationError,
+        > {
+            Ok(self.0.legacy_window_snapshots())
+        }
+    }
+
+    /// One synthetic desktop: titles and applications that exist nowhere else.
+    fn desktop(applications: [Option<&str>; 2]) -> DesktopObservationCapture {
+        let mut capture = dual_monitor_fixture();
+        let titles = ["Quokka Ledger", "Quokka Ledger"];
+        for (index, window) in capture.windows.iter_mut().take(2).enumerate() {
+            window.title = titles[index].into();
+            window.process_name = applications[index].map(str::to_string);
+        }
+        capture
+    }
+
+    fn provider_observing(capture: DesktopObservationCapture) -> WindowProvider {
+        WindowProvider::new(WindowPorts {
+            enumerator: Arc::new(CaptureEnumerator(capture.clone())),
+            mutator: Arc::new(StubWindowMutator::fixture_dual_monitor()),
+            capturer: Arc::new(StubDesktopCapturer::new(capture)),
+            ui_automation: Arc::new(MemoryUiAutomationPort::fixture()),
+        })
+    }
+
+    fn invoke(provider: &WindowProvider, operation: CapabilityOperation) -> ProviderInvokeResponse {
+        provider
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation,
+                ..Default::default()
+            })
+            .unwrap()
+    }
+
+    #[test]
+    fn active_window_carries_the_observed_application() {
+        let provider =
+            provider_observing(desktop([Some("quokka-editor.exe"), Some("zarnak.exe")]));
+        let response = invoke(&provider, CapabilityOperation::Active);
+
+        let items = response.items.expect("active window is an item");
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].process_name.as_deref(), Some("quokka-editor.exe"));
+        assert_eq!(items[0].title, "Quokka Ledger");
+    }
+
+    #[test]
+    fn enumerated_windows_carry_the_observed_application() {
+        let provider =
+            provider_observing(desktop([Some("quokka-editor.exe"), Some("zarnak.exe")]));
+        let response = invoke(&provider, CapabilityOperation::Enumerate);
+
+        let items = response.items.expect("enumeration returns items");
+        let observed: Vec<_> = items
+            .iter()
+            .take(2)
+            .map(|item| item.process_name.as_deref())
+            .collect();
+        assert_eq!(observed, vec![Some("quokka-editor.exe"), Some("zarnak.exe")]);
+    }
+
+    #[test]
+    fn identical_titles_stay_distinguishable_by_application() {
+        let provider =
+            provider_observing(desktop([Some("quokka-editor.exe"), Some("zarnak.exe")]));
+        let items = invoke(&provider, CapabilityOperation::Enumerate)
+            .items
+            .expect("enumeration returns items");
+
+        assert_eq!(items[0].title, items[1].title);
+        assert_ne!(items[0].process_name, items[1].process_name);
+    }
+
+    #[test]
+    fn an_unreported_application_is_never_filled_in_from_the_title() {
+        let provider = provider_observing(desktop([None, None]));
+
+        for operation in [CapabilityOperation::Active, CapabilityOperation::Enumerate] {
+            let items = invoke(&provider, operation).items.expect("items");
+            assert!(
+                items.iter().all(|item| item.process_name.is_none()),
+                "{operation:?} invented an application from the window title"
+            );
+        }
     }
 }

@@ -12,6 +12,11 @@ pub struct DesktopWindowSnapshot {
     pub hwnd: String,
     pub title: String,
     pub process_id: u32,
+    /// Executable image basename of the owning process, exactly as Windows
+    /// reports it (`Code.exe`). `None` when the OS declines to say — protected
+    /// and elevated processes do, and that must stay distinguishable from a
+    /// name, because the only alternative is guessing from the title.
+    pub process_name: Option<String>,
     pub visible: bool,
     pub focused: bool,
     pub minimized: bool,
@@ -35,6 +40,7 @@ impl DesktopWindowSnapshot {
             hwnd: hwnd.into(),
             title: title.into(),
             process_id,
+            process_name: None,
             visible,
             focused: false,
             minimized: false,

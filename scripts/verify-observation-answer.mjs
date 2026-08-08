@@ -125,8 +125,17 @@ if (!source.includes("observation.items")) {
 if (!bridge.includes("observationNeededFor")) {
   fail(`${BRIDGE} must carry the comprehended need to the existing observation`);
 }
-if (!/isSpeakingAction\(action\)\)\s*return action;/.test(bridge)) {
-  fail("the bridge must never override an action the cascade already resolved");
+// Replaceable: an action that only speaks, and an external handoff — both are
+// what happens when Workspace has no answer. An action that does something on
+// the desktop is the Owner's request and is never overridden.
+if (
+  !/if \(!isSpeakingAction\(action\) && !isIndependentInformationRoute\(action\)\) \{\s*return action;\s*\}/.test(
+    bridge,
+  )
+) {
+  fail(
+    "the bridge may replace only a spoken non-answer or an external information handoff — never an action that acts on the desktop",
+  );
 }
 // A total map cannot invent a request for a need that has none; a conditional
 // chain can. Translation stays translation only while this holds.

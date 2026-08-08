@@ -18,6 +18,7 @@ impl WindowEnumerator for FixtureWindowEnumerator {
                 hwnd: window.hwnd,
                 title: window.title,
                 process_id: window.process_id,
+                process_name: window.process_name,
                 visible: window.visible,
                 focused: window.focused,
                 minimized: window.minimized,

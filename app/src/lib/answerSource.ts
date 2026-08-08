@@ -98,10 +98,19 @@ export type ObservationNeed = "open-windows" | "active-window";
  *
  * `focused` is carried because the Kernel reports it: which window is active is
  * observed fact, not something composition may infer from ordering.
+ *
+ * `processName` is the application Windows names as owning the window (P23.S6).
+ * It is optional at the type level because the OS genuinely withholds it for
+ * protected processes, and that absence must remain visible: an answer source
+ * that cannot tell "unreported" from "unknown" would have to guess.
  */
 export interface ObservationResult {
   ok: boolean;
-  items?: Array<{ title: string; focused?: boolean }> | null;
+  items?: Array<{
+    title: string;
+    focused?: boolean;
+    processName?: string | null;
+  }> | null;
 }
 
 export interface ObservationAnswerSource {

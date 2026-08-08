@@ -163,16 +163,17 @@ describe("P23.S5 the active window becomes an answer", () => {
     );
   });
 
-  it("4. answers an application question with the window it can actually see", async () => {
+  it("4. will not name an application this observation did not report", async () => {
+    // This desktop reports titles and no owning application, which Windows
+    // genuinely does for protected processes. P23.S6 gave the observation a
+    // place to carry identity; it must stay empty rather than be filled in.
     desktopIs(["Verdigris Atlas"]);
     const text = await replyTo("Which application am I using?");
 
-    // The title is authoritative; the program that owns it is not observed.
     expect(text).toContain("Verdigris Atlas");
-    expect(text).toBe(
-      "The window you’re using is “Verdigris Atlas”. I can see window titles, " +
-        "not which program owns them, so I won’t name the application.",
-    );
+    expect(text).toMatch(/didn’t tell me which application/);
+    // The title is not quietly promoted into an application name.
+    expect(text).not.toMatch(/using Verdigris Atlas|application is Verdigris/);
   });
 
   it("names the window the observation reports as focused, not the first one", async () => {

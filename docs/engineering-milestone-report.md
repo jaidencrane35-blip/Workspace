@@ -1,4 +1,58 @@
 ﻿# Engineering Milestone Report
+## P23.S6 - Observed Application Identity (C-OBS-001 / C-OBS-002 observation data, consumed by C-REA-002)
+
+| Field | Value |
+| --- | --- |
+| **Capability ID** | C-OBS-001 / C-OBS-002 observation enriched; C-REA-002 consumes it — no new ID |
+| **Artifacts** | `process_name` on `DesktopWindowSnapshot` and `ApplicationWindowItem`, `to_legacy_snapshot` reuse in the Window Provider, `processName` on the TS observation view, application-vs-window answers with truthful fallback, `scripts/verify-application-identity.mjs` (new), kernel `application_identity_tests`, `tests/application-identity.test.ts`, Atlas C-OBS-001/002 + C-REA-002 |
+| **Date** | 2026-08-08 |
+| **Status** | **Engineering complete** — Owner Product Proof required (Owner-visible answers) |
+| **Max layer** | Windows observation data + Kernel item + Intent/Conversation composition (no new capability, provider, or IPC channel) |
+| **Readiness** | C-REA-002 **57%**, C-OBS-001 / C-OBS-002 unchanged; PP/Trusted/Production not advanced |
+| **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) |
+
+### Summary
+
+P23.S4 and P23.S5 both ended at the same admission: Workspace could name the
+window but not the application. The audit found the information was never
+missing. `win32.rs` already resolves the executable image basename for every
+enumerated window (`QueryFullProcessImageNameW` under
+`PROCESS_QUERY_LIMITED_INFORMATION`) and stores it on `CapturedDesktopWindow`;
+`to_legacy_snapshot` then dropped it, because `DesktopWindowSnapshot` did not
+declare the field. The same value already reaches the product elsewhere — the
+Workspace State pipeline surfaces `process_name` on active applications — so no
+new authority, API, or permission was involved. The Window Provider also held
+two hand-written copies of that conversion, one of which dropped the field
+independently; both were replaced by the shared conversion.
+
+Identity is defined narrowly: the executable image basename exactly as Windows
+spells it (`Code.exe`), never prettified into a product name. Any case fixing,
+extension stripping, or executable-to-product mapping would be a claim the
+observation cannot support, and verbatim reporting keeps the chain checkable —
+the string in the answer is the string Windows produced. `FileDescription` from
+the version resource remains the documented dependency for a friendlier name.
+
+The field is optional end to end because Windows genuinely withholds it for
+protected processes. When it is absent Conversation says so rather than reading
+an application out of the title, and both the tests and the new verifier fail if
+that stops being true. Window questions stay window questions; the open-windows
+inventory still lists titles and names applications only where titles collide.
+
+One substitution was closed on the way: "What application is active?" was being
+handed to ChatGPT because the intelligence cascade resolved an external handoff
+before the observation bridge saw the request. The bridge now replaces a spoken
+non-answer or an external handoff — never an action that acts on the desktop —
+because the Answer Source Ladder already ranks an authorized observation above
+an external source.
+
+### Validation
+
+- `cargo test -p workspace-kernel --lib` and `-p workspace-windows-integration --lib` (incl. 4 new provider identity tests and the snapshot-conversion test)
+- `pnpm typecheck`, `pnpm build`, `pnpm test` — 86 files / 625 tests, all verifiers
+- Falsification: title-as-identity fails 3 tests across P23.S5 and P23.S6; a fabricated `process_name` and a source-owned application name are both rejected by `verify-application-identity`
+
+---
+
 ## P23.S5 - Active Window Answer (C-REA-002 rung 3 second need, reusing C-OBS-002)
 
 | Field | Value |

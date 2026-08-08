@@ -1,5 +1,6 @@
 /**
- * P23.S4 / P23.S5 — Observation answer sources (rung 3: capability-observation).
+ * P23.S4 / P23.S5 / P23.S6 — Observation answer sources (rung 3:
+ * capability-observation).
  *
  * The answer sources whose data lives on the desktop rather than in this
  * process. They are deliberately incapable of obtaining that data: each
@@ -16,6 +17,11 @@
  * is in front — and their coverage is mutually exclusive, so a request has one
  * meaning rather than a shortlist to choose from. That exclusivity is what
  * keeps this a set of answers rather than a selection between capabilities.
+ *
+ * The application behind a window is read from the observation and from nowhere
+ * else. There is no application name in this file, and none is derived from a
+ * window title: an observation that named no application produces an answer
+ * that names none.
  */
 
 import type { GoalContract } from "./goalContract";
@@ -74,18 +80,43 @@ export const openWindowsAnswerSource: ObservationAnswerSource = {
 
   compose(_goal: GoalContract, observation: ObservationResult): Answer | null {
     if (!observation.ok) return null;
-    const titles = (observation.items ?? [])
-      .map((item) => item.title?.trim())
-      .filter((title): title is string => Boolean(title));
-    if (titles.length === 0) return null;
+    const windows = (observation.items ?? [])
+      .map((item) => ({
+        title: item.title?.trim() ?? "",
+        application: item.processName?.trim() ?? "",
+      }))
+      .filter((window) => window.title.length > 0);
+    if (windows.length === 0) return null;
 
     return {
-      text: sentenceFor(titles),
+      text: sentenceFor(labelWindows(windows)),
       sourceId: "open-windows",
       rung: "capability-observation",
     };
   },
 };
+
+/**
+ * The Owner asked what is open, so titles are the answer — that is how they
+ * recognise their own windows. The observed application is added only where a
+ * title alone would be ambiguous, because two windows called the same thing are
+ * useless to hear listed twice. Naming the application everywhere would make
+ * every answer longer for information the Owner did not ask for.
+ */
+function labelWindows(
+  windows: Array<{ title: string; application: string }>,
+): string[] {
+  const repeated = new Set(
+    windows
+      .map((window) => window.title)
+      .filter((title, index, all) => all.indexOf(title) !== index),
+  );
+  return windows.map((window) =>
+    repeated.has(window.title) && window.application
+      ? `${window.title} (${window.application})`
+      : window.title,
+  );
+}
 
 /** The Owner is asking about the one window in front of them. */
 const ACTIVE_STATE = /\b(active|focused|foreground|frontmost|current|in front)\b/;
@@ -132,13 +163,39 @@ export const activeWindowAnswerSource: ObservationAnswerSource = {
     const active = items.find((item) => item.focused) ?? items[0];
     const title = active?.title?.trim();
     if (!title) return null;
+    const application = active?.processName?.trim();
 
-    const text = APPLICATION_IDENTITY.test(goal.normalized)
-      ? `The window you’re using is “${title}”. I can see window titles, not which program owns them, so I won’t name the application.`
-      : IN_USE.test(goal.normalized)
-        ? `You’re using “${title}” right now.`
-        : `The active window is “${title}”.`;
-
-    return { text, sourceId: "active-window", rung: "capability-observation" };
+    return {
+      text: APPLICATION_IDENTITY.test(goal.normalized)
+        ? applicationSentence(title, application, IN_USE.test(goal.normalized))
+        : IN_USE.test(goal.normalized)
+          ? `You’re using “${title}” right now.`
+          : `The active window is “${title}”.`,
+      sourceId: "active-window",
+      rung: "capability-observation",
+    };
   },
 };
+
+/**
+ * The Owner asked which application, so the answer stands or falls on whether
+ * the observation named one. When it did not — Windows withholds this for
+ * protected processes — the window is still reported and the gap is stated,
+ * because the only way to produce an application name here would be to read it
+ * out of the title, which is a guess dressed up as an answer.
+ */
+function applicationSentence(
+  title: string,
+  application: string | undefined,
+  inUsePhrasing: boolean,
+): string {
+  if (!application) {
+    return (
+      `The active window is “${title}”. I can see the window, but Windows ` +
+      `didn’t tell me which application is behind it, so I won’t name one.`
+    );
+  }
+  return inUsePhrasing
+    ? `You’re using ${application} — its window is “${title}”.`
+    : `The active application is ${application} — its window is “${title}”.`;
+}

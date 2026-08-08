@@ -79,7 +79,7 @@ function isSoftMiss(action: IntentAction): boolean {
  * downstream routing authority independently selected an external information
  * mechanism. A KNOW outcome never implies it by itself.
  */
-function isIndependentInformationRoute(action: IntentAction): boolean {
+export function isIndependentInformationRoute(action: IntentAction): boolean {
   return action.kind === "browserOpen" && action.informationHandoff === true;
 }
 

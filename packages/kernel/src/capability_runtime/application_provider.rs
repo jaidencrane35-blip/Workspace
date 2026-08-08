@@ -37,6 +37,7 @@ impl ApplicationProvider {
             hwnd: window.hwnd.clone(),
             title: window.title.clone(),
             process_id: window.process_id,
+            process_name: window.process_name.clone(),
             minimized: window.minimized,
             focused: window.focused,
             x: window.x,

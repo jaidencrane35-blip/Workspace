@@ -46,6 +46,7 @@ import { resolveIntelligenceRoute } from "./intelligenceRouting";
 import { comprehend, type GoalContract } from "./goalContract";
 import {
   enforceSubstitutionProhibition,
+  isIndependentInformationRoute,
   isSpeakingAction,
 } from "./substitutionProhibition";
 import {
@@ -2298,6 +2299,13 @@ export function resolveIntent(raw: string): IntentAction {
  * translation rather than a selection: there is nothing to choose, because a
  * need Workspace can express is a need it already had a request for. A need
  * with no existing request would not compile, and so cannot be invented here.
+ *
+ * Only two kinds of action may be replaced: one that merely speaks, and one
+ * that hands the question to an external model. Neither is a desktop goal —
+ * both are what happens when Workspace has no answer — and the Answer Source
+ * Ladder already ranks an authorized observation above an external handoff.
+ * A question Workspace can observe must never be sent to another AI. Anything
+ * that actually does something on the desktop is left exactly as resolved.
  */
 const OBSERVATION_REQUESTS: Record<ObservationNeed, IntentAction> = {
   "open-windows": {
@@ -2311,7 +2319,9 @@ function bridgeObservationRequest(
   goal: GoalContract,
   action: IntentAction,
 ): IntentAction {
-  if (!isSpeakingAction(action)) return action;
+  if (!isSpeakingAction(action) && !isIndependentInformationRoute(action)) {
+    return action;
+  }
   const need = observationNeededFor(goal);
   if (!need) return action;
   return { ...OBSERVATION_REQUESTS[need] };

@@ -234,6 +234,10 @@ pub struct ApplicationWindowItem {
     pub hwnd: String,
     pub title: String,
     pub process_id: u32,
+    /// Owning application as the OS names it — the executable image basename
+    /// observed with the window, never derived from the title. `None` means the
+    /// OS did not say, and Conversation must report that rather than guess.
+    pub process_name: Option<String>,
     pub minimized: bool,
     pub focused: bool,
     pub x: i32,
