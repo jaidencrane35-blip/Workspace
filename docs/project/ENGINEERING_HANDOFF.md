@@ -10,10 +10,10 @@
 | **Engineering status** | **Release Hold** — Atlas Execution Loop slices when Owner-authorized |
 | **Current phase** | **Stage 2 — Owner Acceptance** (Accepted with changes; T1 slice complete) |
 | **Next engineering event** | **A2 (Code Signing)** after Owner Acceptance **and** Authenticode certificate (parallel) |
-| **Current priority** | Owner Product Proof (C-OBS-003/004 + C-ACT-004/005 + C-VER-003 + C-VER-002); **C-PROC-002 PLANNED** — B-DEF-001 resolved, implementation requires a new explicit Owner authorization |
+| **Current priority** | Owner Product Proof (C-OBS-003/004 + C-ACT-004/005 + C-VER-003 + C-VER-002); **C-PROC-002 PLANNED** — B-DEF-001 resolved, contract corrected, implementation requires a new explicit Owner authorization |
 | **Resume triggers** | `docs/production/R2_RELEASE_HOLD.md` + Capability Atlas Execution Loop |
 | **Capability Atlas** | `docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md` (**v2.0** — Pair Rule §0.1 active) |
-| **Latest program** | B-DEF-001 — C-PROC-002 Prepare Coding Workspace procedure definition **complete**; runtime implementation not started |
+| **Latest program** | C-PROC-002 contract correction after pre-implementation audit; runtime implementation not started |
 | **P22.S7 report** | `docs/capability-runtime/product-proof/P22_S7_PREPARE_CODING_WORKSPACE_BLOCKED.md` |
 | **P22.S6 report** | `docs/capability-runtime/product-proof/P22_S6_BOUNDED_RETRY.md` |
 | **P22.S5 report** | `docs/capability-runtime/product-proof/P22_S5_WAIT_CONDITIONS.md` |
@@ -76,7 +76,7 @@
 | **Product Proof workbook** | `docs/capability-runtime/product-proof/P16_O2_PRODUCT_PROOF_SESSION_WORKBOOK.md` |
 | **Rule** | Spec v2 = sole architectural authority. Execution Standard v1 = how all programs run. Classify work, max layer, lowest-layer invariant, compliance checklist. Do not reopen Spec without a Review Trigger. |
 
-**Milestone:** Workspace is on **Release Hold**. Capability Atlas **v2.0** + Pair Rule §0.1. Control-surface eng complete through **C-VER-002** — **Owner Product Proof required**. **B-DEF-001 is resolved**: C-PROC-002 has an authoritative deterministic contract and is **PLANNED**, with implementation/PP/Trusted/Production incomplete. Do not implement it without a new explicit Owner authorization. F1 Complete; A2 awaits Authenticode cert. **Do not begin File Provider** until Voice Accept.
+**Milestone:** Workspace is on **Release Hold**. Capability Atlas **v2.0** + Pair Rule §0.1. Control-surface eng complete through **C-VER-002** — **Owner Product Proof required**. **B-DEF-001 is resolved**: C-PROC-002 has a **corrected** authoritative deterministic contract and is **PLANNED**, with implementation/PP/Trusted/Production incomplete. Do not implement it without a new explicit Owner authorization. F1 Complete; A2 awaits Authenticode cert. **Do not begin File Provider** until Voice Accept.
 
 **Start here before any execution program.**
 
@@ -334,8 +334,8 @@ After Owner closes Workspace: cleanup only — **never relaunch**.
 | Program | C-PROC-002 Prepare Coding Workspace runtime implementation |
 | --- | --- |
 | When | **Only after a new explicit Product Owner authorization under the Atlas Execution Loop** |
-| Standard | Atlas C-PROC-002.1–.8 + Kernel Authority + Completion Contract + Product Proof Rule |
-| Instruction | **Do not begin automatically.** Definition completion is not implementation authorization. P17 File Provider remains blocked until Voice Accept. |
+| Standard | Atlas C-PROC-002.1–.9 + Kernel Authority + Completion Contract + Product Proof Rule |
+| Instruction | **Do not begin automatically.** Contract correction is not implementation authorization. P17 File Provider remains blocked until Voice Accept. |
 
 ---
 
@@ -346,7 +346,7 @@ After Owner closes Workspace: cleanup only — **never relaunch**.
 3. Reassess git (`v2-dev`, clean tree).  
 4. Ignore previous conversational history.  
 5. Treat repository documentation as authoritative.  
-6. Treat C-PROC-002 as **PLANNED**, B-DEF-001 resolved, and implementation not started.
+6. Treat C-PROC-002 as **PLANNED**, B-DEF-001 resolved, contract corrected, and implementation not started.
 7. Continue only from the next Owner-issued execution program; do not infer authorization from readiness.
 
 ---

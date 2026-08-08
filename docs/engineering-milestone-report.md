@@ -4,9 +4,9 @@
 | Field | Value |
 | --- | --- |
 | **Capability ID** | C-PROC-002 |
-| **Artifacts** | Atlas C-PROC-002.1–.8, `verify-prepare-coding-workspace-definition`, `P22_S7_PREPARE_CODING_WORKSPACE_BLOCKED.md` resolution record |
+| **Artifacts** | Atlas C-PROC-002.1–.9, `verify-prepare-coding-workspace-definition`, `P22_S7_PREPARE_CODING_WORKSPACE_BLOCKED.md` resolution record |
 | **Date** | 2026-08-08 |
-| **Status** | **Definition complete** — B-DEF-001 resolved; runtime implementation not started |
+| **Status** | **Contract corrected** — B-DEF-001 resolved; runtime implementation not started |
 | **Max layer** | Capability definition + Repository Standards + Documentation |
 | **Readiness** | Overall **~31%** (Architecture/Dependencies 100%; partial Continue handoff 20%; runtime Verification/PP/Trusted/Production 0%) |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) |
@@ -14,13 +14,16 @@
 ### Summary
 
 Takeover found clean synchronized `v2-dev` at `ac8c050a` and no partial
-B-DEF-001 work. Repository evidence established no default coding app or app
-set. The Atlas now defines a parameterized Owner-named target procedure:
-PCW-001 Resolve → PCW-002 Observe → PCW-003 Open/Focus → PCW-004 Wait →
-PCW-005 one bounded same-target retry → PCW-006 final observe/complete.
-Missing/ambiguous targets clarify before any effect; Moments remains a separate
-Owner-approved restore path. Product Proof is defined but not run. No runtime
-execution behaviour changed. C-PROC-002 is **PLANNED** and requires a new Owner
+B-DEF-001 work. An initial PCW-001–PCW-006 definition resolved incompleteness,
+then a pre-implementation audit blocked it for contract defects. The Atlas now
+defines a corrected composition over existing authorities:
+PCW-001 whole-set resolve/preflight → PCW-002 execute via C-CMP-002 /
+C-ACT-001/006 → PCW-003 C-VER-003 wait/observe → PCW-004 C-CMP-001 aggregate.
+No Launch retry, invented operation deadlines, duplicate Find, private
+A→B→C planner, or mandatory final-focus inference. Targetless coding/setup
+owned by Situation Goals remains Continue; prepare-without-targets otherwise
+clarifies. Primary Product Proof uses Cursor + Notepad. No runtime execution
+behaviour changed. C-PROC-002 is **PLANNED** and requires a new Owner
 authorization before implementation.
 
 ---

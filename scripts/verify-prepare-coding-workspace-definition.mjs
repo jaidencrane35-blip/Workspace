@@ -2,8 +2,9 @@
 /**
  * B-DEF-001 / C-PROC-002 — authoritative procedure-definition check.
  *
- * Definition-only: this verifier proves Atlas schema completeness and safety
- * constraints. It does not claim runtime implementation or Product Proof.
+ * Definition-only: this verifier proves Atlas schema completeness and the
+ * post-audit contract corrections. It does not claim runtime implementation
+ * or Product Proof.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -35,15 +36,16 @@ const procedure = atlas.slice(start, end);
 
 for (const token of [
   "| **Status** | **PLANNED** |",
-  "definition complete; implementation not started",
+  "contract corrected after pre-implementation audit; implementation not started",
   "C-PROC-002.1 Scope and completion",
-  "C-PROC-002.2 Named-target resolution",
-  "C-PROC-002.3 Deterministic step table",
-  "C-PROC-002.4 Authorization",
-  "C-PROC-002.5 Failure rules",
-  "C-PROC-002.6 Retry boundary",
-  "C-PROC-002.7 Future Owner Product Proof",
-  "C-PROC-002.8 Explicit non-goals",
+  "C-PROC-002.2 Entry routing (Continue vs clarification vs procedure)",
+  "C-PROC-002.3 Target authority and launchability",
+  "C-PROC-002.4 Deterministic step table",
+  "C-PROC-002.5 Authorization",
+  "C-PROC-002.6 Failure rules",
+  "C-PROC-002.7 Timing and retry model",
+  "C-PROC-002.8 Future Owner Product Proof",
+  "C-PROC-002.9 Explicit non-goals",
 ]) {
   if (!procedure.includes(token)) {
     fail(`C-PROC-002 missing required section/token: ${token}`);
@@ -51,20 +53,13 @@ for (const token of [
 }
 
 const requiredHeader =
-  "| Step ID | Action | Required Capability | Target | Preconditions | Observable Success Condition | Timeout | Retry Policy | Failure Outcome |";
+  "| Step ID | Action | Required Capability | Target | Preconditions | Observable Success Condition | Timeout / bounded timing authority | Retry Policy | Failure Outcome |";
 if (!procedure.includes(requiredHeader)) {
   fail("step table does not contain every required B-DEF-001 field");
 }
 
-const stepIds = [
-  "PCW-001",
-  "PCW-002",
-  "PCW-003",
-  "PCW-004",
-  "PCW-005",
-  "PCW-006",
-];
-for (const stepId of stepIds) {
+const requiredSteps = ["PCW-001", "PCW-002", "PCW-003", "PCW-004"];
+for (const stepId of requiredSteps) {
   const line = procedure
     .split(/\r?\n/)
     .find((candidate) => candidate.startsWith(`| **${stepId}** |`));
@@ -83,26 +78,67 @@ for (const stepId of stepIds) {
   }
 }
 
+for (const retiredStep of ["PCW-005", "PCW-006"]) {
+  if (procedure.includes(`| **${retiredStep}** |`)) {
+    fail(`${retiredStep} must not remain after contract correction`);
+  }
+}
+
 for (const resolutionClass of [
   "Explicitly named target",
   "Existing known target",
   "Ambiguous target",
   "Missing target",
+  "Intent-known / Kernel-unexecutable",
 ]) {
   if (!procedure.includes(resolutionClass)) {
     fail(`missing named-target rule: ${resolutionClass}`);
   }
 }
 
+for (const dependency of [
+  "C-CMP-002",
+  "C-CMP-001",
+  "C-ACT-001",
+  "C-ACT-006",
+  "C-VER-001",
+  "C-VER-003",
+  "C-OBS-001",
+  "C-ITL-002",
+  "C-ITL-003",
+  "C-ITL-004",
+  "C-CMP-004",
+]) {
+  if (!procedure.includes(dependency)) {
+    fail(`missing required dependency/authority: ${dependency}`);
+  }
+}
+
+const depsLine = procedure
+  .split(/\r?\n/)
+  .find((line) => line.startsWith("| **Dependencies** |"));
+if (!depsLine) {
+  fail("missing Dependencies row");
+}
+if (depsLine.includes("C-VER-002")) {
+  fail("C-VER-002 must not remain a C-PROC-002 dependency");
+}
+if (!depsLine.includes("C-CMP-002") || !depsLine.includes("C-CMP-001")) {
+  fail("Dependencies must compose C-CMP-002 and C-CMP-001");
+}
+
 for (const safetyToken of [
   "There is no",
   "default coding application",
-  "does **not** authorize selection",
-  "All target references are resolved atomically before the first desktop effect",
+  "Final-active-window state is **not** a mandatory completion criterion",
   "Providers never call each other",
-  "Permission denial is never retried around",
-  "MAX_INTERACTION_ATTEMPTS = 2",
-  "current C-VER-002 runtime wiring is click/type-only",
+  "automatic Launch/Open re-attempt is **forbidden**",
+  "C-VER-002 is **out of scope**",
+  "No invented operation deadline",
+  "Substring/first-match title search alone is **not** completion truth",
+  "hwnd",
+  "Private Find loop duplicating C-ACT-001 / C-CMP-002",
+  "Private Target A→B→C planner duplicating C-CMP-002",
 ]) {
   if (!procedure.includes(safetyToken)) {
     fail(`missing target/authority/retry safety token: ${safetyToken}`);
@@ -110,12 +146,15 @@ for (const safetyToken of [
 }
 
 for (const failure of [
+  "Targetless coding/setup owned by Situation Goals",
+  "Missing named target for prepare phrasing",
+  "Ambiguous target",
+  "Intent-known / Kernel-unexecutable",
   "Application not open",
-  "Application cannot be located after launch/focus",
+  "Application cannot be located after open/focus",
   "Control cannot be located",
-  "Interaction failure",
+  "Interaction / permission / unsupported failure",
   "Verification timeout",
-  "Retry exhaustion",
 ]) {
   if (!procedure.includes(`| ${failure} |`)) {
     fail(`missing required failure rule: ${failure}`);
@@ -123,13 +162,15 @@ for (const failure of [
 }
 
 for (const proofToken of [
-  "**Status:** Definition complete; not executed; not accepted.",
+  "**Status:** Definition corrected; not executed; not accepted.",
+  "Prepare my coding workspace with Cursor and Notepad.",
   "Prepare my coding workspace with Notepad and Calculator.",
   "Prepare my coding workspace.",
+  "I need my coding environment.",
+  "Visual Studio Code",
   "NoSuchCodingAppZZZ",
-  "Partial-completion behaviour",
-  "Only the",
-  "Owner may mark Product Proof, Trusted, or Production.",
+  "Partial-completion case",
+  "Only the Owner may mark Product Proof, Trusted, or Production.",
 ]) {
   if (!procedure.includes(proofToken)) {
     fail(`future Product Proof definition missing: ${proofToken}`);
@@ -154,9 +195,10 @@ const resolvedBlockers = atlas.slice(
 );
 if (
   !resolvedBlockers.includes("B-DEF-001") ||
-  !resolvedBlockers.includes("RESOLVED")
+  !resolvedBlockers.includes("RESOLVED") ||
+  !resolvedBlockers.includes("contract corrected")
 ) {
-  fail("resolved blocker register must retain B-DEF-001 history");
+  fail("resolved blocker register must retain B-DEF-001 correction history");
 }
 
 const pkg = fs.readFileSync(path.join(root, "package.json"), "utf8");

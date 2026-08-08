@@ -532,7 +532,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "Release Hold (R2) remains. Control-surface engineering through C-VER-002 is complete with Owner Product Proof pending. B-DEF-001 is resolved: C-PROC-002 is PLANNED with a deterministic definition, but runtime implementation has not started and requires a new Owner authorization. Parallel A2 still awaits an Authenticode certificate; File Provider remains blocked.",
+    note: "Release Hold (R2) remains. Control-surface engineering through C-VER-002 is complete with Owner Product Proof pending. B-DEF-001 is resolved: C-PROC-002 is PLANNED with a corrected deterministic contract after pre-implementation audit, but runtime implementation has not started and requires a new Owner authorization. Parallel A2 still awaits an Authenticode certificate; File Provider remains blocked.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -599,14 +599,14 @@ const health = {
       "Provider Acceptance Standard permanent",
       "Capability Independence Rule permanent (P15)",
       "Operator Authority + Kernel Authority + Composition permanent",
-      "B-DEF-001 resolved — C-PROC-002 definition complete; implementation and Product Proof not started",
+      "B-DEF-001 resolved — C-PROC-002 contract corrected; implementation and Product Proof not started",
       "Canonical agent handoff: docs/project/ENGINEERING_HANDOFF.md",
     ],
   },
   currentMilestone: {
     id: "b-def-001-c-proc-002-definition",
     title: "C-PROC-002 Prepare Coding Workspace Procedure Definition",
-    status: "definition_complete_implementation_not_started",
+    status: "contract_corrected_implementation_not_started",
     commit: milestoneCommit,
   },
   acceptedReviews: [
@@ -719,7 +719,7 @@ const health = {
       id: "c-proc-002-implementation",
       track: "B",
       summary:
-        "C-PROC-002 definition complete; runtime implementation and Owner Product Proof not started; requires a new Owner-authorized Atlas slice",
+        "C-PROC-002 contract corrected; runtime implementation and Owner Product Proof not started; requires a new Owner-authorized Atlas slice",
     },
     {
       id: "tray-integration",
@@ -777,7 +777,7 @@ const health = {
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
       "P16.39 Operator Intelligence — Product Proof pending Owner acceptance; WinRT WRAP frozen; Voice not reopened; Owner evidence outranks engineering confidence",
-      "B-DEF-001 resolved; C-PROC-002 PLANNED at ~31% readiness (definition/dependencies only)",
+      "B-DEF-001 resolved; C-PROC-002 PLANNED at ~31% readiness (contract corrected; definition/dependencies only)",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -860,7 +860,7 @@ const health = {
     date: "2026-08-08",
     document: "docs/engineering-milestone-report.md",
     title:
-      "B-DEF-001 resolved — C-PROC-002 definition complete; implementation not started",
+      "C-PROC-002 contract corrected — ready for Owner-authorized implementation definition",
     reviewBrief:
       "docs/capability-runtime/product-proof/P22_S7_PREPARE_CODING_WORKSPACE_BLOCKED.md",
   },
@@ -869,7 +869,7 @@ const health = {
     id: "c-proc-002-prepare-coding-workspace",
     title: "C-PROC-002 Prepare Coding Workspace runtime implementation",
     blockedUntil: "New explicit Owner authorization under the Atlas Execution Loop",
-    note: "Definition is complete and B-DEF-001 is resolved. Implement only the fixed C-PROC-002 contract in one future bounded slice. Do not begin automatically. File Provider remains blocked on Voice Accept; release track A2 remains certificate-blocked.",
+    note: "Contract is corrected and B-DEF-001 is resolved. Implement only the corrected C-PROC-002 Atlas contract in one future bounded slice. Do not begin automatically. File Provider remains blocked on Voice Accept; release track A2 remains certificate-blocked.",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",

@@ -765,15 +765,15 @@ Overall .................  57%
 | **Name** | Prepare Coding Workspace |
 | **Layer** | L8 Procedures |
 | **Status** | **PLANNED** |
-| **Lifecycle** | Audited → Planned — definition complete; implementation not started |
-| **Dependencies** | C-ITL-002/003/004; C-OBS-001/002; C-ACT-001; C-VER-001/002/003; C-CMP-001 |
+| **Lifecycle** | Audited → Planned — contract corrected after pre-implementation audit; implementation not started |
+| **Dependencies** | C-ITL-002/003/004; C-ACT-001; C-ACT-006; C-CMP-002; C-CMP-001; C-CMP-004; C-VER-001; C-VER-003; C-OBS-001 |
 | **Verification** | `verify-prepare-coding-workspace-definition` (definition only); future runtime composition + regression verification required |
-| **Product Proof** | Defined in §C-PROC-002.7; **not run — Owner session required after implementation** |
+| **Product Proof** | Defined in §C-PROC-002.8; **not run — Owner session required after implementation** |
 | **Priority** | P0 (next Owner-authorized Atlas implementation slice) |
-| **Engineering Notes** | Authoritative procedure contract below. Existing `situationGoals` → Continue/Moments remains the lawful interim path. This definition changes no runtime behaviour and creates no default coding app set. |
-| **Readiness** | Overall **~31%** (definition + dependencies; implementation partial handoff only; runtime verification/PP/Trusted/Production 0%) |
+| **Engineering Notes** | Procedure-level composition over C-CMP-002 + C-ACT-001/006 + C-VER-003 + C-CMP-001. No private planner, Find loop, Launch retry, or final-focus inference. No default coding app set. Runtime behaviour unchanged until Owner-authorized implementation. |
+| **Readiness** | Overall **~31%** (definition + dependencies; implementation partial handoff only; runtime Verification/PP/Trusted/Production 0%) |
 | | ```text
-Architecture ............ 100%  (deterministic procedure contract)
+Architecture ............ 100%  (deterministic corrected contract)
 Dependencies ............ 100%  (required capability primitives eng-complete)
 Implementation ..........  20%  (situationGoals Continue handoff only)
 Verification ............   0%  (definition verifier is not runtime verification)
@@ -786,132 +786,187 @@ Overall ................. ~31%
 ##### C-PROC-002.1 Scope and completion
 
 `C-PROC-002` prepares a finite, non-empty, Owner-selected ordered set of
-application targets. For each target, Workspace determines whether a matching
-top-level window is already present, opens or focuses that exact target, waits
-for observable window availability, and finally verifies that every requested
-target is present and the final requested target is active.
+desktop open targets for the current Conversation turn. It resolves the whole
+set first, executes through existing compound/open capabilities, waits for
+observable window availability where needed, and aggregates truthful
+completed / partial / failed results under the Completion Contract.
 
 The procedure **never chooses what a coding workspace contains**. There is no
 default coding application, application set, layout, file, folder, terminal
 command, project, control, or saved Moment. Target order is the Owner's order;
 the Operator does not add, remove, substitute, or reorder targets.
 
-Completion uses the existing Completion Contract:
+Completion uses the existing Completion Contract (`C-CMP-001` / `C-VER-001`):
 
-- **completed** — every resolved target has an observed top-level window and
-  the final requested target is observed active;
-- **partial** — at least one target reached that state, but one or more did
-  not, or final focus could not be verified;
-- **failed** — no target reached the required state;
-- **clarification required** — resolution failed before effects; no procedure
-  step executes and this is not upgraded to partial or completed.
+- **completed** — every resolved target has an observed top-level window
+  matching that target's identity evidence;
+- **partial** — at least one resolved target reached that state and at least
+  one did not;
+- **failed** — no resolved target reached the required state;
+- **clarification required** — resolution/preflight failed before effects; no
+  procedure Effect executes and this is not upgraded to partial or completed.
 
-##### C-PROC-002.2 Named-target resolution
+Final-active-window state is **not** a mandatory completion criterion. List
+order never implies focus. Explicit focus remains a separate Owner request
+through existing focus capabilities.
 
-All target references are resolved atomically before the first desktop effect.
-If any reference is missing or ambiguous, Workspace asks for clarification and
-opens or focuses **nothing**.
+##### C-PROC-002.2 Entry routing (Continue vs clarification vs procedure)
+
+| Owner request shape | Authority | Result |
+| --- | --- | --- |
+| Targetless coding/setup/resume family already owned by Situation Goals (examples: “I'm coding”, “coding environment”, “set me up”, “development setup”) | **C-PROC-003** + **C-WF-002** | Open Continue; restore only after Owner **Approve and restore**. Not C-PROC-002. |
+| Prepare/set-up coding workspace phrasing **with** one or more named desktop targets | **C-PROC-002** | Enter PCW-001. |
+| Prepare/set-up coding workspace phrasing **without** named targets and **not** already owned by Situation Goals Continue routing | Clarification Policy | Ask which application(s) or site(s); invent nothing; open/focus nothing. |
+| Named targets that fail resolution/preflight | Clarification Policy | Clarify; open/focus nothing. |
+
+A saved Moment is never an inferred C-PROC-002 target. Moments restore remains
+the separate C-WF-002 path.
+
+##### C-PROC-002.3 Target authority and launchability
+
+A **resolved target** is a finite tuple produced before any Effect:
+
+1. **Owner evidence** — explicit name in the current request, or an unambiguous
+   Workspace Context referent that the Owner references in this request
+   (“that app”, “again” only when Context binds exactly one prior open target).
+2. **Intent canonical form** — existing C-ITL-002 entity resolution
+   (`resolveDesktopEntity` / compound-open encoding): `app:<query>` or
+   `browser:<url>`.
+3. **Kernel executability** — for apps/protocols/shell targets, the query must
+   be executable under the existing Application Provider `launch_alias` /
+   explicit path-or-protocol rules used by C-ACT-001. For sites, the URL must
+   satisfy the existing browser-open plausibility rules used by C-ACT-006 /
+   C-CMP-002.
 
 | Resolution class | Authoritative rule | Procedure result |
 | --- | --- | --- |
-| **Explicitly named target** | An application reference supplied in the current Owner request. It must resolve deterministically through existing Intent aliases/entities and to an existing application launch/focus target. | Include the canonical target once, in Owner-supplied order. |
-| **Existing known target** | A canonical application target already held in current Workspace Context and unambiguously referenced by the Owner in this request (for example, a bound “that app” or “again”). Registry knowledge, installation, or a running window alone does **not** authorize selection. | Include only the exact context-bound target. |
-| **Ambiguous target** | A reference has more than one plausible application/context match, or application and window evidence disagree. | **CLARIFICATION**; name the alternatives in user language; no effect. |
-| **Missing target** | The request contains no application target, a context reference is unbound, or a name has no authoritative resolver/launch mapping. | **CLARIFICATION**; ask which application(s); no effect. |
+| **Explicitly named target** | Current-turn Owner name that passes Intent resolution **and** Kernel executability. | Include once, Owner order. |
+| **Existing known target** | Exact Context-bound prior open target unambiguously referenced now. Installation, registry presence, or a running window alone does **not** authorize selection. | Include only that exact bound target. |
+| **Ambiguous target** | More than one plausible Intent/Context match, or no unique Context bind. | **CLARIFICATION**; no effect. |
+| **Missing target** | No named/bound target, or Continue routing does not already own the utterance. | Continue (if C-PROC-003 owns it) or **CLARIFICATION**; never invent apps. |
+| **Intent-known / Kernel-unexecutable** | Intent entity exists but Kernel cannot launch/open it under existing rules (example today: Intent knows “Visual Studio Code”, Application `launch_alias` does not). | **CLARIFICATION** for the whole set before any Effect; do not open earlier targets. |
 
-A saved Moment is not an “existing known target” for this procedure. Generic
-setup/coding phrasing may continue to open Continue under C-PROC-003. Restore
-remains the separate C-WF-002 path and requires the existing preview plus
-**Approve and restore** authorization. C-PROC-002 never selects or restores a
-Moment automatically.
+**Preflight rule:** PCW-001 resolves and validates the **entire** ordered set
+before the first desktop Effect. If any member fails Intent resolution, Kernel
+executability, or uniqueness, Workspace clarifies and opens nothing.
 
-##### C-PROC-002.3 Deterministic step table
+**Existing limitation (documented, not invented away):** Intent entities and
+Kernel `launch_alias` are separate tables today; there is no shared exported
+launchability API. Future implementation must enforce the intersection using
+those existing authorities — it must **not** invent a third alias table or
+guess executables.
 
-Steps `PCW-002` through `PCW-005` run once per resolved target, sequentially in
-Owner-supplied order. The target list is finite, and retry never changes the
-target or requested effect.
+**Identity model:**
 
-| Step ID | Action | Required Capability | Target | Preconditions | Observable Success Condition | Timeout | Retry Policy | Failure Outcome |
+- Running windows expose existing `ApplicationWindowItem` fields: `hwnd`,
+  `process_id`, `title`.
+- When Find/open returns an `hwnd`, later focus/wait/verify for that running
+  instance should prefer `hwnd` (already supported by Application/Window
+  request fields).
+- When only a closed target exists, identity starts as the canonical
+  Intent/Kernel query/label; after the first observed window appears, prefer
+  the returned `hwnd` for subsequent verification.
+- Substring/first-match title search alone is **not** completion truth. Final
+  verification must confirm an observed window for each resolved target using
+  the strongest available identity (`hwnd` when present; otherwise exact
+  canonical label / query match against observation results). If multiple
+  windows still match after observation, report that target unconfirmed
+  rather than inventing which one counts.
+
+##### C-PROC-002.4 Deterministic step table
+
+C-PROC-002 does **not** privately loop Target A→B→C. Ordered multi-target
+execution is owned by **C-CMP-002**. Single-target open/focus is owned by
+**C-ACT-001** / **C-ACT-006**. Waiting is owned by **C-VER-003**. Completion
+aggregation is owned by **C-CMP-001** / **C-VER-001**. Application Launch is
+**not** automatically retried.
+
+| Step ID | Action | Required Capability | Target | Preconditions | Observable Success Condition | Timeout / bounded timing authority | Retry Policy | Failure Outcome |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **PCW-001** | Resolve and canonicalize the complete ordered target set. | C-ITL-002 Semantic Intent; C-ITL-003 Workspace Context; C-ITL-004 Goal Resolution | Every application reference in the current Owner request | Request maps to Prepare Coding Workspace; no desktop effect has begun | A non-empty finite ordered set exists; every item records explicit-name or context-bound evidence and maps to one canonical launch/focus target | Single deterministic pass; no polling or wait | **Not permitted.** Missing/ambiguous information is not transient. | **CLARIFICATION**; no target effect executes. |
-| **PCW-002** | Enumerate top-level windows and record whether the current target is already present. | C-OBS-001 Enumerate Windows | Current canonical target | PCW-001 completed for the entire set | Truthful `present` or `not present` fact for the exact target; `not present` is the lawful launch branch, not invented failure | 2s operation deadline; one observation pass | **Not permitted.** | Observation error/timeout: stop this target; final outcome **failed** or **partial** according to completed targets. |
-| **PCW-003** | Ensure the target is available: focus the exact running target, otherwise launch the exact resolved target (`app.open_or_focus`). | C-ACT-001 Launch Application (existing focus-or-launch composition) | Current canonical target only | PCW-002 produced an availability fact; effect remains authorized for this Owner turn | Provider/OS fact identifies focus or launch acceptance for the exact target; this is provisional until PCW-004 | 2s effect-response deadline; launch readiness is measured by PCW-004 | No immediate loop. **One re-attempt only through PCW-005** after a retryable PCW-004 miss. | Permission denial, unsupported target, access denial, focus refusal, or interaction failure: stop immediately; no retry; final **failed/partial**. |
-| **PCW-004** | Wait for and observe the exact target window. | C-VER-003 Wait Conditions (`window_available`) | Exact current target window | PCW-003 returned, or PCW-002 found the target present | `condition_met` plus an observed matching top-level window | 8s maximum, 50ms polling | On `condition_timeout` or post-action `not_found`, proceed to PCW-005 once. No retry for policy/auth/unsupported/interaction failures. | Retryable miss → PCW-005. Otherwise stop target and aggregate **failed/partial**. |
-| **PCW-005** | Apply one bounded same-target re-attempt: wait 400ms, repeat PCW-003 once, then repeat PCW-004 once. | C-VER-002 Retry; C-VER-003 Wait Conditions; C-ACT-001 | Same canonical target and same open/focus effect only | First PCW-004 ended with retryable `condition_timeout` or post-action `not_found`; original Owner authorization still applies | Second PCW-004 returns `condition_met` for the same target | 400ms pause + 2s effect response + 8s verification (**10.4s maximum**) | **No further retry. Maximum two action attempts total.** | **Retry exhaustion**; retain prior completed targets and aggregate **failed/partial** truthfully. |
-| **PCW-006** | Re-enumerate requested targets, observe the active window, and compose the final result. | C-OBS-001 Enumerate Windows; C-OBS-002 Active Window; C-VER-001 Action Verification; C-VER-003 (`window_active`); C-CMP-001 Completion Contract | Entire resolved target set; final requested target for active-window check | Every target has completed or stopped; no retries remain | Every requested target window is observed and the final requested target is observed active; result lists per-target facts | 2s final active-window wait, 50ms polling; one final enumeration | **Not permitted.** Per-target retry boundaries are already exhausted. | Return **completed**, **partial**, or **failed** from observed facts; never upgrade missing evidence to success. |
+| **PCW-001** | Resolve the complete ordered authorized target set; enforce launchability/openability preflight for every member; encode for existing compound/open execution. | C-ITL-002; C-ITL-003; C-ITL-004; Kernel Application `launch_alias` / browser openability rules (existing) | Every Owner-named or exactly Context-bound desktop open target in the current request | Request enters C-PROC-002 per §C-PROC-002.2; no Effect has begun | Non-empty finite ordered set; every member has Owner evidence + Intent canonical form + Kernel executability; encode ready for C-CMP-002 (`app:` / `browser:`) or single open | Single deterministic pass; no polling | **Not permitted.** | **CLARIFICATION** or Continue routing; no target Effect. |
+| **PCW-002** | Execute the authorized set through existing composition: C-CMP-002 for ≥2 targets; C-ACT-001 `app.open_or_focus` for one app; C-ACT-006 browser open for one site. | C-CMP-002; C-ACT-001; C-ACT-006; C-CMP-004; Permission Gateway | Exact PCW-001 set, Owner order | PCW-001 succeeded for the entire set; current-turn Owner authorization applies | Existing composition returns per-target Focus/Launch/Open facts. Find then Focus or Launch remains inside C-ACT-001 / C-CMP-002 — not reimplemented here. Provisional until PCW-003 observation. | No invented operation deadline. Use existing provider / composition completion behaviour. | **Not permitted** for Launch/Open. Permission/unsupported/interaction failures stop that unit under existing composition rules. | Permission denial / unsupported / interaction failure: stop further units per existing C-CMP-002 stop-on-failure behaviour; retain earlier units; proceed to PCW-003/004 for truthful aggregation. |
+| **PCW-003** | For each requested target, wait/observe until a matching top-level window is available or the wait bound expires. Prefer `hwnd` when PCW-002 produced one; otherwise wait on the canonical window query and confirm against observation. | C-VER-003 (`window_available`); C-OBS-001 | Each resolved target from PCW-001 | PCW-002 finished (completed, partial, or failed units) | Per target: `condition_met` **and** observed window identity evidence for that exact target | Existing C-VER-003 authority only: default 2s, max 8s, poll 50ms per wait | **No Launch/Open retry.** One bounded wait per target. C-VER-002 is **not** used (click/type-only; Launch is not proven idempotent). | `condition_timeout` / unconfirmed identity: mark that target unverified; continue remaining waits; never relaunch; never substitute another app. |
+| **PCW-004** | Aggregate observed facts into completed / partial / failed under the Completion Contract. | C-CMP-001; C-VER-001; C-OBS-001 | Entire resolved target set | PCW-003 finished for all targets; no retries remain | Conversation reports completed only if every target has observed identity evidence; otherwise partial/failed with per-target facts; never upgrade missing evidence | One final observation pass; no invented deadline | **Not permitted.** | Return **completed**, **partial**, or **failed** from observed facts only. |
 
-##### C-PROC-002.4 Authorization
+##### C-PROC-002.5 Authorization
 
 | Step | Authorization classification | Rule |
 | --- | --- | --- |
-| PCW-001 | **No additional authorization** | Resolution is Meaning/Plan only; it produces no Effect. |
-| PCW-002 | **No additional authorization** | Read-only observation still follows the Kernel/Runtime permission path. |
-| PCW-003 | **Existing Owner confirmation** | The current request explicitly names or unambiguously references each target. The Kernel Permission Gateway remains mandatory at effect time. |
-| PCW-004 | **No additional authorization** | Bounded observation of the already-authorized target. |
-| PCW-005 | **Existing Owner confirmation** | Covers only the same target and same effect once. Permission denial is never retried around. |
-| PCW-006 | **No additional authorization** | Observation and truthful completion composition only. |
-| Separate C-WF-002 restore | **Existing Moments authorization** | Preview plus Owner **Approve and restore** with plan-digest binding; not a C-PROC-002 step. |
+| PCW-001 | **No additional authorization** | Meaning/Plan only; no Effect. |
+| PCW-002 | **Existing Owner confirmation** | Current-turn explicit names or exact Context bind authorize only those targets. Permission Gateway remains mandatory per Effect. Historical coding-workspace requests never create standing launch authority. |
+| PCW-003 | **No additional authorization** | Bounded observation/wait of already-authorized targets. |
+| PCW-004 | **No additional authorization** | Truthful completion composition only. |
+| Separate C-WF-002 restore | **Existing Moments authorization** | Preview + Owner **Approve and restore** + plan-digest binding. Not a C-PROC-002 step. |
 
-No procedure-wide approval token is invented. Every Effect remains
-Conversation → Intent → `execute_capability_intent` → Kernel Operator →
-Permission Gateway → Runtime. Providers never call each other.
+No procedure-wide approval token is invented. No automatic second Launch is
+authorized. Every Effect remains Conversation → Intent →
+`execute_capability_intent` → Kernel Operator → Permission Gateway → Runtime.
+Providers never call each other.
 
-##### C-PROC-002.5 Failure rules
+##### C-PROC-002.6 Failure rules
 
-| Failure | Deterministic behaviour | Retry | Final procedure result |
+| Failure | Deterministic behaviour | Retry / wait | Final procedure result |
 | --- | --- | --- | --- |
-| Missing target | Ask which application(s) the Owner wants; execute nothing. | No | **CLARIFICATION** |
-| Ambiguous target | Present the concrete alternatives; execute nothing. | No | **CLARIFICATION** |
-| Application not open | Treat as PCW-002 `not present`; launch the exact resolved target through PCW-003. | Only if later verification times out | Continue |
-| Application cannot be located after launch/focus | Wait up to 8s, then one same-target re-attempt under PCW-005. | Once | **failed/partial** after exhaustion |
-| Control cannot be located | Controls are outside this procedure contract. Do not guess a control or add a click/type step; ask for a separate named control action if needed. | No C-PROC-002 retry | **CLARIFICATION** for the out-of-contract request; existing prepared targets remain truthfully reported |
-| Interaction failure | Report the exact target failure in user language; retain earlier completed targets. | No | **failed/partial** |
-| Verification timeout | Enter PCW-005 only for the same target/effect. | Once | Continue or retry exhaustion |
-| Retry exhaustion | Stop; do not substitute another application or continue retrying. | No | **failed/partial** |
-| Permission/authorization denial | Report denial; do not retry around policy. | No | **failed/partial** |
+| Targetless coding/setup owned by Situation Goals | Route to Continue/Moments | No | Continue path (not C-PROC-002) |
+| Missing named target for prepare phrasing | Ask which application(s)/site(s); execute nothing | No | **CLARIFICATION** |
+| Ambiguous target | Present concrete alternatives; execute nothing | No | **CLARIFICATION** |
+| Intent-known / Kernel-unexecutable | Clarify the unexecutable target; execute nothing for the whole set | No | **CLARIFICATION** |
+| Application not open | Existing C-ACT-001 / C-CMP-002 Find→Launch branch opens the exact resolved target once | No automatic relaunch | Continue to wait/verify |
+| Application cannot be located after open/focus | One C-VER-003 `window_available` wait | Wait only; no Launch retry | Unverified target → **failed/partial** |
+| Control cannot be located | Outside this procedure; do not invent click/type | No | Clarify the out-of-contract control request; report any prepared targets truthfully |
+| Interaction / permission / unsupported failure | Report exact target failure; do not retry around policy | No | **failed/partial** |
+| Verification timeout | Mark target unverified; do not relaunch | No | **failed/partial** |
 
-##### C-PROC-002.6 Retry boundary
+##### C-PROC-002.7 Timing and retry model
 
-C-VER-002 supplies the permanent bound: original attempt plus one re-attempt
-(`MAX_INTERACTION_ATTEMPTS = 2`) with a 400ms C-VER-003 pause. For this
-procedure, the retry boundary is exactly one canonical application target and
-the same `app.open_or_focus` effect. Retry may follow only a verification
-`condition_timeout` or post-action `not_found`.
+**Timing authority:** only existing C-VER-003 Wait Conditions
+(default 2s / max 8s / 50ms). No invented 2-second operation deadlines for
+Find, Launch, Focus, or aggregate completion.
 
-The current C-VER-002 runtime wiring is click/type-only. Future C-PROC-002
-implementation must reuse its policy and add the application composition
-without changing the bound; this definition does **not** claim that runtime
-wiring already exists.
+**Retry authority:** C-VER-002 is **out of scope** for C-PROC-002. It remains
+click/type-only, and application Launch is not proven idempotent under current
+repository evidence. Therefore:
 
-##### C-PROC-002.7 Future Owner Product Proof
+- Observe → Wait → Verify is permitted;
+- automatic Launch/Open re-attempt is **forbidden**;
+- C-PROC-002 must not create a second retry orchestration mechanism.
 
-**Status:** Definition complete; not executed; not accepted.
+##### C-PROC-002.8 Future Owner Product Proof
+
+**Status:** Definition corrected; not executed; not accepted.
+
+Primary Product Proof must validate a credible coding-workspace preparation
+using only repository-supported dual-authority targets. Neutral multi-app
+opening is a regression case, not the sole proof.
 
 | Field | Required future proof |
 | --- | --- |
-| **Exact Owner input (success)** | `Prepare my coding workspace with Notepad and Calculator.` The application names are explicit proof targets, not product defaults. |
-| **Starting state** | Workspace is launched once by Owner for Product Proof; Conversation is ready; Notepad and Calculator are closed; no saved Moment is selected; no prior target context is required. |
-| **Expected visible outcome** | Notepad and Calculator become visibly open; Calculator (the final Owner-named target) is active; Conversation reports completed only after both windows and final focus are observed. |
-| **Missing-target case** | `Prepare my coding workspace.` → ask which applications; launch/focus nothing. |
-| **Unknown-target case** | `Prepare my coding workspace with Notepad and NoSuchCodingAppZZZ.` → resolve the entire set first, ask for clarification, and do not open Notepad. |
-| **Ambiguous-target case** | With more than one context candidate, `Prepare my coding workspace with that app.` → name the alternatives and execute nothing. |
-| **Application-already-open case** | Start Notepad first, then use the success input → focus/reuse Notepad rather than duplicate it; Calculator may launch. |
-| **Failure/timeout case** | If a resolved target refuses interaction or never presents a window, stop after the defined bound and identify that target; never claim completed. |
-| **Partial-completion behaviour** | If the first of two fully resolved targets is observed ready and the second later fails, retain the first effect and report partial with one-of-two target facts and recovery guidance. |
-| **Success criteria** | Exact target fidelity; no added/substituted app; correct input order; finite timing; at most two attempts for one retryable target; all requested windows observed; final target active; truthful completed/partial/failed/clarification response. |
+| **Exact Owner input (primary success)** | `Prepare my coding workspace with Cursor and Notepad.` Both names are Intent-known and Kernel-launchable today; Cursor is a coding-relevant explicit target, not a default stack. |
+| **Neutral regression (optional)** | `Prepare my coding workspace with Notepad and Calculator.` Proves multi-target open only; not sufficient alone. |
+| **Starting state** | Owner launches Workspace once; Conversation ready; named proof apps closed unless a case says otherwise; no Moment auto-selected. |
+| **Expected visible outcome** | Cursor and Notepad are visibly open; Conversation reports **completed** only after both windows are observed. Final focus is **not** required unless the Owner separately asks to focus one. |
+| **Targetless Continue case** | `I need my coding environment.` → Continue/Moments path; no invented apps. |
+| **Targetless clarify case** | `Prepare my coding workspace.` → ask which applications/sites; launch/focus nothing. |
+| **Unsupported / Kernel-unexecutable case** | `Prepare my coding workspace with Cursor and Visual Studio Code.` → whole-set clarification before effects (Intent may know VS Code; Kernel `launch_alias` does not); Cursor must not open first. |
+| **Unknown-target case** | `Prepare my coding workspace with Cursor and NoSuchCodingAppZZZ.` → clarify; open nothing. |
+| **Ambiguous-target case** | Unbound `Prepare my coding workspace with that app.` → clarify alternatives; open nothing. |
+| **Already-open case** | Start Cursor first, then primary success input → reuse/focus Cursor; open Notepad; no duplicate Cursor invent. |
+| **Partial-completion case** | First target observed ready, later target fails/times out → retain first effect; report **partial** with per-target facts. |
+| **Permission / interaction failure** | Gateway denial or focus/launch refusal on a target → truthful failed/partial; no policy retry. |
+| **Success criteria** | Exact target fidelity; no invented/default apps; whole-set preflight; no Launch retry; C-CMP-002 owns ordered execution; C-VER-003 owns waits; C-CMP-001 owns completion; no mandatory final-focus inference; ordinary phrasing variants work without rigid capitalization. |
 
-Product Proof must also attempt ordinary variants such as “Set up my coding
-space with Notepad and Calculator” without requiring exact capitalization or
-memorized wording. Engineering verification must be green first. Only the
-Owner may mark Product Proof, Trusted, or Production.
+Engineering verification must be green first. Only the Owner may mark Product Proof, Trusted, or Production.
 
-##### C-PROC-002.8 Explicit non-goals
+##### C-PROC-002.9 Explicit non-goals
 
 - Selecting a default IDE, editor, browser, terminal, project, or app set.
-- Opening files/folders, running terminal commands, typing into controls, or
-  clicking controls.
+- Private Target A→B→C planner duplicating C-CMP-002.
+- Private Find loop duplicating C-ACT-001 / C-CMP-002.
+- Automatic Launch/Open retry or a second retry framework.
+- Invented operation-timeout framework outside C-VER-003.
+- Mandatory final-active-window inference from list order.
+- Opening files/folders, running terminal commands, typing/clicking controls.
 - Choosing, approving, or restoring a saved Moment.
-- Arranging windows unless a separate named layout capability is authorized.
 - OCR/VLM perception, probabilistic target selection, autonomous agent loops,
   indefinite polling, or provider-to-provider calls.
 - Treating definition verification as runtime implementation or Product Proof.
@@ -1103,9 +1158,9 @@ PLANNED spine:
        └─► C-VER-003 Wait (eng done → PP)
               └─► C-VER-002 Retry (eng done → PP)
 
-  C-ITL-002/003/004 + C-OBS-001/002 + C-ACT-001
-       + C-VER-001/002/003 + C-CMP-001
-                     └─► C-PROC-002 (**PLANNED**; definition complete)
+  C-ITL-002/003/004 + C-ACT-001/006 + C-CMP-002
+       + C-VER-001/003 + C-OBS-001 + C-CMP-001/004
+                     └─► C-PROC-002 (**PLANNED**; contract corrected)
                               └─► C-WF-001 (later)
 
 BLOCKED spine:
@@ -1138,7 +1193,7 @@ BLOCKED spine:
 
 | ID | Resolution | Evidence | Lifecycle effect |
 | --- | --- | --- | --- |
-| **B-DEF-001** | **RESOLVED 2026-08-08** — C-PROC-002 now defines target-resolution authority, ordered Step IDs, actions, required capabilities, targets, preconditions, observable success, timeouts, retry boundaries, failure outcomes, authorization, and future Product Proof. | C-PROC-002.1–.8; `verify-prepare-coding-workspace-definition` | C-PROC-002 **BLOCKED → PLANNED**. Implementation, Product Proof, Trusted, and Production remain incomplete. |
+| **B-DEF-001** | **RESOLVED 2026-08-08** — initial procedure body landed; **contract corrected** after pre-implementation audit (compose C-CMP-002, remove Launch retry / invented deadlines / mandatory final-focus, dual Intent+Kernel target authority, Continue vs clarify routing). | C-PROC-002.1–.9; `verify-prepare-coding-workspace-definition` | C-PROC-002 remains **PLANNED**. Implementation, Product Proof, Trusted, and Production remain incomplete. |
 
 ---
 
@@ -1151,7 +1206,7 @@ BLOCKED spine:
 | Desktop Control Interaction | Invoke/SetValue + Operator compose | `verify-desktop-control-interaction` | Owner P22.S4 (joint) |
 | Wait Conditions | Bounded WaitCondition + compose | `verify-wait-conditions` | Owner P22.S5 |
 | Bounded Retry | Operator retry + Wait reuse | `verify-bounded-retry` | Owner P22.S6 |
-| Prepare Coding Workspace definition | Atlas C-PROC-002.1–.8 | `verify-prepare-coding-workspace-definition` | Defined; Owner session only after runtime implementation |
+| Prepare Coding Workspace definition | Atlas C-PROC-002.1–.9 | `verify-prepare-coding-workspace-definition` | Corrected contract; Owner session only after runtime implementation |
 | Providers | `cargo` + verify scripts | `pnpm test` | Owner NL |
 | Composition | Kernel + completion/compound | Hostile NL | Live confirm |
 | Reasoning | intelligence-routing | verify script | Owner re-proof |
@@ -1214,7 +1269,7 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 | **C-VER-002** | **Retry** | **IMPLEMENTED (eng)** | **57%** |
 | **C-VER-003** | **Wait Conditions** | **IMPLEMENTED (eng)** | **57%** |
 | C-CMP-002..004 | Composition | IMPLEMENTED | ~71% |
-| **C-PROC-002** | **Prepare Coding Workspace** | **PLANNED** | **~31%** (definition complete; implementation/PP open) |
+| **C-PROC-002** | **Prepare Coding Workspace** | **PLANNED** | **~31%** (contract corrected; implementation/PP open) |
 | C-PROC-* / C-WF-* (other) | Procedures / Workflows | Mixed | see records |
 | C-INT-001..003 | Intelligence | IMPLEMENTED | ~57–71% |
 | C-INT-004..005 | Memory / Agent | REJECTED | 0% |
@@ -1227,7 +1282,7 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 
 | Rank | ID | Capability | Status | Why |
 | --- | --- | --- | --- | --- |
-| **1** | **C-PROC-002** | Prepare Coding Workspace | **PLANNED** | Definition complete; next only when Owner authorizes implementation |
+| **1** | **C-PROC-002** | Prepare Coding Workspace | **PLANNED** | Contract corrected; next only when Owner authorizes implementation |
 | 2 | C-REL-002 | Code Signing A2 | BLOCKED (cert) | Parallel release track |
 | 3 | C-ACT-011 | File Provider | BLOCKED (Voice) | Production Before Expansion |
 | 4 | C-OBS-007 | Tokenized perception | FUTURE | After interaction PP |
@@ -1236,8 +1291,9 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 
 **Rejected (do not queue):** C-ACT-013; C-INT-004; C-INT-005.
 
-**Latest definition slice:** B-DEF-001 resolved. C-PROC-002 is **PLANNED**;
-runtime implementation has not started. No silent scope expansion.
+**Latest definition slice:** B-DEF-001 resolved and contract corrected after
+pre-implementation audit. C-PROC-002 is **PLANNED**; runtime implementation
+has not started. No silent scope expansion.
 
 ---
 
@@ -1245,18 +1301,19 @@ runtime implementation has not started. No silent scope expansion.
 
 ### **C-PROC-002 — PLANNED (not active)**
 
-C-PROC-002 is now completely defined and its prerequisite capabilities are
-engineering-present. It is the highest planned implementation candidate, but
-Release Hold remains active: implementation starts only after a new explicit
-Owner authorization. This definition slice does not authorize implementation.
+C-PROC-002 now has a corrected deterministic contract that composes existing
+authorities (C-CMP-002, C-ACT-001/006, C-VER-003, C-CMP-001). It is the highest
+planned implementation candidate, but Release Hold remains active:
+implementation starts only after a new explicit Owner authorization. This
+definition correction does not authorize implementation.
 
 | Candidate | Status |
 | --- | --- |
-| C-PROC-002 | **PLANNED** — definition complete; await Owner implementation authorization |
+| C-PROC-002 | **PLANNED** — contract corrected; await Owner implementation authorization |
 | C-REL-002 | **BLOCKED** — B-EXT-001 (Authenticode cert) |
 | C-ACT-011 | **BLOCKED** — B-PP-001 / B-CAP-001 (Voice Accept) |
 
-**Recommended Owner action for C-PROC-002:** Review C-PROC-002.1–.8 and,
+**Recommended Owner action for C-PROC-002:** Review C-PROC-002.1–.9 and,
 when desired, explicitly authorize one bounded runtime implementation slice.
 
 Parallel: Owner Product Proof for C-OBS-003/004, C-ACT-004/005, C-VER-003, C-VER-002; Authenticode → A2.
@@ -1283,6 +1340,7 @@ LOOP:
 ## 11. Atlas maintenance checklist (per program)
 
 - [x] C-PROC-002 deterministic procedure body complete
+- [x] Pre-implementation audit defects corrected in Atlas contract
 - [x] C-PROC-002 **BLOCKED → PLANNED**; B-DEF-001 resolved
 - [x] Readiness Score ~31% (definition/dependencies only)
 - [x] Definition verifier wired into `pnpm test`
@@ -1325,5 +1383,5 @@ Two-digit IDs are **retired**. Meanings remapped to permanent three-digit IDs (*
 ## Stop
 
 **Workspace Capability Atlas v2.0** is the authoritative capability roadmap.  
-C-PROC-002 Prepare Coding Workspace → **PLANNED; B-DEF-001 resolved**.
+C-PROC-002 Prepare Coding Workspace → **PLANNED; contract corrected; B-DEF-001 resolved**.
 Do not implement C-PROC-002 or begin another capability without a new explicit Owner authorization.
