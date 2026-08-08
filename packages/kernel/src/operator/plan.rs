@@ -403,6 +403,101 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
         });
     }
 
+    // Locate → click → re-locate verify (C-ACT-004; Completion Contract).
+    if domain == CapabilityDomainId::window()
+        && (op_raw == "click_control" || op_raw == "invoke_control")
+    {
+        let control = intent
+            .text
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .or_else(|| {
+                intent
+                    .title
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+            });
+        if control.is_none() {
+            return Err(KernelError::CapabilityRuntime {
+                message: "Name the control to click (for example Save).".into(),
+            });
+        }
+        let mut find = intent.clone();
+        find.operation = "find_control".into();
+        find.text = control.map(|s| s.to_string());
+        let mut invoke = intent.clone();
+        invoke.operation = "invoke_control".into();
+        invoke.text = control.map(|s| s.to_string());
+        return Ok(OperatorPlan {
+            composition_id: Some("window.click_control".into()),
+            steps: vec![
+                step_from_intent(
+                    CapabilityDomainId::window(),
+                    CapabilityOperation::FindControl,
+                    &find,
+                ),
+                step_from_intent(
+                    CapabilityDomainId::window(),
+                    CapabilityOperation::InvokeControl,
+                    &invoke,
+                ),
+                step_from_intent(
+                    CapabilityDomainId::window(),
+                    CapabilityOperation::FindControl,
+                    &find,
+                ),
+            ],
+        });
+    }
+
+    // Locate → type → re-locate (C-ACT-005; value verified inside set_control_value).
+    if domain == CapabilityDomainId::window()
+        && (op_raw == "type_control" || op_raw == "set_control_value")
+    {
+        let control = intent
+            .title
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
+        let value = intent.text.as_deref().map(str::trim).filter(|s| !s.is_empty());
+        if control.is_none() {
+            return Err(KernelError::CapabilityRuntime {
+                message: "Name the field to type into (for example Edit).".into(),
+            });
+        }
+        if value.is_none() {
+            return Err(KernelError::CapabilityRuntime {
+                message: "What text should I type?".into(),
+            });
+        }
+        let mut find = intent.clone();
+        find.operation = "find_control".into();
+        find.text = control.map(|s| s.to_string());
+        find.title = None;
+        return Ok(OperatorPlan {
+            composition_id: Some("window.type_control".into()),
+            steps: vec![
+                step_from_intent(
+                    CapabilityDomainId::window(),
+                    CapabilityOperation::FindControl,
+                    &find,
+                ),
+                step_from_intent(
+                    CapabilityDomainId::window(),
+                    CapabilityOperation::SetControlValue,
+                    intent,
+                ),
+                step_from_intent(
+                    CapabilityDomainId::window(),
+                    CapabilityOperation::FindControl,
+                    &find,
+                ),
+            ],
+        });
+    }
+
     // Locate then minimise (Semantic Intent Engine composition — Kernel only)
     if domain == CapabilityDomainId::window() && op_raw == "focus_minimize" {
         let query = intent.query.as_deref().unwrap_or("").trim();
@@ -477,6 +572,8 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
             | CapabilityOperation::Monitors
             | CapabilityOperation::EnumerateControls
             | CapabilityOperation::FindControl
+            | CapabilityOperation::InvokeControl
+            | CapabilityOperation::SetControlValue
             | CapabilityOperation::Focus
             | CapabilityOperation::Minimize
             | CapabilityOperation::Restore

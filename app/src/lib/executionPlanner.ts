@@ -177,6 +177,40 @@ export function buildExecutionPlan(
           step("complete", "Present truthful desktop result", null),
         ],
       };
+    case "winClickControl":
+      return {
+        goal,
+        capabilities: caps("mouse-click", "window-control-discovery"),
+        multiStep: true,
+        action,
+        steps: [
+          step(
+            "observe",
+            "Locate the named control",
+            "window-control-discovery",
+            "delegated_to_kernel",
+          ),
+          step("act", "Click the control", "mouse-click", "delegated_to_kernel"),
+          step("verify", "Confirm the control is still observable", "mouse-click"),
+        ],
+      };
+    case "winTypeControl":
+      return {
+        goal,
+        capabilities: caps("keyboard-input", "window-control-discovery"),
+        multiStep: true,
+        action,
+        steps: [
+          step(
+            "observe",
+            "Locate the editable control",
+            "window-control-discovery",
+            "delegated_to_kernel",
+          ),
+          step("act", "Type deterministic text", "keyboard-input", "delegated_to_kernel"),
+          step("verify", "Confirm the field is still observable", "keyboard-input"),
+        ],
+      };
     case "winFindControl":
       return {
         goal,

@@ -1,7 +1,9 @@
-//! UI Automation observation port (C-OBS-003 Desktop UI Tree, C-OBS-004 Window Control Discovery).
+//! UI Automation port — observation (C-OBS-003/004) + interaction (C-ACT-004/005).
 //!
-//! WRAP Windows UI Automation for control list + locate-by-name.
-//! No click/type here — Interaction capabilities are separate Atlas items.
+//! WRAP Windows UI Automation. Providers never invent success: locate → act → verify.
+
+use std::collections::{HashMap, HashSet};
+use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 
@@ -16,11 +18,21 @@ pub struct UiControlSnapshot {
     pub automation_id: String,
 }
 
-/// Bounded UI tree observation for a host window (hwnd string).
+/// Result of a bounded UI interaction with observable verification.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UiInteractionOutcome {
+    pub control: UiControlSnapshot,
+    /// True when post-condition was observed (not assumed).
+    pub verified: bool,
+    pub detail: String,
+}
+
+/// Bounded UI tree observation + Kernel-gated interaction for a host window.
 pub trait UiAutomationPort: Send + Sync {
     fn enumerate_controls(&self, hwnd: &str, limit: usize) -> Result<Vec<UiControlSnapshot>>;
 
-    /// Locate a named control inside a window (C-OBS-004). Default: scan enumerate results.
+    /// Locate a named control inside a window (C-OBS-004).
     fn find_control(&self, hwnd: &str, control_query: &str) -> Result<Option<UiControlSnapshot>> {
         let needle = control_query.trim();
         if needle.is_empty() {
@@ -29,6 +41,17 @@ pub trait UiAutomationPort: Send + Sync {
         let controls = self.enumerate_controls(hwnd, 80)?;
         Ok(match_control(&controls, needle).cloned())
     }
+
+    /// C-ACT-004 — invoke/click a named control; verify control remains discoverable.
+    fn invoke_control(&self, hwnd: &str, control_query: &str) -> Result<UiInteractionOutcome>;
+
+    /// C-ACT-005 — set value / type into a named control; verify read-back when possible.
+    fn set_control_value(
+        &self,
+        hwnd: &str,
+        control_query: &str,
+        value: &str,
+    ) -> Result<UiInteractionOutcome>;
 }
 
 /// Prefer exact name, then case-insensitive equality, then starts-with, then contains.
@@ -44,11 +67,7 @@ pub fn match_control<'a>(
     controls
         .iter()
         .find(|c| c.name == n)
-        .or_else(|| {
-            controls
-                .iter()
-                .find(|c| c.name.eq_ignore_ascii_case(n))
-        })
+        .or_else(|| controls.iter().find(|c| c.name.eq_ignore_ascii_case(n)))
         .or_else(|| {
             controls.iter().find(|c| {
                 c.name.to_ascii_lowercase().starts_with(&n_lower)
@@ -62,20 +81,47 @@ pub fn match_control<'a>(
         })
 }
 
+fn control_key(c: &UiControlSnapshot) -> String {
+    if c.automation_id.is_empty() {
+        format!("{}|{}", c.name, c.control_type)
+    } else {
+        c.automation_id.clone()
+    }
+}
+
 /// Non-Windows / unavailable stub.
 pub struct StubUiAutomationPort;
 
 impl UiAutomationPort for StubUiAutomationPort {
     fn enumerate_controls(&self, _hwnd: &str, _limit: usize) -> Result<Vec<UiControlSnapshot>> {
         Err(WindowsIntegrationError::UiAutomationFailed(
-            "UI Automation control discovery is only available on Windows.".into(),
+            "UI Automation is only available on Windows.".into(),
+        ))
+    }
+
+    fn invoke_control(&self, _hwnd: &str, _control_query: &str) -> Result<UiInteractionOutcome> {
+        Err(WindowsIntegrationError::UiAutomationFailed(
+            "UI Automation click is only available on Windows.".into(),
+        ))
+    }
+
+    fn set_control_value(
+        &self,
+        _hwnd: &str,
+        _control_query: &str,
+        _value: &str,
+    ) -> Result<UiInteractionOutcome> {
+        Err(WindowsIntegrationError::UiAutomationFailed(
+            "UI Automation typing is only available on Windows.".into(),
         ))
     }
 }
 
-/// In-memory fixture for Kernel unit tests.
+/// In-memory fixture for Kernel unit tests (mutable interaction state).
 pub struct MemoryUiAutomationPort {
     pub controls: Vec<UiControlSnapshot>,
+    values: Mutex<HashMap<String, String>>,
+    invoked: Mutex<HashSet<String>>,
 }
 
 impl MemoryUiAutomationPort {
@@ -98,6 +144,8 @@ impl MemoryUiAutomationPort {
                     automation_id: "SaveBtn".into(),
                 },
             ],
+            values: Mutex::new(HashMap::new()),
+            invoked: Mutex::new(HashSet::new()),
         }
     }
 }
@@ -105,6 +153,86 @@ impl MemoryUiAutomationPort {
 impl UiAutomationPort for MemoryUiAutomationPort {
     fn enumerate_controls(&self, _hwnd: &str, limit: usize) -> Result<Vec<UiControlSnapshot>> {
         Ok(self.controls.iter().take(limit.max(1)).cloned().collect())
+    }
+
+    fn invoke_control(&self, hwnd: &str, control_query: &str) -> Result<UiInteractionOutcome> {
+        let Some(control) = self.find_control(hwnd, control_query)? else {
+            return Err(WindowsIntegrationError::UiAutomationFailed(format!(
+                "I couldn’t find a control named “{}” to click.",
+                control_query.trim()
+            )));
+        };
+        let key = control_key(&control);
+        self.invoked
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(key.clone());
+        let still = self.find_control(hwnd, &control.name)?;
+        let verified = still.is_some()
+            && self
+                .invoked
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .contains(&key);
+        Ok(UiInteractionOutcome {
+            detail: if verified {
+                format!("Clicked “{}” ({})", control.name, control.control_type)
+            } else {
+                format!(
+                    "Tried to click “{}”, but I couldn’t verify the result.",
+                    control.name
+                )
+            },
+            control,
+            verified,
+        })
+    }
+
+    fn set_control_value(
+        &self,
+        hwnd: &str,
+        control_query: &str,
+        value: &str,
+    ) -> Result<UiInteractionOutcome> {
+        let Some(control) = self.find_control(hwnd, control_query)? else {
+            return Err(WindowsIntegrationError::UiAutomationFailed(format!(
+                "I couldn’t find a control named “{}” to type into.",
+                control_query.trim()
+            )));
+        };
+        if !matches!(
+            control.control_type.as_str(),
+            "Edit" | "ComboBox" | "Document" | "Text"
+        ) {
+            return Err(WindowsIntegrationError::UiAutomationFailed(format!(
+                "“{}” ({}) doesn’t accept typed text.",
+                control.name, control.control_type
+            )));
+        }
+        let key = control_key(&control);
+        self.values
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(key.clone(), value.to_string());
+        let read_back = self
+            .values
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(&key)
+            .cloned();
+        let verified = read_back.as_deref() == Some(value);
+        Ok(UiInteractionOutcome {
+            detail: if verified {
+                format!("Typed into “{}” and confirmed the value.", control.name)
+            } else {
+                format!(
+                    "Typed into “{}”, but I couldn’t confirm the value.",
+                    control.name
+                )
+            },
+            control,
+            verified,
+        })
     }
 }
 
@@ -125,12 +253,170 @@ pub struct Win32UiAutomationPort;
 #[cfg(windows)]
 impl UiAutomationPort for Win32UiAutomationPort {
     fn enumerate_controls(&self, hwnd: &str, limit: usize) -> Result<Vec<UiControlSnapshot>> {
-        enumerate_controls_win32(hwnd, limit)
+        with_window_elements(hwnd, |elements| {
+            let limit = limit.clamp(1, 80);
+            let mut out = Vec::new();
+            for el in elements {
+                if out.len() >= limit {
+                    break;
+                }
+                if let Some(snap) = element_snapshot(&el) {
+                    out.push(snap);
+                }
+            }
+            Ok(out)
+        })
+    }
+
+    fn invoke_control(&self, hwnd: &str, control_query: &str) -> Result<UiInteractionOutcome> {
+        use windows::core::Interface;
+        use windows::Win32::UI::Accessibility::{
+            IUIAutomationInvokePattern, UIA_InvokePatternId,
+        };
+
+        let needle = control_query.trim();
+        let control = with_window_elements(hwnd, |elements| {
+            find_element(&elements, needle)
+                .map(|(snap, el)| (snap, el))
+                .ok_or_else(|| {
+                    WindowsIntegrationError::UiAutomationFailed(format!(
+                        "I couldn’t find a control named “{needle}” to click."
+                    ))
+                })
+        })?;
+
+        let (snap, el) = control;
+        unsafe {
+            let enabled = el.CurrentIsEnabled().map(|b| b.as_bool()).unwrap_or(true);
+            if !enabled {
+                return Err(WindowsIntegrationError::UiAutomationFailed(format!(
+                    "“{}” is disabled, so I can’t click it.",
+                    snap.name
+                )));
+            }
+            let pattern = el
+                .GetCurrentPattern(UIA_InvokePatternId)
+                .map_err(|_| {
+                    WindowsIntegrationError::UiAutomationFailed(format!(
+                        "“{}” doesn’t support click/invoke.",
+                        snap.name
+                    ))
+                })?;
+            let invoke: IUIAutomationInvokePattern = pattern.cast().map_err(|_| {
+                WindowsIntegrationError::UiAutomationFailed(format!(
+                    "“{}” doesn’t support click/invoke.",
+                    snap.name
+                ))
+            })?;
+            invoke.Invoke().map_err(|e| {
+                WindowsIntegrationError::UiAutomationFailed(format!(
+                    "I couldn’t click “{}” ({e}).",
+                    snap.name
+                ))
+            })?;
+        }
+
+        // Observable verify: control still discoverable after invoke.
+        let verified = self.find_control(hwnd, &snap.name)?.is_some();
+        Ok(UiInteractionOutcome {
+            detail: if verified {
+                format!("Clicked “{}” ({})", snap.name, snap.control_type)
+            } else {
+                format!(
+                    "Clicked “{}”, but I couldn’t re-find it afterward to confirm.",
+                    snap.name
+                )
+            },
+            control: snap,
+            verified,
+        })
+    }
+
+    fn set_control_value(
+        &self,
+        hwnd: &str,
+        control_query: &str,
+        value: &str,
+    ) -> Result<UiInteractionOutcome> {
+        use windows::core::{Interface, BSTR};
+        use windows::Win32::UI::Accessibility::{
+            IUIAutomationValuePattern, UIA_ValuePatternId,
+        };
+
+        let needle = control_query.trim();
+        let control = with_window_elements(hwnd, |elements| {
+            find_element(&elements, needle)
+                .map(|(snap, el)| (snap, el))
+                .ok_or_else(|| {
+                    WindowsIntegrationError::UiAutomationFailed(format!(
+                        "I couldn’t find a control named “{needle}” to type into."
+                    ))
+                })
+        })?;
+
+        let (snap, el) = control;
+        let read_back = unsafe {
+            let enabled = el.CurrentIsEnabled().map(|b| b.as_bool()).unwrap_or(true);
+            if !enabled {
+                return Err(WindowsIntegrationError::UiAutomationFailed(format!(
+                    "“{}” is disabled, so I can’t type into it.",
+                    snap.name
+                )));
+            }
+            let pattern = el.GetCurrentPattern(UIA_ValuePatternId).map_err(|_| {
+                WindowsIntegrationError::UiAutomationFailed(format!(
+                    "“{}” doesn’t accept typed text.",
+                    snap.name
+                ))
+            })?;
+            let value_pattern: IUIAutomationValuePattern = pattern.cast().map_err(|_| {
+                WindowsIntegrationError::UiAutomationFailed(format!(
+                    "“{}” doesn’t accept typed text.",
+                    snap.name
+                ))
+            })?;
+            if value_pattern.CurrentIsReadOnly().map(|b| b.as_bool()).unwrap_or(false) {
+                return Err(WindowsIntegrationError::UiAutomationFailed(format!(
+                    "“{}” is read-only.",
+                    snap.name
+                )));
+            }
+            value_pattern
+                .SetValue(&BSTR::from(value))
+                .map_err(|e| {
+                    WindowsIntegrationError::UiAutomationFailed(format!(
+                        "I couldn’t type into “{}” ({e}).",
+                        snap.name
+                    ))
+                })?;
+            value_pattern
+                .CurrentValue()
+                .ok()
+                .map(|b| b.to_string())
+                .unwrap_or_default()
+        };
+
+        let verified = read_back == value;
+        Ok(UiInteractionOutcome {
+            detail: if verified {
+                format!("Typed into “{}” and confirmed the value.", snap.name)
+            } else {
+                format!(
+                    "Typed into “{}”, but the value didn’t match what I set.",
+                    snap.name
+                )
+            },
+            control: snap,
+            verified,
+        })
     }
 }
 
 #[cfg(windows)]
-fn enumerate_controls_win32(hwnd_raw: &str, limit: usize) -> Result<Vec<UiControlSnapshot>> {
+fn with_window_elements<T>(
+    hwnd_raw: &str,
+    f: impl FnOnce(Vec<windows::Win32::UI::Accessibility::IUIAutomationElement>) -> Result<T>,
+) -> Result<T> {
     use std::ffi::c_void;
 
     use windows::Win32::Foundation::HWND;
@@ -138,8 +424,7 @@ fn enumerate_controls_win32(hwnd_raw: &str, limit: usize) -> Result<Vec<UiContro
         CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED,
     };
     use windows::Win32::UI::Accessibility::{
-        CUIAutomation, IUIAutomation, IUIAutomationElement, IUIAutomationElementArray,
-        TreeScope_Descendants,
+        CUIAutomation, IUIAutomation, IUIAutomationElement, TreeScope_Descendants,
     };
 
     let hwnd_val: isize = hwnd_raw.trim().parse().map_err(|_| {
@@ -151,18 +436,14 @@ fn enumerate_controls_win32(hwnd_raw: &str, limit: usize) -> Result<Vec<UiContro
         ));
     }
 
-    let limit = limit.clamp(1, 80);
-
     unsafe {
         let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
-
         let automation: IUIAutomation = CoCreateInstance(&CUIAutomation, None, CLSCTX_ALL)
             .map_err(|e| {
                 WindowsIntegrationError::UiAutomationFailed(format!(
                     "UI Automation is unavailable ({e})."
                 ))
             })?;
-
         let root: IUIAutomationElement = automation
             .ElementFromHandle(HWND(hwnd_val as *mut c_void))
             .map_err(|e| {
@@ -170,71 +451,87 @@ fn enumerate_controls_win32(hwnd_raw: &str, limit: usize) -> Result<Vec<UiContro
                     "I couldn’t read controls for that window ({e})."
                 ))
             })?;
-
         let condition = automation.CreateTrueCondition().map_err(|e| {
             WindowsIntegrationError::UiAutomationFailed(format!(
                 "UI Automation condition failed ({e})."
             ))
         })?;
-
-        let found: IUIAutomationElementArray = root
-            .FindAll(TreeScope_Descendants, &condition)
-            .map_err(|e| {
-                WindowsIntegrationError::UiAutomationFailed(format!(
-                    "I couldn’t walk the control tree ({e})."
-                ))
-            })?;
-
+        let found = root.FindAll(TreeScope_Descendants, &condition).map_err(|e| {
+            WindowsIntegrationError::UiAutomationFailed(format!(
+                "I couldn’t walk the control tree ({e})."
+            ))
+        })?;
         let count = found.Length().unwrap_or(0).max(0);
-        let mut out = Vec::new();
+        let mut elements = Vec::new();
         for i in 0..count {
-            if out.len() >= limit {
-                break;
+            if let Ok(el) = found.GetElement(i) {
+                elements.push(el);
             }
-            let Ok(el) = found.GetElement(i) else {
-                continue;
-            };
-            let name = el
-                .CurrentName()
-                .ok()
-                .map(|b| b.to_string())
-                .unwrap_or_default()
-                .trim()
-                .to_string();
-            if name.is_empty() {
-                continue;
-            }
-            let control_type = el
-                .CurrentControlType()
-                .ok()
-                .map(|id| control_type_label(id.0))
-                .unwrap_or_else(|| "Control".into());
-            let automation_id = el
-                .CurrentAutomationId()
-                .ok()
-                .map(|b| b.to_string())
-                .unwrap_or_default()
-                .trim()
-                .to_string();
-
-            // Prefer control / content elements with useful names.
-            let is_control = el
-                .CurrentIsControlElement()
-                .map(|b| b.as_bool())
-                .unwrap_or(true);
-            if !is_control && control_type == "Pane" {
-                continue;
-            }
-
-            out.push(UiControlSnapshot {
-                name,
-                control_type,
-                automation_id,
-            });
         }
-
-        Ok(out)
+        f(elements)
     }
+}
+
+#[cfg(windows)]
+fn element_snapshot(
+    el: &windows::Win32::UI::Accessibility::IUIAutomationElement,
+) -> Option<UiControlSnapshot> {
+    unsafe {
+        let name = el
+            .CurrentName()
+            .ok()
+            .map(|b| b.to_string())
+            .unwrap_or_default()
+            .trim()
+            .to_string();
+        if name.is_empty() {
+            return None;
+        }
+        let control_type = el
+            .CurrentControlType()
+            .ok()
+            .map(|id| control_type_label(id.0))
+            .unwrap_or_else(|| "Control".into());
+        let automation_id = el
+            .CurrentAutomationId()
+            .ok()
+            .map(|b| b.to_string())
+            .unwrap_or_default()
+            .trim()
+            .to_string();
+        let is_control = el
+            .CurrentIsControlElement()
+            .map(|b| b.as_bool())
+            .unwrap_or(true);
+        if !is_control && control_type == "Pane" {
+            return None;
+        }
+        Some(UiControlSnapshot {
+            name,
+            control_type,
+            automation_id,
+        })
+    }
+}
+
+#[cfg(windows)]
+fn find_element(
+    elements: &[windows::Win32::UI::Accessibility::IUIAutomationElement],
+    needle: &str,
+) -> Option<(
+    UiControlSnapshot,
+    windows::Win32::UI::Accessibility::IUIAutomationElement,
+)> {
+    let snaps: Vec<(UiControlSnapshot, usize)> = elements
+        .iter()
+        .enumerate()
+        .filter_map(|(i, el)| element_snapshot(el).map(|s| (s, i)))
+        .collect();
+    let controls: Vec<UiControlSnapshot> = snaps.iter().map(|(s, _)| s.clone()).collect();
+    let matched = match_control(&controls, needle)?;
+    let idx = snaps.iter().position(|(s, _)| s == matched)?;
+    let (_, el_idx) = snaps[idx];
+    Some((matched.clone(), elements[el_idx].clone()))
 }
 
 #[cfg(windows)]

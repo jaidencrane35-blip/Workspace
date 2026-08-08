@@ -121,6 +121,10 @@ function outcomeFor(action: IntentAction): string {
       return "List UI Automation controls inside a window";
     case "winFindControl":
       return "Find a named control inside a window";
+    case "winClickControl":
+      return "Click a named control inside a window";
+    case "winTypeControl":
+      return "Type text into a named control inside a window";
     case "unknown":
       return "Clarify or recover without inventing desktop actions";
     default:

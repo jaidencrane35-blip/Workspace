@@ -1,4 +1,22 @@
 ﻿# Engineering Milestone Report
+## P22.S4 - Desktop Control Interaction (C-ACT-004 + C-ACT-005)
+
+| Field | Value |
+| --- | --- |
+| **Capability IDs** | C-ACT-004 · C-ACT-005 |
+| **Artifacts** | `P22_S4_DESKTOP_CONTROL_INTERACTION.md`, `verify-desktop-control-interaction.mjs`, `tests/desktop-control-interaction.test.ts` |
+| **Date** | 2026-08-08 |
+| **Status** | Engineering complete — joint Product Proof required |
+| **Max layer** | Windows Integration + Window Provider + Kernel Operator compose + Intent |
+| **Readiness** | C-ACT-004 **57%** · C-ACT-005 **57%** (separate scores) |
+| **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) |
+
+### Summary
+
+Paired milestone: Mouse Click + Keyboard Input via UIA InvokePattern / ValuePattern. Operator compositions `window.click_control` and `window.type_control` enforce Locate → Interact → Verify with Completion Contract completed/partial/failed. Never invent success. Atlas Pair Rule §0.1 honored (separate IDs/records/readiness; shared implementation).
+
+---
+
 ## P22.S3 - Window Control Discovery (C-OBS-004)
 
 | Field | Value |

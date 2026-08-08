@@ -188,6 +188,30 @@ impl WindowProvider {
         Ok(self.match_windows(request)?.into_iter().next())
     }
 
+    fn control_name(request: &ProviderInvokeRequest) -> Option<&str> {
+        request
+            .text
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .or_else(|| {
+                request
+                    .title
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+            })
+    }
+
+    /// For typing: control name lives in `title` only (value is `text`).
+    fn control_name_for_type(request: &ProviderInvokeRequest) -> Option<&str> {
+        request
+            .title
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+    }
+
     fn effect(
         operation: CapabilityOperation,
         status: &str,
@@ -294,6 +318,8 @@ impl CapabilityProvider for WindowProvider {
                 "monitors",
                 "enumerate_controls",
                 "find_control",
+                "invoke_control",
+                "set_control_value",
                 "focus",
                 "minimize",
                 "restore",
@@ -459,6 +485,177 @@ impl CapabilityProvider for WindowProvider {
                         items: Some(vec![item]),
                         monitors: None,
                     }),
+                }
+            }
+            CapabilityOperation::InvokeControl => {
+                let Some(control_query) = Self::control_name(&request) else {
+                    return Ok(ProviderInvokeResponse {
+                        domain: CapabilityDomainId::window(),
+                        operation: CapabilityOperation::InvokeControl,
+                        ok: false,
+                        format: None,
+                        bytes: None,
+                        text: None,
+                        preview: None,
+                        message: Some(
+                            "Name the control to click (for example Save).".into(),
+                        ),
+                        status: Some("need_control_name".into()),
+                        target: request.query.clone(),
+                        items: None,
+                        monitors: None,
+                    });
+                };
+                let Some(window) = self.resolve_one(&request)? else {
+                    return Ok(Self::not_found(CapabilityOperation::InvokeControl, &request));
+                };
+                match self
+                    .ports
+                    .ui_automation
+                    .invoke_control(&window.hwnd, control_query)
+                {
+                    Ok(outcome) => {
+                        let item = Self::item(&window);
+                        Ok(ProviderInvokeResponse {
+                            domain: CapabilityDomainId::window(),
+                            operation: CapabilityOperation::InvokeControl,
+                            ok: outcome.verified,
+                            format: Some("control_invoke".into()),
+                            bytes: Some(1),
+                            text: Some(outcome.control.name.clone()),
+                            preview: Some(text_preview(&outcome.control.name, 80)),
+                            message: Some(if outcome.verified {
+                                format!(
+                                    "Clicked “{}” in “{}”.",
+                                    outcome.control.name, window.title
+                                )
+                            } else {
+                                format!(
+                                    "{} (in “{}”).",
+                                    outcome.detail, window.title
+                                )
+                            }),
+                            status: Some(if outcome.verified {
+                                "control_clicked".into()
+                            } else {
+                                "control_click_unverified".into()
+                            }),
+                            target: Some(window.title),
+                            items: Some(vec![item]),
+                            monitors: None,
+                        })
+                    }
+                    Err(error) => {
+                        let item = Self::item(&window);
+                        Ok(ProviderInvokeResponse {
+                        domain: CapabilityDomainId::window(),
+                        operation: CapabilityOperation::InvokeControl,
+                        ok: false,
+                        format: Some("control_invoke".into()),
+                        bytes: None,
+                        text: None,
+                        preview: Some(text_preview(control_query, 80)),
+                        message: Some(error.to_string()),
+                        status: Some("control_click_failed".into()),
+                        target: Some(window.title),
+                        items: Some(vec![item]),
+                        monitors: None,
+                    })
+                    }
+                }
+            }
+            CapabilityOperation::SetControlValue => {
+                let Some(control_query) = Self::control_name_for_type(&request) else {
+                    return Ok(ProviderInvokeResponse {
+                        domain: CapabilityDomainId::window(),
+                        operation: CapabilityOperation::SetControlValue,
+                        ok: false,
+                        format: None,
+                        bytes: None,
+                        text: None,
+                        preview: None,
+                        message: Some(
+                            "Name the field to type into (for example Edit).".into(),
+                        ),
+                        status: Some("need_control_name".into()),
+                        target: request.query.clone(),
+                        items: None,
+                        monitors: None,
+                    });
+                };
+                let value = request.text.as_deref().unwrap_or("").to_string();
+                if value.is_empty() {
+                    return Ok(ProviderInvokeResponse {
+                        domain: CapabilityDomainId::window(),
+                        operation: CapabilityOperation::SetControlValue,
+                        ok: false,
+                        format: None,
+                        bytes: None,
+                        text: None,
+                        preview: None,
+                        message: Some("What text should I type?".into()),
+                        status: Some("need_text".into()),
+                        target: request.query.clone(),
+                        items: None,
+                        monitors: None,
+                    });
+                }
+                let Some(window) = self.resolve_one(&request)? else {
+                    return Ok(Self::not_found(
+                        CapabilityOperation::SetControlValue,
+                        &request,
+                    ));
+                };
+                match self.ports.ui_automation.set_control_value(
+                    &window.hwnd,
+                    control_query,
+                    &value,
+                ) {
+                    Ok(outcome) => {
+                        let item = Self::item(&window);
+                        Ok(ProviderInvokeResponse {
+                            domain: CapabilityDomainId::window(),
+                            operation: CapabilityOperation::SetControlValue,
+                            ok: outcome.verified,
+                            format: Some("control_type".into()),
+                            bytes: Some(value.len()),
+                            text: Some(value.clone()),
+                            preview: Some(text_preview(&outcome.control.name, 80)),
+                            message: Some(if outcome.verified {
+                                format!(
+                                    "Typed into “{}” in “{}”.",
+                                    outcome.control.name, window.title
+                                )
+                            } else {
+                                format!("{} (in “{}”).", outcome.detail, window.title)
+                            }),
+                            status: Some(if outcome.verified {
+                                "control_typed".into()
+                            } else {
+                                "control_type_unverified".into()
+                            }),
+                            target: Some(window.title),
+                            items: Some(vec![item]),
+                            monitors: None,
+                        })
+                    }
+                    Err(error) => {
+                        let item = Self::item(&window);
+                        Ok(ProviderInvokeResponse {
+                        domain: CapabilityDomainId::window(),
+                        operation: CapabilityOperation::SetControlValue,
+                        ok: false,
+                        format: Some("control_type".into()),
+                        bytes: None,
+                        text: None,
+                        preview: Some(text_preview(control_query, 80)),
+                        message: Some(error.to_string()),
+                        status: Some("control_type_failed".into()),
+                        target: Some(window.title),
+                        items: Some(vec![item]),
+                        monitors: None,
+                    })
+                    }
                 }
             }
             CapabilityOperation::Enumerate => {

@@ -145,6 +145,21 @@ export function toCapabilityIntent(action: IntentAction): CapabilityIntent | nul
         query: action.query,
         text: action.control,
       };
+    case "winClickControl":
+      return {
+        domain: "window",
+        operation: "click_control",
+        query: action.query,
+        text: action.control,
+      };
+    case "winTypeControl":
+      return {
+        domain: "window",
+        operation: "type_control",
+        query: action.query,
+        title: action.control,
+        text: action.text,
+      };
     case "winActive":
       return { domain: "window", operation: "active" };
     case "winMonitors":

@@ -111,6 +111,9 @@ impl MutationCommand for ExecuteWindowOperation {
             | CapabilityOperation::Monitors
             | CapabilityOperation::EnumerateControls
             | CapabilityOperation::FindControl => Capability::window_read(),
+            CapabilityOperation::InvokeControl | CapabilityOperation::SetControlValue => {
+                Capability::window_state()
+            }
             CapabilityOperation::Focus => Capability::window_focus(),
             CapabilityOperation::Minimize
             | CapabilityOperation::Restore
@@ -155,6 +158,8 @@ impl MutationCommand for ExecuteWindowOperation {
             | CapabilityOperation::Monitors
             | CapabilityOperation::EnumerateControls
             | CapabilityOperation::FindControl
+            | CapabilityOperation::InvokeControl
+            | CapabilityOperation::SetControlValue
             | CapabilityOperation::Focus
             | CapabilityOperation::Minimize
             | CapabilityOperation::Restore

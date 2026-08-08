@@ -119,6 +119,14 @@ export type IntentAction =
   | { kind: "winEnumerate"; reply: string }
   | { kind: "winEnumerateControls"; query: string; reply: string }
   | { kind: "winFindControl"; control: string; query: string; reply: string }
+  | { kind: "winClickControl"; control: string; query: string; reply: string }
+  | {
+      kind: "winTypeControl";
+      control: string;
+      query: string;
+      text: string;
+      reply: string;
+    }
   | { kind: "winActive"; reply: string }
   | { kind: "winMonitors"; reply: string }
   | { kind: "winBounds"; query: string; reply: string }
@@ -1075,6 +1083,78 @@ function resolveWindowControlDiscovery(text: string): IntentAction | null {
   };
 }
 
+/** C-ACT-004 / C-ACT-005 — click / type named controls (before semantic soft-miss). */
+function resolveWindowControlInteraction(text: string): IntentAction | null {
+  const click =
+    text.match(
+      /^(?:click|press|tap|invoke)\s+(?:the\s+)?(.+?)\s+(?:button|menu|control|item)?\s*(?:in|inside|on|within)\s+(.+)$/i,
+    ) ??
+    text.match(
+      /^(?:click|press|tap)\s+(?:the\s+)?["']?(.+?)["']?\s+(?:in|inside|on)\s+(.+)$/i,
+    );
+  if (click) {
+    const control = click[1]
+      .trim()
+      .replace(/[.!?]+$/g, "")
+      .replace(/^(the|a|an)\s+/i, "")
+      .replace(/\s+(button|menu|control|field|item)$/i, "")
+      .trim();
+    const windowRaw = click[2].trim().replace(/[.!?]+$/g, "");
+    const query = /^(this|it|the window|this window|active|current)?$/i.test(
+      windowRaw,
+    )
+      ? "this"
+      : windowRaw || "this";
+    if (control) {
+      return {
+        kind: "winClickControl",
+        control,
+        query,
+        reply:
+          query === "this"
+            ? `Clicking “${control}” in the active window.`
+            : `Clicking “${control}” in “${query}”.`,
+      };
+    }
+  }
+
+  const typeIn =
+    text.match(
+      /^(?:type|enter|write)\s+["'](.+?)["']\s+(?:into|in|to)\s+(?:the\s+)?(.+?)\s+(?:field|box|control)?\s*(?:in|inside|on|within)\s+(.+)$/i,
+    ) ??
+    text.match(
+      /^(?:type|enter|write)\s+(.+?)\s+(?:into|in)\s+(?:the\s+)?(.+?)\s+(?:in|inside|on|within)\s+(.+)$/i,
+    );
+  if (typeIn) {
+    const typed = typeIn[1].trim().replace(/[.!?]+$/g, "");
+    const control = typeIn[2]
+      .trim()
+      .replace(/[.!?]+$/g, "")
+      .replace(/^(the|a|an)\s+/i, "")
+      .replace(/\s+(field|box|control|edit)$/i, "")
+      .trim();
+    const windowRaw = typeIn[3].trim().replace(/[.!?]+$/g, "");
+    const query = /^(this|it|the window|this window|active|current)?$/i.test(
+      windowRaw,
+    )
+      ? "this"
+      : windowRaw || "this";
+    if (typed && control) {
+      return {
+        kind: "winTypeControl",
+        control,
+        query,
+        text: typed,
+        reply:
+          query === "this"
+            ? `Typing into “${control}” in the active window.`
+            : `Typing into “${control}” in “${query}”.`,
+      };
+    }
+  }
+  return null;
+}
+
 function resolveWindowIntent(raw: string, text: string): IntentAction | null {
   const utterance = stripTrailingPunctuation(raw);
 
@@ -1389,6 +1469,14 @@ function resolveIntentCore(raw: string): IntentAction {
 
   if (isVoiceCheckUtterance(text) || isVoiceCheckUtterance(matchText)) {
     return voiceCheckReply(raw);
+  }
+
+  // C-ACT-004/005 before C-OBS-004 / semantic soft-miss.
+  const controlInteraction =
+    resolveWindowControlInteraction(text) ??
+    (matchText !== text ? resolveWindowControlInteraction(matchText) : null);
+  if (controlInteraction) {
+    return controlInteraction;
   }
 
   // C-OBS-004 before semantic “find / where is” window locate (which soft-misses controls).

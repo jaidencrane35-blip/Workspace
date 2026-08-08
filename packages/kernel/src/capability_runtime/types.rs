@@ -82,6 +82,10 @@ pub enum CapabilityOperation {
     EnumerateControls,
     /// Window Provider — C-OBS-004 Window Control Discovery (locate named control).
     FindControl,
+    /// Window Provider — C-ACT-004 Mouse Click (UIA invoke).
+    InvokeControl,
+    /// Window Provider — C-ACT-005 Keyboard Input (UIA set value).
+    SetControlValue,
 }
 
 impl CapabilityOperation {
@@ -115,6 +119,8 @@ impl CapabilityOperation {
             Self::CopyClipboard => "copy_clipboard",
             Self::EnumerateControls => "enumerate_controls",
             Self::FindControl => "find_control",
+            Self::InvokeControl => "invoke_control",
+            Self::SetControlValue => "set_control_value",
         }
     }
 
@@ -157,6 +163,10 @@ impl CapabilityOperation {
             | "locate_control"
             | "discover_control"
             | "window_control_discovery" => Some(Self::FindControl),
+            "invoke_control" | "click_control" | "mouse_click" => Some(Self::InvokeControl),
+            "set_control_value" | "type_control" | "keyboard_input" => {
+                Some(Self::SetControlValue)
+            }
             _ => None,
         }
     }

@@ -25,11 +25,33 @@ Future engineering sessions **SHALL** execute:
 2. Synchronize metadata (every capability has required fields).  
 3. Locate the highest-priority capability that is **not** Trusted / Production / Rejected.  
 4. Resolve dependencies; skip if blocked.  
-5. Implement **exactly one** bounded vertical slice.  
+5. Implement **exactly one** bounded vertical slice (or one **Capability Pair** milestone — §0.1).  
 6. Verify (Atlas Verification + `pnpm test` / typecheck / health).  
 7. Product Proof when required — prepare repo, stop engineering.  
 8. Update Atlas, handoff, milestone, project-health.  
-9. Commit. **Stop** — do not begin the next capability.
+9. Commit. **Stop** — do not begin the next capability / pair.
+
+### 0.1 Capability Pair Rule
+
+If the Atlas **explicitly pairs** two capabilities as one functional milestone (example: **C-ACT-004 Mouse Click** + **C-ACT-005 Keyboard Input**), engineering **may** implement both in the **same** bounded slice **only when all** of the following hold:
+
+1. Both are required for meaningful user value together.  
+2. Both share the same dependencies.  
+3. Both share the same verification surface.  
+4. Product Proof evaluates them together.
+
+**Shall:**
+
+- Keep **separate** Capability IDs  
+- Keep **separate** Readiness Scores  
+- Keep **separate** Atlas records  
+- Allow **shared** implementation (ports, Kernel ops, verifiers)  
+
+**Shall not:** merge the capabilities into one ID; expand into a third capability in the same slice.
+
+If the paired capability would **significantly expand scope** or needs a **different** Product Proof → return to **one-capability** execution.
+
+**Current Atlas pair:** C-ACT-004 + C-ACT-005 (Desktop Control Interaction milestone).
 
 ---
 
@@ -452,26 +474,48 @@ Overall .................  57%
 | --- | --- |
 | **Name** | Mouse Click |
 | **Layer** | L5 Interaction |
-| **Status** | **PLANNED** |
-| **Lifecycle** | Planned |
-| **Dependencies** | **C-OBS-003** (tree); preferably **C-OBS-004** |
-| **Verification** | Planned |
-| **Product Proof** | Required after eng |
-| **Priority** | **P0** (after C-OBS-004 or with discovery) |
-| **Engineering Notes** | Kernel-gated UIA invoke/click. Not agent loops. |
+| **Status** | **IMPLEMENTED** (engineering) |
+| **Lifecycle** | Verifying → **Product Proof required** (joint with C-ACT-005) |
+| **Dependencies** | **C-OBS-003**; **C-OBS-004** (eng complete; PP parallel) |
+| **Verification** | Shared — `verify-desktop-control-interaction`, `tests/desktop-control-interaction.test.ts`, kernel `window_invoke_and_set_control_through_router` |
+| **Product Proof** | **Joint** with C-ACT-005 — `P22_S4_DESKTOP_CONTROL_INTERACTION.md` |
+| **Priority** | P0 (PP pending) |
+| **Engineering Notes** | Kernel composition `window.click_control`: Find → Invoke → Find. UIA InvokePattern. Honest partial if unverified. Pair Rule §0.1. |
+| **Readiness** | Overall **57%** |
+| | ```text
+Architecture ............ 100%
+Dependencies ............ 100%
+Implementation .......... 100%
+Verification ............ 100%
+Product Proof ...........   0%
+Trusted .................   0%
+Production ..............   0%
+Overall .................  57%
+``` |
 
 #### C-ACT-005 Keyboard Input
 | | |
 | --- | --- |
 | **Name** | Keyboard Input |
 | **Layer** | L5 Interaction |
-| **Status** | **PLANNED** |
-| **Lifecycle** | Planned |
-| **Dependencies** | **C-OBS-003**; preferably **C-OBS-004** |
-| **Verification** | Planned |
-| **Product Proof** | Required after eng |
-| **Priority** | **P0** (paired with C-ACT-004) |
-| **Engineering Notes** | Kernel-gated set-value / type. Honest fail if control missing. |
+| **Status** | **IMPLEMENTED** (engineering) |
+| **Lifecycle** | Verifying → **Product Proof required** (joint with C-ACT-004) |
+| **Dependencies** | **C-OBS-003**; **C-OBS-004** (eng complete; PP parallel) |
+| **Verification** | Shared — `verify-desktop-control-interaction`, `tests/desktop-control-interaction.test.ts`, kernel `window_invoke_and_set_control_through_router` |
+| **Product Proof** | **Joint** with C-ACT-004 — `P22_S4_DESKTOP_CONTROL_INTERACTION.md` |
+| **Priority** | P0 (PP pending) |
+| **Engineering Notes** | Kernel composition `window.type_control`: Find → SetValue → Find. UIA ValuePattern + read-back verify. Pair Rule §0.1. |
+| **Readiness** | Overall **57%** |
+| | ```text
+Architecture ............ 100%
+Dependencies ............ 100%
+Implementation .......... 100%
+Verification ............ 100%
+Product Proof ...........   0%
+Trusted .................   0%
+Production ..............   0%
+Overall .................  57%
+``` |
 
 #### C-ACT-006 Browser Open / Focus / Beside
 | | |
@@ -889,8 +933,8 @@ C-CON-001 Conversation
                └─ C-WF-002 Moments
 
 PLANNED spine:
-  C-OBS-003/004 (eng done → PP) ──► C-ACT-004 Click + C-ACT-005 Keyboard
-                                       └─► C-VER-002/003 Retry / Wait
+  C-OBS-003/004 + C-ACT-004/005 (eng done → PP) ──► C-VER-003 Wait
+                                                       └─► C-PROC / C-WF (later)
 
 BLOCKED spine:
   B-PP-001 Voice Accept ──► C-ACT-011 File Provider
@@ -913,6 +957,7 @@ BLOCKED spine:
 | **B-API-001** | ~~No UIA observation surface~~ **CLEARED** (C-OBS-003 eng) | — | — | Interaction still needs C-ACT-004/005 |
 | **B-PP-003** | C-OBS-003 Desktop UI Tree Product Proof pending | High | C-OBS-003 Trusted | Owner live session per P22.S2 |
 | **B-PP-004** | C-OBS-004 Window Control Discovery Product Proof pending | High | C-OBS-004 Trusted | Owner live session per P22.S3 |
+| **B-PP-005** | C-ACT-004/005 Desktop Control Interaction Product Proof pending | High | C-ACT-004 + C-ACT-005 Trusted | Joint Owner session per P22.S4 |
 | **B-PLAT-001** | Windows-only product | Low | All desktop | Accepted scope |
 
 ---
@@ -923,6 +968,7 @@ BLOCKED spine:
 | --- | --- | --- | --- |
 | Desktop UI Tree | UIA port + Window Provider | `verify-desktop-ui-tree` | Owner P22.S2 |
 | Window Control Discovery | `find_control` + Intent | `verify-window-control-discovery` | Owner P22.S3 |
+| Desktop Control Interaction | Invoke/SetValue + Operator compose | `verify-desktop-control-interaction` | Owner P22.S4 (joint) |
 | Providers | `cargo` + verify scripts | `pnpm test` | Owner NL |
 | Composition | Kernel + completion/compound | Hostile NL | Live confirm |
 | Reasoning | intelligence-routing | verify script | Owner re-proof |
@@ -939,11 +985,12 @@ BLOCKED spine:
 | --- | --- | --- |
 | C-OBS-003 Desktop UI Tree | **Yes** | **Required — pending Owner** |
 | C-OBS-004 Window Control Discovery | **Yes** | **Required — pending Owner** |
+| C-ACT-004 Mouse Click | **Yes** | **Required — joint with C-ACT-005** |
+| C-ACT-005 Keyboard Input | **Yes** | **Required — joint with C-ACT-004** |
 | Core desktop providers | Yes | Mixed Owner trust |
 | Voice | Yes | Pending Accept |
 | Intelligence routing | Yes | Owner re-proof |
 | Beside / Compound | Yes | Owner confirm |
-| C-ACT-004/005 Click/Type | No | N/A |
 | File Provider | No | Blocked |
 | Signed release | No | Cert blocked |
 
@@ -972,8 +1019,8 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 | C-OBS-006 | Monitors | IMPLEMENTED | ~71% |
 | C-OBS-007 | OCR Perception | FUTURE | ~14% |
 | C-ACT-001..003,006..010 | Core actions | IMPLEMENTED | ~71% |
-| C-ACT-004 | Mouse Click | PLANNED | ~29% (deps partial) |
-| C-ACT-005 | Keyboard Input | PLANNED | ~29% |
+| **C-ACT-004** | **Mouse Click** | **IMPLEMENTED (eng)** | **57%** |
+| **C-ACT-005** | **Keyboard Input** | **IMPLEMENTED (eng)** | **57%** |
 | C-ACT-011 | File Provider | BLOCKED | ~14% |
 | C-ACT-012 | Terminal | FUTURE | ~14% |
 | C-ACT-013 | Agent Loop | REJECTED | 0% |
@@ -992,35 +1039,34 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 
 | Rank | ID | Capability | Status | Why |
 | --- | --- | --- | --- | --- |
-| **1** | **C-ACT-004 + C-ACT-005** | Mouse Click + Keyboard Input | **PLANNED** | Deps: C-OBS-003/004 eng complete |
+| **1** | **C-VER-003** | Wait Conditions | **PLANNED** | Strengthens click/type verify |
 | 2 | C-REL-002 | Code Signing A2 | BLOCKED (cert) | Parallel release track |
 | 3 | C-ACT-011 | File Provider | BLOCKED (Voice) | Production Before Expansion |
-| 4 | C-VER-003 | Wait Conditions | PLANNED | With click/type |
-| 5 | C-OBS-007 | Tokenized perception | FUTURE | After interaction |
-| 6 | C-REA-004 | In-Conversation Model | FUTURE | Research |
-| 7 | C-WF-001 | Daily Coding Session | FUTURE | After procedures |
+| 4 | C-OBS-007 | Tokenized perception | FUTURE | After interaction PP |
+| 5 | C-REA-004 | In-Conversation Model | FUTURE | Research |
+| 6 | C-PROC-002 / C-WF-001 | Coding procedures | FUTURE | After interaction Trusted |
 
 **Rejected (do not queue):** C-ACT-013; C-INT-004; C-INT-005.
 
-**Just completed eng:** C-OBS-004 Window Control Discovery → Product Proof (do not start next until Atlas loop selects).
+**Just completed eng:** C-ACT-004 + C-ACT-005 Desktop Control Interaction pair → **joint Product Proof** required.
 
 ---
 
 ## 9. Current highest remaining executable capability
 
-### **C-ACT-004 Mouse Click** (paired with **C-ACT-005 Keyboard Input**)
+### **C-VER-003 Wait Conditions** (next executable after interaction eng)
 
 | Factor | Assessment |
 | --- | --- |
-| Owner Value | Very High |
-| Dependencies | C-OBS-003 + C-OBS-004 eng complete (PP parallel) |
-| Effort | M |
-| Risk | Med (UIA invoke flakiness → truthful fail) |
-| Trust Improvement | Very High |
+| Owner Value | High (stronger post-click/type certainty) |
+| Dependencies | C-ACT-004 / C-ACT-005 eng complete |
+| Effort | S–M |
+| Risk | Med |
+| Pair note | Complements interaction; not merged into C-ACT IDs |
 
-**Do not begin in the same session that completed C-OBS-004.**
+**Do not begin in the same session that completed C-ACT-004/005.**
 
-Parallel: C-OBS-003 / C-OBS-004 Owner Product Proof; Authenticode → A2.
+Parallel: Owner Product Proof for C-OBS-003/004 and C-ACT-004/005; Authenticode → A2.
 
 ---
 
@@ -1030,10 +1076,11 @@ Parallel: C-OBS-003 / C-OBS-004 Owner Product Proof; Authenticode → A2.
 LOOP:
   Capability Atlas
     → Highest executable (not Trusted/Production/Rejected)
-    → One vertical slice
-    → Verification
-    → Product Proof (when required)
-    → Atlas update
+    → If Atlas Pair Rule (§0.1) qualifies → one coordinated pair slice
+      else → one capability slice
+    → Verification (shared verifiers OK for pairs)
+    → Product Proof (joint when pair rule applies)
+    → Update separate Readiness Scores / Atlas records
     → Commit
     → STOP
 ```
@@ -1042,14 +1089,12 @@ LOOP:
 
 ## 11. Atlas maintenance checklist (per program)
 
-- [x] Capability row status updated (C-OBS-004)  
-- [x] Readiness Scores schema + matrix  
-- [x] Evidence / Verification paths  
-- [x] Blockers register (B-PP-004 added)  
+- [x] Capability rows updated (C-ACT-004 + C-ACT-005)  
+- [x] Separate Readiness Scores (both 57%)  
+- [x] Shared verification + joint Product Proof doc  
+- [x] Blockers register (B-PP-005)  
 - [x] Priority queue re-ranked  
-- [x] Product Proof matrix updated  
-- [x] Engineering Notes  
-- [ ] Owner Product Proof for C-OBS-003 / C-OBS-004  
+- [ ] Owner Product Proof for C-OBS-003 / C-OBS-004 / C-ACT-004+005  
 
 ---
 
@@ -1058,7 +1103,7 @@ LOOP:
 - Replacing Conversation, Kernel Operator, or Moments  
 - Adopting VLM computer-use runtimes  
 - Spec / constitutional redesign via Atlas  
-- Starting C-ACT-004 / C-ACT-005 in the same slice as C-OBS-004  
+- Starting C-VER-003 or procedures in the same slice as C-ACT-004/005  
 
 ---
 
@@ -1083,5 +1128,5 @@ Two-digit IDs are **retired**. Meanings remapped to permanent three-digit IDs (*
 ## Stop
 
 **Workspace Capability Atlas v2.0** is the authoritative capability roadmap.  
-C-OBS-004 engineering slice complete → **Product Proof required**.  
-Do not begin C-ACT-004 / C-ACT-005 in this iteration.
+C-ACT-004 + C-ACT-005 engineering pair complete → **joint Product Proof required**.  
+Do not begin C-VER-003 or procedures in this iteration.

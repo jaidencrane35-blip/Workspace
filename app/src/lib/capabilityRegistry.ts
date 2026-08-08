@@ -188,7 +188,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     ],
     failureRecovery:
       "List controls in that window, or name a different control or window.",
-    related: ["desktop-ui-tree", "focus-window"],
+    related: ["desktop-ui-tree", "focus-window", "mouse-click", "keyboard-input"],
     similar: ["desktop-ui-tree"],
     alternatives: ["desktop-ui-tree"],
     discoverability: "Ask to find a named control in an open window.",
@@ -204,6 +204,82 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     ],
     architecturalJustification:
       "Click/type require truthful control resolve before interaction capabilities.",
+  },
+  {
+    id: "mouse-click",
+    domain: "Windows",
+    summary: "Click a named control inside a window",
+    purpose: "Press the button or menu you name — after finding it",
+    verbs: ["click", "press", "tap", "invoke"],
+    aliases: ["hit", "activate control"],
+    objects: ["Save", "OK", "File"],
+    modifiers: ["in", "inside", "button"],
+    arguments: ["control name", "window title hint"],
+    requirements: ["Control is discoverable via UI Automation", "Control supports invoke"],
+    limitations: [
+      "Only named, invokable controls",
+      "Never invents click success — locate then verify",
+    ],
+    examples: [
+      "Click the Save button in Notepad",
+      "Click File in Notepad",
+    ],
+    failureRecovery:
+      "Ask what controls are in the window, or name a different control.",
+    related: ["window-control-discovery", "keyboard-input", "desktop-ui-tree"],
+    similar: ["window-control-discovery"],
+    alternatives: ["window-control-discovery"],
+    discoverability: "Ask to click a named control in an open window.",
+    documentation:
+      "Locates, clicks, and re-checks a named control when you ask.",
+    ownership: "Owns click semantics; Wraps Windows UI Automation invoke",
+    permissions: ["Window state", "UI Automation invoke"],
+    dependencies: ["Desktop UI Tree", "Window Control Discovery", "Window operations"],
+    benchmark: "Accessibility invoke — not raw mouse injection agent loops",
+    tests: [
+      "tests/desktop-control-interaction.test.ts",
+      "scripts/verify-desktop-control-interaction.mjs",
+    ],
+    architecturalJustification:
+      "In-window click is interaction after observation; Completion Contract reports truth.",
+  },
+  {
+    id: "keyboard-input",
+    domain: "Windows",
+    summary: "Type into a named editable control",
+    purpose: "Enter the text you specify into a field Workspace can find",
+    verbs: ["type", "enter", "write"],
+    aliases: ["set value", "fill in"],
+    objects: ["Edit", "Name", "Search"],
+    modifiers: ["into", "in"],
+    arguments: ["text to type", "control name", "window title hint"],
+    requirements: ["Editable control with ValuePattern", "Control is discoverable"],
+    limitations: [
+      "Deterministic text only — no invented content",
+      "Read-only or non-value controls refuse honestly",
+    ],
+    examples: [
+      "Type hello into Edit in Notepad",
+      "Type 'test note' into Edit in Notepad",
+    ],
+    failureRecovery:
+      "Find an editable control first, or name the field and window again.",
+    related: ["window-control-discovery", "mouse-click", "desktop-ui-tree"],
+    similar: ["mouse-click"],
+    alternatives: ["window-control-discovery"],
+    discoverability: "Ask to type text into a named field in an open window.",
+    documentation:
+      "Locates an editable control, types your text, and confirms when possible.",
+    ownership: "Owns type semantics; Wraps Windows UI Automation value pattern",
+    permissions: ["Window state", "UI Automation set value"],
+    dependencies: ["Desktop UI Tree", "Window Control Discovery", "Window operations"],
+    benchmark: "Accessibility set-value — not keystroke agent loops",
+    tests: [
+      "tests/desktop-control-interaction.test.ts",
+      "scripts/verify-desktop-control-interaction.mjs",
+    ],
+    architecturalJustification:
+      "Typing is independent interaction that composes with discovery under Operator.",
   },
   {
     id: "window-state",

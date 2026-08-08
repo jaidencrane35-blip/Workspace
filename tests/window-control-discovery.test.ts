@@ -35,9 +35,9 @@ describe("C-OBS-004 Window Control Discovery", () => {
     expect(action.query.toLowerCase()).toContain("notepad");
   });
 
-  it("does not claim click or type", () => {
+  it("routes click to interaction (not discovery)", () => {
     const click = resolveIntent("Click the Save button in Notepad");
-    expect(click.kind).not.toBe("winFindControl");
+    expect(click.kind).toBe("winClickControl");
   });
 
   it("leaves full control list on C-OBS-003 path", () => {

@@ -111,9 +111,8 @@ if (!pkg.includes("verify-desktop-ui-tree.mjs")) {
   fail("package.json must wire verify-desktop-ui-tree.mjs");
 }
 
-// Observation slice must not invent click/type operations.
-if (types.includes("InvokeControl") || types.includes("SetControlValue")) {
-  fail("C-OBS-003 slice must not add InvokeControl/SetControlValue (C-ACT later)");
+if (!types.includes("FindControl")) {
+  fail("types.rs must retain FindControl for observation");
 }
 
 console.log("verify-desktop-ui-tree: ok");

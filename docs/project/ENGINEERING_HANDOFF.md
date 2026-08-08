@@ -10,10 +10,11 @@
 | **Engineering status** | **Release Hold** — Atlas Execution Loop slices when Owner-authorized |
 | **Current phase** | **Stage 2 — Owner Acceptance** (Accepted with changes; T1 slice complete) |
 | **Next engineering event** | **A2 (Code Signing)** after Owner Acceptance **and** Authenticode certificate (parallel) |
-| **Current priority** | C-OBS-003 / C-OBS-004 Product Proof; next Atlas eng = **C-ACT-004** Mouse Click (+ C-ACT-005) |
+| **Current priority** | Joint Product Proof: C-OBS-003/004 + C-ACT-004/005; next Atlas eng = **C-VER-003** Wait Conditions |
 | **Resume triggers** | `docs/production/R2_RELEASE_HOLD.md` + Capability Atlas Execution Loop |
-| **Capability Atlas** | `docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md` (**v2.0** — authoritative; Readiness Scores required) |
-| **Latest program** | P22.S3 — Window Control Discovery (**C-OBS-004**) engineering complete; Product Proof required |
+| **Capability Atlas** | `docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md` (**v2.0** — Pair Rule §0.1 active) |
+| **Latest program** | P22.S4 — Desktop Control Interaction (**C-ACT-004** + **C-ACT-005**) eng complete; joint Product Proof required |
+| **P22.S4 report** | `docs/capability-runtime/product-proof/P22_S4_DESKTOP_CONTROL_INTERACTION.md` |
 | **P22.S3 report** | `docs/capability-runtime/product-proof/P22_S3_WINDOW_CONTROL_DISCOVERY.md` |
 | **P22.S2 report** | `docs/capability-runtime/product-proof/P22_S2_DESKTOP_UI_TREE.md` |
 | **P22.A2 audit** | `docs/capability-runtime/product-proof/P22_A2_OPEN_SOURCE_TECHNOLOGY_ACQUISITION_AUDIT.md` |
@@ -72,7 +73,7 @@
 | **Product Proof workbook** | `docs/capability-runtime/product-proof/P16_O2_PRODUCT_PROOF_SESSION_WORKBOOK.md` |
 | **Rule** | Spec v2 = sole architectural authority. Execution Standard v1 = how all programs run. Classify work, max layer, lowest-layer invariant, compliance checklist. Do not reopen Spec without a Review Trigger. |
 
-**Milestone:** Workspace is on **Release Hold** (Stage 2 — Owner Acceptance). Capability Atlas **v2.0** is the engineering authority (includes **Capability Readiness Scores**). **C-OBS-003** and **C-OBS-004** engineering complete — **Owner Product Proof required**. Next executable Atlas capability: **C-ACT-004** (with C-ACT-005). F1 Complete; A2 awaits Authenticode cert. **Do not begin File Provider** until Voice Accept. Architecture stable by default.
+**Milestone:** Workspace is on **Release Hold**. Capability Atlas **v2.0** + Pair Rule §0.1. **C-OBS-003/004** and **C-ACT-004/005** engineering complete — **Owner Product Proof required** (observation + joint interaction). Next executable Atlas capability: **C-VER-003**. F1 Complete; A2 awaits Authenticode cert. **Do not begin File Provider** until Voice Accept.
 
 **Start here before any execution program.**
 

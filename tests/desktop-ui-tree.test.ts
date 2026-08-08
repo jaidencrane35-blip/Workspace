@@ -32,7 +32,7 @@ describe("C-OBS-003 Desktop UI Tree", () => {
 
   it("does not claim click or type (observation only)", () => {
     const click = resolveIntent("Click the Save button in Notepad");
-    expect(click.kind).not.toBe("winEnumerateControls");
+    expect(click.kind).toBe("winClickControl");
   });
 
   it("leaves window enumeration on the enumerate path", () => {

@@ -100,8 +100,8 @@ if (!pkg.includes("verify-window-control-discovery.mjs")) {
   fail("package.json must wire verify-window-control-discovery.mjs");
 }
 
-if (types.includes("InvokeControl") || types.includes("SetControlValue")) {
-  fail("C-OBS-004 must not add InvokeControl/SetControlValue (C-ACT later)");
+if (types.includes("InvokeControl") && !atlas.includes("C-ACT-004")) {
+  fail("InvokeControl requires Atlas C-ACT-004 pairing");
 }
 
 console.log("verify-window-control-discovery: ok");

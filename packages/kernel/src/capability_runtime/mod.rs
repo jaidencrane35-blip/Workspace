@@ -321,6 +321,48 @@ mod tests {
     }
 
     #[test]
+    fn window_invoke_and_set_control_through_router() {
+        let clicked = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::InvokeControl,
+                query: Some("Fixture Focus".into()),
+                text: Some("Save".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(clicked.ok);
+        assert_eq!(clicked.status.as_deref(), Some("control_clicked"));
+
+        let typed = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::SetControlValue,
+                query: Some("Fixture Focus".into()),
+                title: Some("Edit".into()),
+                text: Some("hello workspace".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(typed.ok);
+        assert_eq!(typed.status.as_deref(), Some("control_typed"));
+        assert_eq!(typed.text.as_deref(), Some("hello workspace"));
+
+        let bad_type = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::SetControlValue,
+                query: Some("Fixture Focus".into()),
+                title: Some("Save".into()),
+                text: Some("nope".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(!bad_type.ok);
+        assert_eq!(bad_type.status.as_deref(), Some("control_type_failed"));
+    }
+
+    #[test]
     fn notifications_status_and_show_through_router() {
         let status = runtime()
             .invoke(ProviderInvokeRequest {
