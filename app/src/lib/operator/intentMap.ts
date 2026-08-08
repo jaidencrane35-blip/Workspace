@@ -54,7 +54,8 @@ export function toCapabilityIntent(action: IntentAction): CapabilityIntent | nul
         path: action.url,
         query: action.url,
         title: action.beside,
-        // Prefer matching the browser window that typically appears after URL open.
+        // Window-title hint for the opened browser surface (not a snap edge).
+        // Kernel owns left/right edges under Capability Completion Contract.
         snap: "Chrome",
       };
     case "screenshotStatus":
@@ -110,6 +111,19 @@ export function toCapabilityIntent(action: IntentAction): CapabilityIntent | nul
       };
     case "appOpen":
       return { domain: "application", operation: "open", query: action.query };
+    case "compoundOpen":
+      return {
+        domain: "application",
+        operation: "open_compound",
+        // Kernel plan parses encoded targets (app:…|browser:…).
+        text: action.encode,
+        query: action.targets[0]
+          ? action.targets[0].kind === "browser"
+            ? action.targets[0].url
+            : action.targets[0].query
+          : null,
+        title: action.targets.map((t) => t.label).join(" and "),
+      };
     case "appOpenMaximize":
       return {
         domain: "application",

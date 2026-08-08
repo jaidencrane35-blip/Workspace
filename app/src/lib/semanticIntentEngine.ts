@@ -547,7 +547,7 @@ function reasonCognitiveDesktop(text: string): IntentAction | null {
       kind: "navigate",
       view: "resume",
       reply:
-        "Opening Continue for your work setup. If you’ve saved a Moment, approve a restore plan there — I won’t invent a multi-app layout.",
+        "Opening Continue for your work setup. If you’ve saved a Moment, approve a restore plan there.",
     };
   }
 

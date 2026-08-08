@@ -147,7 +147,10 @@ export function resolveIntentWithEvidence(raw: string): IntentPipelineEvidence {
     looksLikeOpen &&
     action.kind === "unknown" &&
     !entity &&
-    /won’t invent a program name/i.test(action.reply);
+    (/don’t know how to launch|don't know how to launch|don’t recognize|don't recognize/i.test(
+      action.reply,
+    ) ||
+      /won’t invent a program name/i.test(action.reply));
 
   stages.push({
     stage: "executable_guard",

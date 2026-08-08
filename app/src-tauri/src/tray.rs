@@ -1,14 +1,26 @@
 //! P16.PR2 / Gate E1 — tray presence that serves Conversation (Product Gravity).
+//! P19.S1 — Show Conversation restores ShellMode Form B, not only the native window.
 //! Minimal menu: restore Conversation, Exit Workspace. No catalogue chrome.
 
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager, Runtime,
+    AppHandle, Emitter, Manager, Runtime,
 };
 
+/// Event frontend listens for to restore React ShellMode Conversation Form.
+pub const SHOW_CONVERSATION_EVENT: &str = "workspace-show-conversation";
+
 /// Bring Conversation forward — same intent as single-instance secondary launch.
+/// Emits ShellMode restore first; native show is a fallback if the webview is slow.
 pub fn show_conversation<R: Runtime>(app: &AppHandle<R>) {
+    // P19.S1: lifecycle transition only — frontend owns ShellMode → Conversation Form.
+    if let Err(err) = app.emit(SHOW_CONVERSATION_EVENT, ()) {
+        log::warn!("tray: emit {SHOW_CONVERSATION_EVENT} failed: {err}");
+    } else {
+        log::info!("tray: emitted {SHOW_CONVERSATION_EVENT} (ShellMode restore)");
+    }
+
     if let Some(main) = app.get_webview_window("main") {
         let _ = main.unminimize();
         let _ = main.show();

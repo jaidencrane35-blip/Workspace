@@ -13,6 +13,7 @@ import {
   MAIN_SIZE_KEY,
   OPERATOR_POS_KEY,
   OPERATOR_SIZE,
+  SHOW_CONVERSATION_EVENT,
   emitShellModeEvent,
   isTauriRuntime,
   loadPoint,
@@ -264,4 +265,33 @@ export async function bootstrapShellOnLaunch(): Promise<void> {
   setShellHidden(false);
   const mode = loadShellMode(1);
   await applyShellMode(mode);
+}
+
+/**
+ * P19.S1 — restore Conversation Form B (ShellMode 1) after tray / secondary launch.
+ * Same contract as Desktop Operator click: durable mode + React sync + native Form.
+ * Does not remount App; navigation / Moments session authorities stay mounted.
+ */
+export async function restoreConversationShell(): Promise<void> {
+  saveShellMode(1);
+  emitShellModeEvent();
+  await applyShellMode(1);
+}
+
+let trayShowRestoreInstalled = false;
+
+/** Listen once per webview for tray Show Conversation / single-instance focus. */
+export async function installTrayShowConversationRestore(): Promise<void> {
+  if (!isTauriRuntime() || trayShowRestoreInstalled) {
+    return;
+  }
+  trayShowRestoreInstalled = true;
+  try {
+    const { listen } = await import("@tauri-apps/api/event");
+    await listen(SHOW_CONVERSATION_EVENT, () => {
+      void restoreConversationShell();
+    });
+  } catch {
+    trayShowRestoreInstalled = false;
+  }
 }

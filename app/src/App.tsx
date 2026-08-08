@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { ActiveMomentProvider } from "./components/ActiveMoment";
 import { HomeWorkspacePanel } from "./components/HomeWorkspacePanel";
+import { MomentsToolSessionProvider } from "./components/MomentsToolSession";
 import { OperatorRoot } from "./components/operator/OperatorRoot";
 import { PilotHelpPanel } from "./components/PilotHelpPanel";
 import { PilotMeasurementPanel } from "./components/PilotMeasurementPanel";
@@ -21,6 +23,9 @@ import type {
 } from "./types/workspace";
 
 const LEGACY_WORKSPACE_ID_KEY = "workspace.active_id";
+
+/** Moments tool family — preserve focus when moving among these (P18.S2). */
+const MOMENTS_VIEWS = new Set<PilotPrimaryView>(["home", "resume", "save"]);
 
 function formatError(err: unknown): string {
   if (err instanceof Error) {
@@ -71,6 +76,20 @@ export default function App() {
   const onMessage = useCallback((next: string | null) => {
     setMessage(next);
   }, []);
+
+  // P17.S5: view change drops stale specialized status (Moments owns lifecycle ack).
+  useEffect(() => {
+    setMessage(null);
+  }, [view]);
+
+  // Independent system ok banners stay ephemeral — no sticky second primary.
+  useEffect(() => {
+    if (!message) {
+      return;
+    }
+    const timer = window.setTimeout(() => setMessage(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [message]);
 
   const activateWorkspace = useCallback(async (next: Workspace) => {
     setWorkspace(next);
@@ -126,7 +145,7 @@ export default function App() {
         });
         await activateWorkspace(created);
         setMessage("Workspace ready.");
-        setView("save");
+        navigate("save");
       } catch (err: unknown) {
         onError(formatError(err));
       } finally {
@@ -150,9 +169,11 @@ export default function App() {
     }
     if (opts && "focusContextId" in opts) {
       setFocusContextId(opts.focusContextId ?? null);
-    } else {
+    } else if (!MOMENTS_VIEWS.has(next) || !MOMENTS_VIEWS.has(view)) {
+      // Leaving or entering Moments family — clear selection.
       setFocusContextId(null);
     }
+    // Else Home ↔ Continue ↔ Save: keep focus for session continuity.
     trackNavigate(next, { commandId: "dock_navigate" });
     setView(next);
   };
@@ -194,8 +215,7 @@ export default function App() {
             busy={busy}
             onCreateWorkspace={createWorkspace}
             onGoToSave={() => {
-              trackNavigate("save", { commandId: "go_save" });
-              setView("save");
+              navigate("save");
             }}
             onContinueContext={(id) => goContinue(id)}
           />
@@ -224,12 +244,10 @@ export default function App() {
             onError={onError}
             onMessage={onMessage}
             onGoToPilot={() => {
-              trackNavigate("pilot", { commandId: "dock_navigate" });
-              setView("pilot");
+              navigate("pilot");
             }}
             onGoHome={() => {
-              trackNavigate("home", { commandId: "dock_navigate" });
-              setView("home");
+              navigate("home");
             }}
             focusContextId={focusContextId}
           />
@@ -259,8 +277,21 @@ export default function App() {
     <div className="op-specialized">
       {(error || message) && (
         <div className="op-specialized__status" role="status" aria-atomic="true">
-          {error && <p className="error banner ws-toast">{error}</p>}
-          {message && !error && <p className="ok banner ws-toast">{message}</p>}
+          {error && (
+            <div className="error banner ws-toast ws-toast--dismissible">
+              <p className="ws-toast__text">{error}</p>
+              <button
+                type="button"
+                className="ws-toast__dismiss"
+                onClick={() => onError(null)}
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+          {message && !error && (
+            <p className="ok banner ws-toast">{message}</p>
+          )}
         </div>
       )}
       {tool}
@@ -268,11 +299,20 @@ export default function App() {
   );
 
   return (
-    <OperatorRoot
-      specializedSurface={specializedSurface}
-      onNavigateProduct={navigate}
-      listMoments={listMoments}
-      activeSpecialized={view}
-    />
+    <ActiveMomentProvider
+      workspace={workspace}
+      view={view}
+      focusContextId={focusContextId}
+    >
+      <MomentsToolSessionProvider>
+        <OperatorRoot
+          specializedSurface={specializedSurface}
+          onNavigateProduct={navigate}
+          listMoments={listMoments}
+          activeSpecialized={view}
+          toolBusy={busy}
+        />
+      </MomentsToolSessionProvider>
+    </ActiveMomentProvider>
   );
 }

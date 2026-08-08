@@ -229,6 +229,25 @@ export function buildExecutionPlan(
           step("complete", "Wait for Owner approval before restore side-effects", null),
         ],
       };
+    case "compoundOpen": {
+      const n = "targets" in action ? action.targets.length : 2;
+      return {
+        goal,
+        capabilities: caps("open-app", "browser"),
+        multiStep: true,
+        action,
+        steps: [
+          step("resolve", `Resolve ${n} known open targets`, "open-app"),
+          step(
+            "execute",
+            "Open each target in order (Kernel compound)",
+            "open-app",
+            "delegated_to_kernel",
+          ),
+          step("complete", "Report aggregate Completion Contract outcome", null),
+        ],
+      };
+    }
     default: {
       const domainGuess =
         action.kind.startsWith("screenshot")

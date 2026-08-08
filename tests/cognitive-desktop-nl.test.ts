@@ -130,12 +130,14 @@ describe("P16.33 cognitive desktop NL", () => {
 
   it("recovers conversationally for unknown entities via registry guidance", () => {
     const recovery = generateRecoveryGuidance("totallyunknownthing");
-    expect(recovery.reply).toMatch(/won’t invent|can't do that/i);
-    expect(recovery.suggestion.toLowerCase()).toMatch(/try|what can you do/);
+    expect(recovery.reply).toMatch(/can't do that|can’t do that|exactly as asked/i);
+    expect(recovery.suggestion.toLowerCase()).toMatch(/closest|desktop|what/);
     const action = resolveIntent("Where is TotallyUnknownApp?");
     expect(action.kind).toBe("unknown");
     expect(action.reply).not.toMatch(/Provider|Registry|Kernel|WinRT/i);
-    expect(action.reply.toLowerCase()).toMatch(/won’t invent|can't do that|cannot/);
+    expect(action.reply.toLowerCase()).toMatch(
+      /can't do that|can’t do that|cannot|lost|name the window|exactly as asked|don’t recognize|don't recognize/,
+    );
   });
 
   it("keeps the full Intent pipeline evidence for cognitive phrasing", () => {

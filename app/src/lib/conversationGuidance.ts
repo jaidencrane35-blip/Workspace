@@ -1,6 +1,6 @@
 /**
  * Conversation quality after transcription — deterministic, no AI guessing.
- * Unsupported requests get truthful, varied guidance (never identical churn).
+ * Companion voice: truthful limits without Help-catalogue churn (T1).
  */
 
 export type UnknownGuidance = {
@@ -67,30 +67,30 @@ export function voiceCheckReply(raw: string): HeardGuidance {
     heard.length > 72 ? `${heard.slice(0, 69).trimEnd()}…` : heard;
   return {
     kind: "unknown",
-    reply: `Heard you: “${preview}”.`,
-    suggestion:
-      "Say what you need on the desktop — for example “open ChatGPT”, “take a screenshot”, or “what windows are open?”.",
+    reply: `Heard you: “${preview}”. What do you need on the desktop?`,
+  };
+}
+
+/** Calm companion greeting — invite conversation, never a feature catalogue. */
+export function companionGreetingReply(): UnknownGuidance {
+  return {
+    kind: "unknown",
+    reply: "Hi — I’m here with you on the desktop.",
   };
 }
 
 const GENERIC_REPLIES = [
-  "I can’t do that on the desktop yet — and I won’t invent it.",
-  "That’s outside what I can operate right now.",
-  "I stay with desktop work I can actually complete.",
-  "I’m not set up for that request yet.",
-] as const;
-
-const GENERIC_SUGGESTIONS = [
-  'Try “what windows are open?”, “open ChatGPT”, “take a screenshot”, or “bring Chrome to the front”.',
-  'Nearby: open a site or app, arrange windows, capture the screen, or Save / Continue.',
-  'You can ask me to open apps, manage windows, take screenshots, or open sites in your browser.',
-  'If you want desktop help, try “open my browser”, “list apps”, or “save this”.',
+  "I’m not sure how to help with that yet — what are you trying to finish?",
+  "I don’t have a path for that yet. Want to try a desktop step, or ask another way?",
+  "I can help with desktop work I can complete, or hand broader questions to ChatGPT.",
+  "I can’t take that on yet.",
 ] as const;
 
 type NearMiss = {
   test: (text: string) => boolean;
   reply: string;
-  suggestion: string;
+  /** Single collaborative recovery line — never a command catalogue. */
+  recovery?: string;
 };
 
 const NEAR_MISSES: NearMiss[] = [
@@ -99,80 +99,76 @@ const NEAR_MISSES: NearMiss[] = [
       /\b(file|files|folder|folders|directory|directories|document|documents)\b/.test(
         t,
       ),
-    reply:
-      "I can’t work with files and folders yet — and I won’t pretend I can.",
-    suggestion:
-      'For now I can open apps and sites, arrange windows, take screenshots, or Save / Continue. Try “open Explorer” or “what windows are open?”.',
+    reply: "I can’t work with files and folders yet.",
+    recovery:
+      "If something should be open on the desktop, name the app or window and I’ll take it from there.",
   },
   {
     test: (t) =>
       /\b(terminal|command prompt|powershell|shell|console|cmd)\b/.test(t),
-    reply: "I can’t run terminal commands yet — and I won’t invent output.",
-    suggestion:
-      'I can open apps, arrange windows, or take screenshots. Try “open Windows Terminal” or “what windows are open?”.',
-  },
-  {
-    test: (t) =>
-      /\b(weather|joke|story|poem|recipe|homework|translate|define|meaning of)\b/.test(
-        t,
-      ) ||
-      /\b(who is|what is the capital|tell me a)\b/.test(t),
-    reply:
-      "I’m here to operate your desktop — not general chat or look-ups.",
-    suggestion:
-      'Ask me to open something, arrange windows, take a screenshot, or Save / Continue.',
+    reply: "I can’t run terminal commands yet.",
+    recovery:
+      "I can open Terminal as an app if that helps — or we can keep working with windows you already have open.",
   },
   {
     test: (t) =>
       /\b(screenshot|screen shot|capture|screengrab)\b/.test(t),
-    reply: "I can capture the screen when you ask directly.",
-    suggestion:
-      'Try “take a screenshot”, “screenshot this window”, or “take a screenshot and copy it”.',
+    reply: "I can capture the screen when the ask is clear.",
+    recovery: "Want the whole desktop, this window, or a copy to the clipboard?",
   },
   {
     test: (t) =>
       /\b(window|windows|monitor|snap|maximize|minimise|minimize)\b/.test(t),
-    reply: "I can work with open windows when the ask is clear.",
-    suggestion:
-      'Try “what windows are open?”, “bring Chrome to the front”, or “snap this window left”.',
+    reply: "I can work with open windows when I know which one you mean.",
+    recovery: "Name the window, or ask what’s open and we’ll pick from there.",
   },
   {
     test: (t) =>
       /\b(browser|chrome|edge|firefox|brave|website|web page|url)\b/.test(t),
     reply: "I can open sites and bring browsers forward.",
-    suggestion:
-      'Try “open my browser”, “open GitHub”, “open ChatGPT beside Cursor”, or “bring Chrome to the front”.',
+    recovery: "Which site or browser should we use?",
   },
   {
     test: (t) =>
       /\b(notif|notify|toast|alert me|remind)\b/.test(t),
     reply: "I can show a desktop notification when you ask for one.",
-    suggestion:
-      'Try “show me a notification” or “notify me that the build finished.” Watching for when something finishes isn’t available yet.',
+    recovery:
+      "Tell me the message to show — watching for when something finishes isn’t available yet.",
   },
   {
     test: (t) => /\b(clipboard|paste|copy that)\b/.test(t),
     reply: "I can read or write the clipboard when you ask.",
-    suggestion:
-      'Try “what’s on my clipboard?” or “copy to clipboard: hello”.',
+    recovery: "Want me to read what’s there, or copy something specific?",
   },
   {
     test: (t) =>
       /\b(voice|microphone|mic|speak|talk|listen)\b/.test(t),
     reply:
       "Use the microphone beside the message box to speak — I’ll put what I hear into Conversation, same as typing.",
-    suggestion:
-      'Or ask “can you hear me?” / “what can you do with voice?”',
   },
 ];
 
 let lastUnknownReply = "";
+let lastSuggestion = "";
 let genericCursor = 0;
 
 /** Test helper — clears rotation so cases stay deterministic. */
 export function resetConversationGuidanceState(): void {
   lastUnknownReply = "";
+  lastSuggestion = "";
   genericCursor = 0;
+}
+
+/** Avoid repeating the same recovery line on consecutive soft misses. */
+function maybeRecovery(recovery?: string): string | undefined {
+  if (!recovery) {
+    return undefined;
+  }
+  if (recovery === lastSuggestion) {
+    return undefined;
+  }
+  lastSuggestion = recovery;
+  return recovery;
 }
 
 function pickGeneric(text: string): UnknownGuidance {
@@ -186,21 +182,19 @@ function pickGeneric(text: string): UnknownGuidance {
       return {
         kind: "unknown",
         reply,
-        suggestion: GENERIC_SUGGESTIONS[idx]!,
       };
     }
   }
-  const reply = `Still can’t help with “${text.slice(0, 40)}${text.length > 40 ? "…" : ""}” — I won’t invent a desktop action.`;
+  const reply = `Still can’t help with “${text.slice(0, 40)}${text.length > 40 ? "…" : ""}”.`;
   lastUnknownReply = reply;
   return {
     kind: "unknown",
     reply,
-    suggestion: GENERIC_SUGGESTIONS[start]!,
   };
 }
 
 /**
- * Truthful unsupported guidance — varies wording, suggests nearby desktop work.
+ * Truthful unsupported guidance — companion voice, recovery only when it helps.
  */
 export function resolveUnknownGuidance(text: string): UnknownGuidance {
   for (const miss of NEAR_MISSES) {
@@ -210,15 +204,11 @@ export function resolveUnknownGuidance(text: string): UnknownGuidance {
         return {
           kind: "unknown",
           reply: miss.reply,
-          suggestion: miss.suggestion,
+          suggestion: maybeRecovery(miss.recovery),
         };
       }
-      // Same near-miss twice → rotate into a sibling generic with the same suggestion.
-      const rotated = pickGeneric(text);
-      return {
-        ...rotated,
-        suggestion: miss.suggestion,
-      };
+      // Same near-miss twice → rotate generic; still no command catalogue.
+      return pickGeneric(text);
     }
   }
   return pickGeneric(text);

@@ -27,6 +27,8 @@ interface VoiceMicButtonProps {
   disabled?: boolean;
   onTranscript: (transcript: string) => void;
   onVoiceMessage: (message: string) => void;
+  /** P20.S1 — hide first-session cue while voice capture owns attention. */
+  onCaptureActiveChange?: (active: boolean) => void;
 }
 
 /** Owner-facing labels — distinguish soft fail, hard deny, and capture phases. */
@@ -78,6 +80,7 @@ export function VoiceMicButton({
   disabled,
   onTranscript,
   onVoiceMessage,
+  onCaptureActiveChange,
 }: VoiceMicButtonProps) {
   const [phase, setPhase] = useState<VoicePhase>("idle");
   const [available, setAvailable] = useState(true);
@@ -364,6 +367,10 @@ export function VoiceMicButton({
     phase === "recognizing" ||
     phase === "processing";
   const label = phaseLabel(phase, available, deniedUi, softFailUi);
+
+  useEffect(() => {
+    onCaptureActiveChange?.(busy);
+  }, [busy, onCaptureActiveChange]);
 
   return (
     <button

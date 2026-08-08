@@ -1411,6 +1411,36 @@ body {
 .error.banner { color: #fecaca; border-color: rgba(248, 113, 113, 0.4); }
 .ok.banner { color: #bbf7d0; border-color: rgba(134, 239, 172, 0.35); }
 
+/* P17.S5 — error banner dismissal without a toast framework */
+.ws-toast--dismissible {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.ws-toast__text {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+.ws-toast__dismiss {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0.15rem 0.45rem;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  background: transparent;
+  color: inherit;
+  opacity: 0.75;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.ws-toast__dismiss:hover,
+.ws-toast__dismiss:focus-visible {
+  opacity: 1;
+  outline: 1px solid currentColor;
+}
+
 /* —— Stage (content only; shell never remounts) —— */
 
 .ws-stage,
@@ -3491,6 +3521,27 @@ html[data-shell-form="conversation"] #root {
 }
 
 .op-shell__waiting { flex: 1; min-height: 6rem; }
+
+/* P20.S1 — quiet first-session invite; never marketing chrome. */
+.op-shell__waiting--invite {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 0.35rem;
+}
+
+.op-shell__invite {
+  margin: 0;
+  max-width: 18rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: rgba(226, 232, 240, 0.55);
+}
+
+.op-shell__input::placeholder {
+  color: rgba(226, 232, 240, 0.42);
+}
 
 .op-msg {
   max-width: 96%;

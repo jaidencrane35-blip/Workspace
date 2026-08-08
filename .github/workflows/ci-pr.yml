@@ -2,9 +2,9 @@ name: CI PR
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, v2-dev]
   push:
-    branches: [main]
+    branches: [main, v2-dev]
 
 jobs:
   validate:
@@ -27,6 +27,9 @@ jobs:
       - name: Install Node dependencies
         run: pnpm install
 
+      - name: Version consistency
+        run: pnpm verify:version-consistency
+
       - name: Typecheck
         run: pnpm typecheck
 
@@ -48,5 +51,8 @@ jobs:
       - name: Cargo test
         run: cargo test --workspace
 
-      - name: Frontend placeholder test
+      - name: Repository verifiers
         run: pnpm test
+
+      - name: Release pipeline stages
+        run: pnpm verify:release-pipeline

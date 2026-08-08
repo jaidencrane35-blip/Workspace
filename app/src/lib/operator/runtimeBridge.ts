@@ -36,7 +36,7 @@ export function composeTransportFailureMessage(intent: CapabilityIntent): string
     case "application":
       return "I couldn’t open or focus that app just now.";
     default:
-      return "That didn’t work — and I won’t pretend it did. Try again in a moment.";
+      return "That didn’t work. Try again in a moment.";
   }
 }
 

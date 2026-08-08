@@ -206,6 +206,9 @@ export function isTauriRuntime(): boolean {
 
 export const SHELL_MODE_EVENT = "workspace-shell-mode";
 
+/** Tauri event from tray / single-instance — restore Conversation Form (P19.S1). */
+export const SHOW_CONVERSATION_EVENT = "workspace-show-conversation";
+
 export function emitShellModeEvent(): void {
   window.dispatchEvent(new Event(SHELL_MODE_EVENT));
 }

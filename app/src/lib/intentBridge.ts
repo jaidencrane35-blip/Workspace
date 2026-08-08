@@ -18,6 +18,7 @@ import {
   appendProposal,
 } from "./capabilityEvolution";
 import {
+  companionGreetingReply,
   isVoiceCheckUtterance,
   resolveUnknownGuidance,
   softenUtterance,
@@ -35,6 +36,11 @@ import {
   commitWorkspaceContext,
   resolveFromWorkspaceContext,
 } from "./workspaceContext";
+import {
+  resolveCompoundOpen,
+  type CompoundOpenTarget,
+} from "./compoundOpen";
+import { resolveIntelligenceRoute } from "./intelligenceRouting";
 
 export type IntentAction =
   | { kind: "navigate"; view: PilotPrimaryView; reply: string }
@@ -77,6 +83,12 @@ export type IntentAction =
       kind: "browserOpenBeside";
       url: string;
       beside: string;
+      reply: string;
+    }
+  | {
+      kind: "compoundOpen";
+      targets: CompoundOpenTarget[];
+      encode: string;
       reply: string;
     }
   | { kind: "appOpenMaximize"; query: string; reply: string }
@@ -445,9 +457,8 @@ function resolveNotificationIntent(raw: string, text: string): IntentAction | nu
     return {
       kind: "unknown",
       reply:
-        "I can show a desktop notification now. Watching for when something finishes isn’t available yet — and I won’t pretend it is.",
-      suggestion:
-        'Try “show me a notification: Restore finished.” or “can you send notifications?”',
+        "I can show a desktop notification now. Watching for when something finishes isn’t available yet.",
+      suggestion: "Tell me the notification text if you want one now.",
     };
   }
 
@@ -1028,10 +1039,8 @@ function resolveWindowIntent(raw: string, text: string): IntentAction | null {
   ) {
     return {
       kind: "unknown",
-      reply:
-        "I can’t minimize every application at once yet — and I won’t fake it.",
-      suggestion:
-        'Try “minimize Chrome”, “minimize this window”, or “what windows are open?”.',
+      reply: "I can’t minimize every application at once yet.",
+      suggestion: "Name a window and I can minimize that one.",
     };
   }
 
@@ -1314,12 +1323,7 @@ function resolveIntentCore(raw: string): IntentAction {
     text === "hi" ||
     text === "hello"
   ) {
-    return {
-      kind: "unknown",
-      reply: "Here when you need the desktop.",
-      suggestion:
-        'Try “open ChatGPT”, “take a screenshot”, or “what windows are open?”.',
-    };
+    return companionGreetingReply();
   }
 
   if (
@@ -1629,10 +1633,8 @@ function resolveIntentCore(raw: string): IntentAction {
   ) {
     return {
       kind: "unknown",
-      reply:
-        "I can’t change speaker volume yet — and I won’t invent a system control.",
-      suggestion:
-        'I can open Windows Settings, arrange windows, or take a screenshot. Try “open Settings” or “what windows are open?”.',
+      reply: "I can’t change speaker volume yet.",
+      suggestion: "I can open Windows Settings if you want to adjust it there.",
     };
   }
 
@@ -1645,8 +1647,7 @@ function resolveIntentCore(raw: string): IntentAction {
       kind: "unknown",
       reply:
         "I can’t close a single browser tab yet — only whole windows or apps.",
-      suggestion:
-        'Try “close Chrome”, “close YouTube”, or “bring Chrome to the front”.',
+      suggestion: "Name the browser window if you want me to close that instead.",
     };
   }
 
@@ -1658,10 +1659,8 @@ function resolveIntentCore(raw: string): IntentAction {
   ) {
     return {
       kind: "unknown",
-      reply:
-        "I can’t minimize every application at once yet — and I won’t fake it.",
-      suggestion:
-        'Try “minimize Chrome”, “minimize this window”, or “what windows are open?”.',
+      reply: "I can’t minimize every application at once yet.",
+      suggestion: "Name a window and I can minimize that one.",
     };
   }
 
@@ -1675,8 +1674,6 @@ function resolveIntentCore(raw: string): IntentAction {
       kind: "unknown",
       reply:
         "I don’t transcribe other conversations — the mic only puts what you say into Workspace Conversation.",
-      suggestion:
-        'Use the microphone to speak to me, then ask for a desktop action — for example “open ChatGPT” or “take a screenshot”.',
     };
   }
 
@@ -1808,10 +1805,10 @@ function resolveIntentCore(raw: string): IntentAction {
       const nearby = suggestNearbyCapabilities(rawQuery);
       return {
         kind: "unknown",
-        reply: `I don’t recognize “${rawQuery}” as something I can launch — and I won’t invent a program name.`,
+        reply: `I don’t recognize “${rawQuery}” as something I can launch yet.`,
         suggestion: nearby
-          ? `Try “${nearby}”.`
-          : "Try naming an app or site I already support.",
+          ? `Closest I can try: “${nearby.split("”, “")[0]}”.`
+          : "Name an app or site you already use and I’ll try that.",
       };
     }
   }
@@ -1819,9 +1816,20 @@ function resolveIntentCore(raw: string): IntentAction {
   const appOpen = matchFirst(raw, softRaw, /^open\s+(.+)$/i);
   if (appOpen?.[1]) {
     const rawQuery = stripTrailingPunctuation(appOpen[1]);
-    // Safety net: compounds must never become executable names (F11 / Intent Grammar).
+    // P21.S2 — resolvable “open A and B” → compound; unresolved compounds stay unknown.
+    if (/\band\b/i.test(rawQuery) && !/\bbeside\b/i.test(rawQuery)) {
+      const compound = resolveCompoundOpen(rawQuery);
+      if (compound) {
+        return compound;
+      }
+      return {
+        kind: "unknown",
+        reply: "I need a clearer desktop request before I can open that.",
+        suggestion: "Name each app or site — I only open targets I already know.",
+      };
+    }
+    // Safety net: compounds / layout modifiers must never become executable names.
     if (
-      /\band\b/i.test(rawQuery) ||
       /\b(full\s*size|fullscreen|full\s*screen|maximized|maximised)\b/i.test(
         rawQuery,
       ) ||
@@ -1830,7 +1838,7 @@ function resolveIntentCore(raw: string): IntentAction {
       return {
         kind: "unknown",
         reply: "I need a clearer desktop request before I can open that.",
-        suggestion: `Try “${suggestNearbyCapabilities("open")}”.`,
+        suggestion: "Which app or site should I open?",
       };
     }
     const query = expandSemanticAlias(rawQuery) || rawQuery;
@@ -1869,12 +1877,19 @@ function resolveIntentCore(raw: string): IntentAction {
       const nearby = suggestNearbyCapabilities(rawQuery);
       return {
         kind: "unknown",
-        reply: `I don’t recognize “${rawQuery}” as something I can open yet — and I won’t invent a program name.`,
+        reply: `I don’t recognize “${rawQuery}” as something I can open yet.`,
         suggestion: nearby
-          ? `Try “${nearby}”.`
-          : "Try naming an app, site, or folder I already support.",
+          ? `Closest I can try: “${nearby.split("”, “")[0]}”.`
+          : "Name an app or site you already use and I’ll try that.",
       };
     }
+  }
+
+  // P22.S1 — intelligence kind before desktop soft-miss refusal.
+  const intelligence = resolveIntelligenceRoute(raw.trim()) ??
+    resolveIntelligenceRoute(matchText);
+  if (intelligence) {
+    return intelligence;
   }
 
   return resolveUnknownGuidance(matchText);

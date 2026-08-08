@@ -1,8 +1,7 @@
 import { BookmarkPlus } from "lucide-react";
-import { useEffect, useState } from "react";
 import { ICON } from "../lib/icons";
-import { invokeIpc } from "../lib/ipc";
-import type { SavedContext, Workspace } from "../types/domain";
+import type { Workspace } from "../types/domain";
+import { useActiveMoment } from "./ActiveMoment";
 
 interface HomeWorkspacePanelProps {
   workspace: Workspace | null;
@@ -14,6 +13,7 @@ interface HomeWorkspacePanelProps {
 
 /**
  * Moments tool (Mode 3 specialized) — not an onboarding dashboard.
+ * P18.S1: browse list comes from ActiveMoment.moments — same authority as Continue.
  */
 export function HomeWorkspacePanel({
   workspace,
@@ -22,31 +22,7 @@ export function HomeWorkspacePanel({
   onGoToSave,
   onContinueContext,
 }: HomeWorkspacePanelProps) {
-  const [moments, setMoments] = useState<SavedContext[]>([]);
-
-  useEffect(() => {
-    if (!workspace) {
-      setMoments([]);
-      return;
-    }
-    let cancelled = false;
-    void invokeIpc<SavedContext[]>("list_saved_contexts", {
-      workspaceId: workspace.id,
-    })
-      .then((list) => {
-        if (!cancelled) {
-          setMoments(list);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setMoments([]);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [workspace]);
+  const { moments } = useActiveMoment();
 
   if (!workspace) {
     return (
@@ -121,7 +97,7 @@ export function HomeWorkspacePanel({
           Choose a Moment to restore — or ask in conversation.
         </p>
       </div>
-      <ul className="op-moments-list">
+      <ul className="op-moments-list" data-moments-browse="home">
         {moments.map((moment) => (
           <li key={moment.id}>
             <button

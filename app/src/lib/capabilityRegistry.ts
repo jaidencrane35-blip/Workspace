@@ -73,7 +73,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
       "Open Notepad",
     ],
     failureRecovery:
-      "Say a known app name, or ask what applications I can control — I won’t invent a program.",
+      "Say a known app name, or ask what applications I can control.",
     related: ["focus-window", "browser", "folders"],
     similar: ["focus-window", "browser"],
     alternatives: ["focus-window", "folders"],
@@ -110,7 +110,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
       "Locate the browser with YouTube open",
     ],
     failureRecovery:
-      "Ask what windows are open, or name the app/site window you want — I won’t invent a window.",
+      "Ask what windows are open, or name the app/site window you want.",
     related: ["window-state", "browser", "open-app"],
     similar: ["open-app", "window-state"],
     alternatives: ["open-app", "browser"],
@@ -330,7 +330,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
       "Show my Desktop",
     ],
     failureRecovery:
-      "Name a common folder (Downloads, Pictures, Desktop, Documents) — I won’t invent paths.",
+      "Name a common folder (Downloads, Pictures, Desktop, Documents).",
     related: ["open-app", "screenshots"],
     similar: ["open-app", "screenshots"],
     alternatives: ["open-app"],
@@ -431,6 +431,13 @@ export function isCapabilityDiscoveryUtterance(text: string): boolean {
     ) ||
     /^(what can('|’)t you do|what can you not do|what are your limits)$/i.test(t) ||
     /^(what('?s| is) similar|what else can you do|what are my options|what can you help with)$/i.test(
+      t,
+    ) ||
+    // P22.S1 — ordinary desktop-capability meta (avoid soft-miss refusal).
+    /^(can you|do you|are you able to)\s+(manage|control|help with|handle|support|work with)\s+(my\s+)?(windows?|desktop|screenshots?|clipboard|notifications?|apps?|applications?|browsers?)\??$/i.test(
+      t,
+    ) ||
+    /^do you support\s+(windows?|screenshots?|clipboard|notifications?|browsers?)\??$/i.test(
       t,
     )
   );
@@ -573,7 +580,7 @@ export function generateCapabilityDiscovery(scope: DiscoveryScope = "all"): {
     .slice(0, 6);
 
   const why =
-    "I only claim desktop work I can actually control — I won’t invent apps, folders, or success.";
+    "I only claim desktop work I can actually control — no invented apps, folders, or success.";
 
   const reply = [
     scope === "all"
@@ -592,11 +599,11 @@ export function generateCapabilityDiscovery(scope: DiscoveryScope = "all"): {
     .filter((line) => line !== "")
     .join("\n");
 
-  const examples = nodes.flatMap((n) => n.examples).slice(0, 4);
-  const suggestion =
-    examples.length > 0
-      ? `Try “${examples.join("”, “")}”.`
-      : "Try asking for a desktop action in ordinary words.";
+  // Discovery is Owner-asked — one example is enough; no multi-command catalogue.
+  const example = nodes.flatMap((n) => n.examples)[0];
+  const suggestion = example
+    ? `For example: “${example}”.`
+    : "Ask for a desktop action in ordinary words.";
 
   return { reply, suggestion };
 }
@@ -661,16 +668,18 @@ export function generateRecoveryGuidance(seed: string): {
     .slice(0, 2)
     .join("”, “");
 
+  const closest = nearby ? nearby.split("”, “")[0] : "";
   const reply = [
-    `I can’t do that exactly as asked — and I won’t invent a desktop action.`,
-    `Recovery: ${recovery}`,
+    "I can’t do that exactly as asked.",
+    recovery,
     related ? `Related I can try: “${related}”.` : "",
-    nearby && !related ? `Closest things I can try: “${nearby}”.` : "",
   ]
     .filter(Boolean)
     .join(" ");
   return {
     reply,
-    suggestion: nearby ? `Try “${nearby}”.` : "Ask “what can you do?”",
+    suggestion: closest
+      ? `Closest I can try: “${closest}”.`
+      : "What are you trying to finish on the desktop?",
   };
 }

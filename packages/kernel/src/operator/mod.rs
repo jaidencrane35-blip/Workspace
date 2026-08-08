@@ -95,7 +95,56 @@ impl KernelOperator {
 
         let mut results: Vec<ProviderInvokeResponse> = Vec::new();
 
-        if plan.composition_id.as_deref() == Some("app.open_or_focus")
+        if plan.composition_id.as_deref() == Some("desktop.open_compound") {
+            // P21.S2 — each Find step = open_or_focus unit; each Browser Open = site open.
+            for step in &plan.steps {
+                if step.domain == CapabilityDomainId::application()
+                    && step.operation == CapabilityOperation::Find
+                {
+                    let query = step.query.clone();
+                    let find = Self::invoke_step(step)?;
+                    let has_match =
+                        find.ok && find.items.as_ref().is_some_and(|i| !i.is_empty());
+                    results.push(find);
+                    let next_op = if has_match {
+                        CapabilityOperation::Focus
+                    } else {
+                        CapabilityOperation::Launch
+                    };
+                    let next = Self::invoke_step(&OperatorPlanStep {
+                        domain: CapabilityDomainId::application(),
+                        operation: next_op,
+                        text: None,
+                        query,
+                        path: None,
+                        hwnd: None,
+                        pid: None,
+                        x: None,
+                        y: None,
+                        width: None,
+                        height: None,
+                        monitor_index: None,
+                        snap: None,
+                        title: None,
+                        category: None,
+                        priority: None,
+                        duration: None,
+                    })?;
+                    let ok = next.ok;
+                    results.push(next);
+                    if !ok {
+                        break;
+                    }
+                } else {
+                    let result = Self::invoke_step(step)?;
+                    let ok = result.ok;
+                    results.push(result);
+                    if !ok {
+                        break;
+                    }
+                }
+            }
+        } else if plan.composition_id.as_deref() == Some("app.open_or_focus")
             || plan.composition_id.as_deref() == Some("app.open_maximize")
         {
             let find = Self::invoke_step(&plan.steps[0])?;
@@ -212,6 +261,55 @@ mod tests {
             Some("browser.open_foreground")
         );
         assert_eq!(plan.steps.len(), 2);
+    }
+
+    #[test]
+    fn plans_compound_open_decomposition() {
+        let plan = KernelOperator::plan(&CapabilityIntent {
+            domain: "application".into(),
+            operation: "open_compound".into(),
+            text: Some("app:Cursor|app:Google Chrome".into()),
+            title: Some("Cursor and Google Chrome".into()),
+            ..Default::default()
+        })
+        .unwrap();
+        assert_eq!(
+            plan.composition_id.as_deref(),
+            Some("desktop.open_compound")
+        );
+        assert_eq!(plan.steps.len(), 2);
+        assert_eq!(plan.steps[0].operation, CapabilityOperation::Find);
+        assert_eq!(plan.steps[0].query.as_deref(), Some("Cursor"));
+        assert_eq!(plan.steps[1].operation, CapabilityOperation::Find);
+        assert_eq!(plan.steps[1].query.as_deref(), Some("Google Chrome"));
+    }
+
+    #[test]
+    fn plans_browser_open_beside_completion_contract() {
+        let plan = KernelOperator::plan(&CapabilityIntent {
+            domain: "browser".into(),
+            operation: "open_beside".into(),
+            path: Some("https://chatgpt.com".into()),
+            query: Some("https://chatgpt.com".into()),
+            title: Some("Cursor".into()),
+            snap: Some("Chrome".into()),
+            ..Default::default()
+        })
+        .unwrap();
+        assert_eq!(plan.composition_id.as_deref(), Some("browser.open_beside"));
+        assert!(
+            plan.steps.len() >= 5,
+            "open_beside must plan open+locate+snaps+verify, got {}",
+            plan.steps.len()
+        );
+        assert_eq!(plan.steps[0].operation, CapabilityOperation::Open);
+        assert_eq!(plan.steps[0].domain, CapabilityDomainId::browser());
+        assert_eq!(plan.steps[1].operation, CapabilityOperation::Focus);
+        assert_eq!(plan.steps[2].operation, CapabilityOperation::Snap);
+        assert_eq!(plan.steps[2].snap.as_deref(), Some("left"));
+        assert_eq!(plan.steps[3].operation, CapabilityOperation::Snap);
+        assert_eq!(plan.steps[3].snap.as_deref(), Some("right"));
+        assert_eq!(plan.steps[4].operation, CapabilityOperation::Enumerate);
     }
 
     #[test]

@@ -10,6 +10,7 @@ import { isTauriRuntime, loadShellMode } from "./lib/shellRuntime";
 import {
   bootstrapShellOnLaunch,
   currentWindowLabel,
+  installTrayShowConversationRestore,
 } from "./lib/shellWindows";
 import "./design-system/tokens.css";
 import "./App.css";
@@ -19,6 +20,8 @@ initExperienceInstrumentation();
 async function resolveShellEntry(): Promise<React.ReactElement> {
   if (isTauriRuntime()) {
     await bootstrapShellOnLaunch();
+    // P19.S1: tray Show / secondary launch restore ShellMode Conversation Form.
+    await installTrayShowConversationRestore();
     const label = await currentWindowLabel();
     if (label === "operator") {
       return <DesktopOperator />;

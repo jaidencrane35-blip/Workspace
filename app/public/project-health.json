@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T16:44:32.611Z",
+  "updatedAt": "2026-08-08T02:03:23.405Z",
   "constitution": {
     "document": "docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md",
     "version": "2.1",
@@ -17,7 +17,7 @@
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "note": "P17.S1: Conversation Capability Failure Compose — Owner-facing hard fails via Operator compose; diagnostics preserved. File Provider P17 blocked. nextReadyNow D1. Owner PP pending."
+    "note": "Release Hold (R2) — Stage 2 Owner Acceptance. P22.S1 Intelligence Kind Routing complete (after P21.S1/S2). No active eng program. Next: A2 after Accept+Authenticode cert. F1 Complete. P17–P20 closed. File Provider blocked. nextReadyNow D1."
   },
   "completedExecutionPrograms": [
     {
@@ -707,6 +707,36 @@
         "present": true,
         "wiredInTest": true
       },
+      "verify:moments-success-cohesion": {
+        "script": "scripts/verify-moments-success-cohesion.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:moments-agency-keyboard": {
+        "script": "scripts/verify-moments-agency-keyboard.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:conversation-working-state": {
+        "script": "scripts/verify-conversation-working-state.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:moments-status-ownership": {
+        "script": "scripts/verify-moments-status-ownership.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:moments-browse-truth": {
+        "script": "scripts/verify-moments-browse-truth.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:moments-tool-session": {
+        "script": "scripts/verify-moments-tool-session.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
       "verify:operator-intelligence": {
         "script": "scripts/verify-operator-intelligence.mjs",
         "present": true,
@@ -817,6 +847,36 @@
         "present": true,
         "wiredInTest": true
       },
+      "verify:tray-shellmode": {
+        "script": "scripts/verify-tray-shellmode.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:conversation-first-session": {
+        "script": "scripts/verify-conversation-first-session.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:version-consistency": {
+        "script": "scripts/verify-version-consistency.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:release-pipeline": {
+        "script": "scripts/verify-release-pipeline.mjs",
+        "present": true,
+        "wiredInTest": false
+      },
+      "verify:f1-ci-automation": {
+        "script": "scripts/verify-f1-ci-automation.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:release-hold": {
+        "script": "scripts/verify-release-hold.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
       "verify:support-bundle": {
         "script": "scripts/verify-support-bundle.mjs",
         "present": true,
@@ -866,8 +926,8 @@
     ],
     "productIpcCommandCount": 20,
     "launchStatus": "pending",
-    "readyForOwnerReview": false,
-    "reviewDocument": "docs/product-proof-review.md"
+    "readyForOwnerReview": true,
+    "reviewDocument": "docs/capability-runtime/product-proof/P21_S2_COMPOUND_GOAL_DECOMPOSITION.md"
   },
   "architecturalRisks": [
     {
@@ -909,10 +969,10 @@
     ]
   },
   "lastMilestone": {
-    "date": "2026-08-07",
+    "date": "2026-08-08",
     "document": "docs/engineering-milestone-report.md",
-    "title": "Engineering Execution Standard v1 — meta-architecture complete; P16 Product Proof still pending",
-    "reviewBrief": "docs/00-Constitution/WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md"
+    "title": "P22.S1 Intelligence Kind Routing — Release Hold",
+    "reviewBrief": "docs/capability-runtime/product-proof/P22_S1_INTELLIGENCE_KIND_ROUTING.md"
   },
   "handoffStatus": "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   "nextRecommendedExecutionProgram": {

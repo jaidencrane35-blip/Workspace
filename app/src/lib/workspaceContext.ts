@@ -103,7 +103,9 @@ export function resolveFromWorkspaceContext(raw: string): {
 
   // Replay last action
   if (
-    /^(do that again|do it again|again|once more|repeat that)$/i.test(text)
+    /^(do that again|do it again|again|once more|repeat that|do the previous(?: one)?|previous one)$/i.test(
+      text,
+    )
   ) {
     if (state.lastAction) {
       evidence.push("again→replay_last_action");
@@ -112,7 +114,7 @@ export function resolveFromWorkspaceContext(raw: string): {
           ...cloneAction(state.lastAction),
           reply:
             state.lastAction.reply ||
-            "Doing that again from the current session context.",
+            "Doing that again from what we just did.",
         },
         evidence,
       };
@@ -122,8 +124,7 @@ export function resolveFromWorkspaceContext(raw: string): {
       action: {
         kind: "unknown",
         reply:
-          "There’s nothing in this session to repeat yet. Ask for a desktop action first.",
-        suggestion: 'Try “open Chrome” or “open ChatGPT beside Cursor”.',
+          "There’s nothing in this session to repeat yet — what should we do on the desktop?",
       },
       evidence,
     };
@@ -144,15 +145,49 @@ export function resolveFromWorkspaceContext(raw: string): {
         kind: "navigate",
         view: "resume",
         reply:
-          "Let’s get you back through Continue — restore only runs after you approve a saved Moment. I won’t invent a layout.",
+          "Let’s get you back through Continue — restore only runs after you approve a saved Moment.",
       },
       evidence,
     };
   }
 
-  // Find / locate it — Context binds pronouns; Goal Resolution clarifies only when unbound
+  // Open / launch it — bind to last app or site when known
+  if (/^(open|launch|show)\s+(it|that|this)$/i.test(text)) {
+    if (state.lastUrl) {
+      evidence.push("open_pronoun→url");
+      return {
+        action: {
+          kind: "browserOpen",
+          url: state.lastUrl,
+          reply: "Opening that again from this session.",
+        },
+        evidence,
+      };
+    }
+    if (state.lastAppQuery) {
+      evidence.push(`open_pronoun→${state.lastAppQuery}`);
+      return {
+        action: {
+          kind: "appOpen",
+          query: state.lastAppQuery,
+          reply: `Opening “${state.lastAppQuery}” again.`,
+        },
+        evidence,
+      };
+    }
+    evidence.push("open_pronoun→clarify");
+    return {
+      action: {
+        kind: "unknown",
+        reply: "Open what — which app or site? Name it and I’ll continue from there.",
+      },
+      evidence,
+    };
+  }
+
+  // Find / locate / bring it back — Context binds pronouns
   if (
-    /^(find it|locate it|where (is|did) it(?: go)?|show it|bring it back)$/i.test(
+    /^(find it|locate it|where (is|did) it(?: go)?|show it|bring it back|bring that back)$/i.test(
       text,
     )
   ) {
@@ -163,7 +198,7 @@ export function resolveFromWorkspaceContext(raw: string): {
         action: {
           kind: "winFocus",
           query: ref,
-          reply: `Looking for “${ref}” from session context.`,
+          reply: `Looking for “${ref}” from what we were just doing.`,
         },
         evidence,
       };
@@ -190,9 +225,46 @@ export function resolveFromWorkspaceContext(raw: string): {
     return {
       action: {
         kind: "unknown",
-        reply:
-          "Close what — which window or app? Name it; I won’t invent a target.",
-        suggestion: 'Try “close Chrome” or open something first.',
+        reply: "Close what — which window or app? Name it, or open something first.",
+      },
+      evidence,
+    };
+  }
+
+  // Minimize / maximize / restore that|it|this
+  const winState = text.match(
+    /^(minimize|minimise|maximize|maximise|restore)\s+(that|it|this)(?:\s+window)?$/i,
+  );
+  if (winState) {
+    const verb = winState[1]!.toLowerCase();
+    const ref = referentLabel();
+    if (ref) {
+      const kind =
+        verb.startsWith("min")
+          ? "winMinimize"
+          : verb.startsWith("max")
+            ? "winMaximize"
+            : "winRestore";
+      evidence.push(`${kind}_pronoun→${ref}`);
+      return {
+        action: {
+          kind,
+          query: ref,
+          reply:
+            kind === "winMinimize"
+              ? `Minimizing “${ref}”.`
+              : kind === "winMaximize"
+                ? `Maximizing “${ref}”.`
+                : `Restoring “${ref}”.`,
+        },
+        evidence,
+      };
+    }
+    evidence.push("win_state_pronoun→clarify");
+    return {
+      action: {
+        kind: "unknown",
+        reply: "Which window should I change? Name it, or ask what’s open.",
       },
       evidence,
     };
@@ -218,7 +290,7 @@ export function resolveFromWorkspaceContext(raw: string): {
     return {
       action: {
         kind: "unknown",
-        reply: "Which window? Name it, or open something first so I have a referent.",
+        reply: "Which window? Name it, or open something first so I know what you mean.",
       },
       evidence: [...evidence, "window_pronoun→clarify"],
     };
@@ -237,7 +309,7 @@ export function resolveFromWorkspaceContext(raw: string): {
           kind: "browserOpenBeside",
           url: state.lastUrl,
           beside: besideTarget,
-          reply: `Opening beside “${besideTarget}” from session context.`,
+          reply: `Opening beside “${besideTarget}” from this session.`,
         },
         evidence,
       };
@@ -261,7 +333,6 @@ export function resolveFromWorkspaceContext(raw: string): {
         kind: "unknown",
         reply:
           "Put what beside that — which app or site? Open it first, or name it.",
-        suggestion: 'Try “open Chrome” then “put it beside Cursor”.',
       },
       evidence,
     };
@@ -298,7 +369,6 @@ export function resolveFromWorkspaceContext(raw: string): {
         kind: "unknown",
         reply:
           "The other one — which? I need two things in this session first.",
-        suggestion: 'Try “open ChatGPT beside Cursor”, then “open the other one”.',
       },
       evidence: [...evidence, "other_one→clarify"],
     };
@@ -334,6 +404,19 @@ export function commitWorkspaceContext(
         ? pushUnique(state.pendingKinds, "clarification")
         : state.pendingKinds.filter((k) => k !== "clarification"),
   };
+
+  if (action.kind === "compoundOpen") {
+    for (const t of action.targets) {
+      if (t.kind === "app") {
+        state.lastAppQuery = t.query;
+        state.appsLaunched = pushUnique(state.appsLaunched, t.query);
+        state.lastWindowQuery = state.lastWindowQuery ?? t.query;
+        state.windowsReferenced = pushUnique(state.windowsReferenced, t.query);
+      } else {
+        state.lastUrl = t.url;
+      }
+    }
+  }
 
   if ("query" in action && typeof action.query === "string" && action.query) {
     const q = action.query;

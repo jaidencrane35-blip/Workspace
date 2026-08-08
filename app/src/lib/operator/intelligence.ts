@@ -10,12 +10,20 @@ import { isCapabilityIntentAction, toCapabilityIntent } from "./intentMap";
 import { executeCapabilityIntent } from "./runtimeBridge";
 import type { OperatorOutcome } from "./types";
 
+/** Optional Owner-facing working copy before long IPC (P17.S4). */
+export type OperatorWorkingNotify = (message: string) => void;
+
+export interface HandleOperatorUtteranceOptions {
+  onWorking?: OperatorWorkingNotify;
+}
+
 /**
  * Conversation → Intent → (shell | Kernel Operator via single IPC).
  * Voice recognition is a Conversation input device — not Kernel Operator work.
  */
 export async function handleOperatorUtterance(
   utterance: string,
+  options?: HandleOperatorUtteranceOptions,
 ): Promise<OperatorOutcome> {
   const intent = resolveIntent(utterance);
 
@@ -42,6 +50,8 @@ export async function handleOperatorUtterance(
   }
 
   if (intent.kind === "supportBundle") {
+    // P17.S4: surface prepared “Creating…” before IPC — not only after completion.
+    options?.onWorking?.(intent.reply);
     try {
       const result = await invokeIpc<{ path: string; message: string }>(
         "export_support_bundle",

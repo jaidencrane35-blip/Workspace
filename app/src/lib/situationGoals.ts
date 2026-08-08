@@ -35,7 +35,7 @@ function continueForActivity(activityLabel: string): IntentAction {
   return {
     kind: "navigate",
     view: "resume",
-    reply: `Opening Continue for your ${activityLabel} session — restore a saved Moment when you’re ready. I won’t invent which apps belong to that mode.`,
+    reply: `Opening Continue for your ${activityLabel} session — restore a saved Moment when you’re ready.`,
   };
 }
 
@@ -43,7 +43,7 @@ function continueForSession(reason: string): IntentAction {
   return {
     kind: "navigate",
     view: "resume",
-    reply: `${reason} Restore only runs after you approve a saved Moment — I won’t invent a desktop layout.`,
+    reply: `${reason} Restore only runs after you approve a saved Moment.`,
   };
 }
 
@@ -52,7 +52,7 @@ function endSessionClarify(): IntentAction {
   return {
     kind: "unknown",
     reply:
-      "Stepping away — should I close a window, minimize something, or open Continue so you can leave this for later? I won’t invent a close-everything action.",
+      "Stepping away — should I close a window, minimize something, or open Continue so you can leave this for later?",
     suggestion: recovery.suggestion,
   };
 }

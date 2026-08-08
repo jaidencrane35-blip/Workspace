@@ -41,7 +41,8 @@
     "C0-single-instance",
     "B1-diagnostics-support-bundle",
     "A1-artifact-checksums",
-    "E1-tray-lifecycle"
+    "E1-tray-lifecycle",
+    "F1-ci-automation"
   ],
   "canonicalOrder": [
     "B1-diagnostics-support-bundle",
@@ -365,10 +366,10 @@
     {
       "id": "F1-ci-automation",
       "gate": "F",
-      "productionClassification": "ReleaseOnly",
+      "productionClassification": "Complete",
       "purpose": "Automate validation and artifact checks on the active development branch.",
       "userValue": "Indirect — fewer broken builds reach humans.",
-      "engineeringValue": "CI on v2-dev; checksum/verify jobs.",
+      "engineeringValue": "CI on v2-dev; checksum/verify jobs; unsigned installer+manifest pipeline.",
       "constitutionalJustification": "Repository Standards — no architectural change.",
       "prerequisites": [
         "A0-installer-foundation"
@@ -381,18 +382,24 @@
       ],
       "exitCriteria": [
         "Workflow covers v2-dev",
-        "verify:release or subset in CI"
+        "verify:release or subset in CI",
+        "ci-release unsigned installer+checksums+manifest",
+        "verify:f1-ci-automation"
       ],
       "verification": [
-        "GitHub Actions green on sample PR"
+        "pnpm verify:f1-ci-automation",
+        "pnpm verify:release-pipeline",
+        "GitHub Actions ci-pr + ci-release"
       ],
-      "productionReadinessDelta": "Release engineering maturity; not Release Ready alone.",
+      "productionReadinessDelta": "Engineering Complete for release pipeline; not Release Ready (unsigned; A2 open).",
       "regressionRisks": [
-        "CI flakiness blocking merges"
+        "CI flakiness blocking merges",
+        "Tauri installer build time on GHA"
       ],
       "rollbackStrategy": "Narrow workflow triggers; make jobs advisory temporarily.",
       "successMetrics": [
-        "CI runs on v2-dev push/PR"
+        "CI runs on v2-dev push/PR",
+        "Unsigned setup.exe + sha256 + manifest produced in ci-release"
       ],
       "operationalAcceptance": [
         "A release engineer can see pass/fail without local full matrix",

@@ -51,7 +51,7 @@ Acknowledge without visual noise.
 | State | How Workspace communicates |
 | --- | --- |
 | Listening | Quiet mic motion (wave/pulse) — no glyph stack |
-| Thinking / working | Streaming Conversation reply; honest preparing copy when needed |
+| Thinking / working | Immediate working copy from Send through real work; then truthful reply (P17.S4) |
 | Success | Outcome stated in Conversation — not toast theatre |
 | Failure | Plain language in Conversation; recovery path offered |
 | Waiting | Stillness + truthful “working” text — not spinners that invent progress |
@@ -107,6 +107,20 @@ Every transition should feel **conversational**, not application-wizard.
 - Confirmations protect the desktop without breaking the conversational thread.
 - Empty states stay quiet (no marketing empty chrome).
 - Window behaviour supports Conversation gravity (collapse / expand without OS title-bar theatre).
+
+---
+
+## 6.1 Moments agency (P17.S3)
+
+Approve / Delete confirmations share Conversation’s keyboard language:
+
+| Key | Meaning |
+| --- | --- |
+| Escape | Non-destructive dismiss (Not now / Cancel) |
+| Enter | Primary commit (Approve and restore / Delete permanently) |
+| Tab | Normal movement between controls |
+
+On open, focus enters the agency card. On close, focus returns to the Conversation input. Text-entry controls and voice capture keep their own Esc/Enter ownership. F10 review-before-send is unchanged.
 
 ---
 

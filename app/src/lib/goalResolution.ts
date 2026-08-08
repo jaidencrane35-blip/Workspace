@@ -85,7 +85,7 @@ function resumeAction(): IntentAction {
     kind: "navigate",
     view: "resume",
     reply:
-      "Let’s get your workspace back through Continue — pick a saved Moment to restore. I won’t invent a layout from a vague description.",
+      "Let’s get your workspace back through Continue — pick a saved Moment to restore.",
   };
 }
 
@@ -94,7 +94,7 @@ function clarifyLocateAction(seed: string): IntentAction {
   return {
     kind: "unknown",
     reply:
-      "You’ve lost something on the desktop — name the window, app, site, or folder and I’ll look. I won’t invent a target. You can also ask what windows are open.",
+      "You’ve lost something on the desktop — name the window, app, or site and I’ll look.",
     suggestion: recovery.suggestion,
   };
 }
@@ -178,7 +178,7 @@ function recoveryFor(action: IntentAction): string {
       : "Ask what I can do, or name a concrete desktop target.";
   }
   if (action.kind === "navigate") {
-    return "If no Moment exists, Save one first — I won’t invent a multi-app layout.";
+    return "If no Moment exists, Save one first — then we can restore from there.";
   }
   return generateRecoveryGuidance(action.kind).reply;
 }

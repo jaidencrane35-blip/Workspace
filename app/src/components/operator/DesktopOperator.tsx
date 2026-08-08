@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
+import { emitShellModeEvent, saveShellMode } from "../../lib/shellRuntime";
 import {
-  emitShellModeEvent,
-  saveShellMode,
-} from "../../lib/shellRuntime";
-import {
-  applyShellMode,
+  restoreConversationShell,
   startOperatorDrag,
 } from "../../lib/shellWindows";
 
@@ -37,13 +34,15 @@ export function DesktopOperator({ onOpenConversation }: DesktopOperatorProps) {
   }, []);
 
   const openConversation = useCallback(async () => {
-    saveShellMode(1);
-    emitShellModeEvent();
+    // Browser fallback: parent owns React mode; still persist durable ShellMode.
     if (onOpenConversation) {
+      saveShellMode(1);
+      emitShellModeEvent();
       onOpenConversation();
       return;
     }
-    await applyShellMode(1);
+    // Tauri Form A: same restore path as tray Show Conversation (P19.S1).
+    await restoreConversationShell();
   }, [onOpenConversation]);
 
   return (

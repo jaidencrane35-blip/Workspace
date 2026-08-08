@@ -12,12 +12,11 @@ import type {
 import { useActiveMoment } from "./ActiveMoment";
 import { trackSaveSuccess } from "../dev";
 import { useCognitiveEngine } from "./CognitiveEngine";
+import { useMomentsToolSession } from "./MomentsToolSession";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 import { useIntentEngine } from "./IntentEngine";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
 import { WorkspaceSurface } from "./WorkspaceSurface";
-
-type Step = "naming" | "saved";
 
 interface SaveContextPanelProps {
   workspace: Workspace | null;
@@ -211,6 +210,9 @@ export function SaveContextPanel({
     selectMoment,
   } = useActiveMoment();
   const { noteCapture } = useCognitiveEngine();
+  // P18.S2 — draft/step above remount.
+  const { save: saveSession, patchSave, resetSave } = useMomentsToolSession();
+  const { name, handoffNote, step, saved, toolsOpen } = saveSession;
 
   const leaveWriting = useCallback(() => {
     setWritingMode(false);
@@ -220,11 +222,10 @@ export function SaveContextPanel({
 
   const [scope, setScope] = useState<SavedContextCaptureScope | null>(null);
   const [scopeError, setScopeError] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [handoffNote, setHandoffNote] = useState("");
-  const [step, setStep] = useState<Step>("naming");
-  const [saved, setSaved] = useState<SavedContext | null>(null);
-  const [toolsOpen, setToolsOpen] = useState(false);
+
+  const setName = (value: string) => patchSave({ name: value });
+  const setHandoffNote = (value: string) => patchSave({ handoffNote: value });
+  const setToolsOpen = (value: boolean) => patchSave({ toolsOpen: value });
 
   useEffect(() => {
     invokeIpc<SavedContextCaptureScope>("get_saved_context_capture_scope")
@@ -266,6 +267,7 @@ export function SaveContextPanel({
     }
     onBusy(true);
     onError(null);
+    onMessage(null);
     void (async () => {
       try {
         const context = await invokeIpc<SavedContext>("save_workspace_context", {
@@ -274,9 +276,8 @@ export function SaveContextPanel({
           approvedScope: scope.id,
           handoffNote: trimmedHandoff,
         });
-        setSaved(context);
-        setStep("saved");
-        onMessage(`Saved “${context.name}”`);
+        patchSave({ saved: context, step: "saved" });
+        // P17.S2: sole Owner ack is “Saved into this place” — no duplicate ok-banner.
         trackSaveSuccess();
         noteCapture(
           context.id,
@@ -306,20 +307,18 @@ export function SaveContextPanel({
     selectMoment,
     setPresence,
     setExpanding,
+    patchSave,
   ]);
 
   const startAgain = () => {
-    setName("");
-    setHandoffNote("");
-    setSaved(null);
-    setStep("naming");
+    resetSave();
     onMessage(null);
     onError(null);
   };
 
   const clearDraft = () => {
-    setName("");
-    setHandoffNote("");
+    patchSave({ name: "", handoffNote: "", toolsOpen: false });
+    onMessage(null);
     onError(null);
   };
 
@@ -410,29 +409,38 @@ export function SaveContextPanel({
     );
   }
 
+  // P18.S2: never blank attach shell — portal when host exists, else inline write.
+  const writeSurface = (
+    <section
+      className="ws-region save-place save-env save-env--write attention-field"
+      data-density={density}
+      data-moments-save={expandHost ? "portaled" : "inline"}
+    >
+      <header className="place__identity place__identity--quiet-region">
+        <p className="exp-kicker">In {workspace.name}</p>
+        <h2 className="place__title place__title--region">Leave a note</h2>
+      </header>
+      {writeForm}
+    </section>
+  );
+
   if (!primary) {
+    return writeSurface;
+  }
+
+  if (expandHost) {
     return (
       <section
-        className="ws-region save-place save-env save-env--write attention-field"
+        className="ws-region save-place save-env save-env--attach"
         data-density={density}
+        data-writing="ready"
+        data-moments-save="portaled"
       >
-        <header className="place__identity place__identity--quiet-region">
-          <p className="exp-kicker">In {workspace.name}</p>
-          <h2 className="place__title place__title--region">Leave a note</h2>
-        </header>
-        {writeForm}
+        <p className="sr-only">Writing expands inside the active Moment.</p>
+        {createPortal(writeForm, expandHost)}
       </section>
     );
   }
 
-  return (
-    <section
-      className="ws-region save-place save-env save-env--attach"
-      data-density={density}
-      data-writing="ready"
-    >
-      <p className="sr-only">Writing expands inside the active Moment.</p>
-      {expandHost ? createPortal(writeForm, expandHost) : null}
-    </section>
-  );
+  return writeSurface;
 }

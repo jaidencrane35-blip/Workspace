@@ -39,6 +39,13 @@ export interface ChatMessage {
 
 const DEV_KEY = "workspace.operator.developer";
 
+/** Honest working copy while Operator turn runs (P17.S4). */
+const WORKING_ACK = "Working on that…";
+
+/** P20.S1 — invite action, never explain capability (Interaction Language). */
+const FIRST_SESSION_INVITE = "Say or type what you need.";
+const COMPOSER_PLACEHOLDER = "Say or type…";
+
 interface OperatorRootProps {
   /** Secondary tool surface launched from conversation (not a shell form). */
   specializedSurface: ReactNode;
@@ -48,6 +55,11 @@ interface OperatorRootProps {
   ) => void;
   listMoments: () => Promise<Array<{ id: string; name: string }>>;
   activeSpecialized: PilotPrimaryView | "health" | null;
+  /**
+   * P17.S4 bridge — Moments/App IPC busy also locks Conversation.
+   * Does not merge busy architectures; Composer ownership only.
+   */
+  toolBusy?: boolean;
 }
 
 export function OperatorRoot({
@@ -55,6 +67,7 @@ export function OperatorRoot({
   onNavigateProduct,
   listMoments,
   activeSpecialized,
+  toolBusy = false,
 }: OperatorRootProps) {
   const listId = useId();
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -68,8 +81,12 @@ export function OperatorRoot({
   const [draft, setDraft] = useState("");
   /** PX3: after voice insert, softly mark Send as the one obvious next action (F10). */
   const [voiceReviewPending, setVoiceReviewPending] = useState(false);
+  /** Voice capture owns attention — suppress first-session cue (P20.S1). */
+  const [voiceCapturing, setVoiceCapturing] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  /** Conversation turn busy — owns Send→IPC→settle (not cosmetic stream alone). */
   const [busy, setBusy] = useState(false);
+  const composerBusy = busy || toolBusy;
   /** Tool dock inside Conversation — never a third shell form. */
   const [toolDock, setToolDock] = useState(false);
   const [showHealth, setShowHealth] = useState(false);
@@ -158,35 +175,54 @@ export function OperatorRoot({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const pushWorkspace = useCallback(async (text: string) => {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    const id = `w-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    setMessages((prev) => [
-      ...prev,
-      { id, role: "workspace", text: "", streaming: true },
-    ]);
-    setBusy(true);
-    try {
-      await streamText(
-        text,
-        (partial) => {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === id ? { ...m, text: partial, streaming: true } : m,
-            ),
-          );
-        },
-        controller.signal,
-      );
-      setMessages((prev) =>
-        prev.map((m) => (m.id === id ? { ...m, streaming: false } : m)),
-      );
-    } finally {
-      setBusy(false);
-    }
-  }, []);
+  /**
+   * Reveal a Workspace reply. When `holdBusy`, parent owns the busy lifecycle
+   * (P17.S4 — cosmetic stream must not define the busy window).
+   */
+  const pushWorkspace = useCallback(
+    async (
+      text: string,
+      opts?: { reuseId?: string; holdBusy?: boolean },
+    ) => {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const id =
+        opts?.reuseId ??
+        `w-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      if (!opts?.reuseId) {
+        setMessages((prev) => [
+          ...prev,
+          { id, role: "workspace", text: "", streaming: true },
+        ]);
+      }
+      const holdBusy = Boolean(opts?.holdBusy);
+      if (!holdBusy) {
+        setBusy(true);
+      }
+      try {
+        await streamText(
+          text,
+          (partial) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === id ? { ...m, text: partial, streaming: true } : m,
+              ),
+            );
+          },
+          controller.signal,
+        );
+        setMessages((prev) =>
+          prev.map((m) => (m.id === id ? { ...m, streaming: false } : m)),
+        );
+      } finally {
+        if (!holdBusy) {
+          setBusy(false);
+        }
+      }
+    },
+    [],
+  );
 
   const ensureConversation = useCallback(async () => {
     if (modeRef.current !== 1) {
@@ -207,13 +243,33 @@ export function OperatorRoot({
   /**
    * Conversation speaks only to the Operator (Operator Authority Rule).
    * Presentation applies shell directives; capability IPC lives in Operator only.
+   * P17.S4: working bubble already mounted; holdBusy keeps busy across IPC.
    */
   const handleIntent = useCallback(
-    async (raw: string) => {
-      const outcome = await handleOperatorUtterance(raw);
+    async (raw: string, workingId: string) => {
+      const setWorking = (message: string) => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === workingId
+              ? { ...m, text: message, streaming: true }
+              : m,
+          ),
+        );
+      };
+
+      const reveal = (text: string) =>
+        pushWorkspace(text, { reuseId: workingId, holdBusy: true });
+
+      const dropWorking = () => {
+        setMessages((prev) => prev.filter((m) => m.id !== workingId));
+      };
+
+      const outcome = await handleOperatorUtterance(raw, {
+        onWorking: setWorking,
+      });
 
       if (outcome.kind === "reply") {
-        await pushWorkspace(
+        await reveal(
           outcome.suggestion
             ? `${outcome.text}\n${outcome.suggestion}`
             : outcome.text,
@@ -225,11 +281,11 @@ export function OperatorRoot({
       switch (action.kind) {
         case "navigate":
           await openToolSurface(action.view);
-          await pushWorkspace(action.reply);
+          await reveal(action.reply);
           break;
         case "saveAs":
           await openToolSurface("save");
-          await pushWorkspace(action.reply);
+          await reveal(action.reply);
           break;
         case "navigateNamed": {
           const moments = await listMoments();
@@ -239,47 +295,49 @@ export function OperatorRoot({
             onNavigateProduct("resume", { focusContextId: hit.id });
             setToolDock(true);
             await ensureConversation();
-            await pushWorkspace(
+            await reveal(
               `Opening restore review for “${hit.name}”. Approve the plan before anything moves.`,
             );
           } else {
             onNavigateProduct("resume");
             setToolDock(true);
             await ensureConversation();
-            await pushWorkspace(
-              `No unique Moment matched “${action.nameQuery}”. Opening restore review so you can choose — I won’t invent a restore.`,
+            await reveal(
+              `No unique Moment matched “${action.nameQuery}”. Opening restore review so you can choose.`,
             );
           }
           break;
         }
         case "expand":
           await ensureConversation();
-          await pushWorkspace(action.reply);
+          await reveal(action.reply);
           break;
         case "collapse":
+          dropWorking();
           await setMode(0);
           break;
         case "settings":
-          await pushWorkspace(action.reply);
+          await reveal(action.reply);
           break;
         case "health":
           setDeveloper(true);
           setShowHealth(true);
           setToolDock(true);
           await ensureConversation();
-          await pushWorkspace(action.reply);
+          await reveal(action.reply);
           break;
         case "developer":
           setDeveloper(action.enabled);
           if (!action.enabled) {
             setShowHealth(false);
           }
-          await pushWorkspace(action.reply);
+          await reveal(action.reply);
           break;
         case "proposal":
-          await pushWorkspace(action.reply);
+          await reveal(action.reply);
           break;
         default:
+          dropWorking();
           break;
       }
     },
@@ -296,18 +354,38 @@ export function OperatorRoot({
   const submitUtterance = useCallback(
     (raw: string) => {
       const text = raw.trim();
-      if (!text || busy) {
+      if (!text || composerBusy) {
         return;
       }
       setDraft("");
       setVoiceReviewPending(false);
+      const workingId = `w-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       setMessages((prev) => [
         ...prev,
         { id: `u-${Date.now()}`, role: "user", text },
+        {
+          id: workingId,
+          role: "workspace",
+          text: WORKING_ACK,
+          streaming: true,
+        },
       ]);
-      void handleIntent(text);
+      // P17.S4: busy from Send through real IPC — not only cosmetic streamText.
+      setBusy(true);
+      void (async () => {
+        try {
+          await handleIntent(text, workingId);
+        } finally {
+          setBusy(false);
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === workingId ? { ...m, streaming: false } : m,
+            ),
+          );
+        }
+      })();
     },
-    [busy, handleIntent],
+    [composerBusy, handleIntent],
   );
 
   const onSubmit = (event: FormEvent) => {
@@ -373,6 +451,16 @@ export function OperatorRoot({
   const presentationExpanded = Boolean(
     toolDock && (showHealth || activeSpecialized),
   );
+
+  // P20.S1 — first-session cue only when Conversation is genuinely idle/empty.
+  const momentsActive = Boolean(presentationExpanded || activeSpecialized);
+  const showFirstSessionCue =
+    messages.length === 0 &&
+    !composerBusy &&
+    !draft.trim() &&
+    !momentsActive &&
+    !voiceCapturing &&
+    !voiceReviewPending;
 
   // Form A in Tauri: conversation window hidden — operator window owns UI.
   if (mode === 0) {
@@ -468,7 +556,16 @@ export function OperatorRoot({
               aria-relevant="additions"
             >
               {messages.length === 0 ? (
-                <div className="op-shell__waiting" aria-hidden="true" />
+                showFirstSessionCue ? (
+                  <div
+                    className="op-shell__waiting op-shell__waiting--invite"
+                    data-first-session="true"
+                  >
+                    <p className="op-shell__invite">{FIRST_SESSION_INVITE}</p>
+                  </div>
+                ) : (
+                  <div className="op-shell__waiting" aria-hidden="true" />
+                )
               ) : (
                 messages.map((message) => (
                   <div
@@ -485,6 +582,7 @@ export function OperatorRoot({
             <form className="op-shell__composer" onSubmit={onSubmit}>
               <textarea
                 ref={inputRef}
+                id="workspace-conversation-input"
                 className="op-shell__input"
                 value={draft}
                 onChange={(e) => {
@@ -507,15 +605,17 @@ export function OperatorRoot({
                   }
                 }}
                 rows={2}
-                placeholder=""
+                placeholder={COMPOSER_PLACEHOLDER}
                 aria-label="Talk to Workspace"
-                disabled={busy}
+                aria-busy={composerBusy || undefined}
+                disabled={composerBusy}
               />
               <div className="op-shell__composer-actions">
                 <VoiceMicButton
-                  disabled={busy}
+                  disabled={composerBusy}
                   onTranscript={onVoiceTranscript}
                   onVoiceMessage={onVoiceMessage}
+                  onCaptureActiveChange={setVoiceCapturing}
                 />
                 <button
                   type="submit"
@@ -523,7 +623,7 @@ export function OperatorRoot({
                   data-voice-ready={
                     voiceReviewPending && draft.trim() ? "true" : "false"
                   }
-                  disabled={busy || !draft.trim()}
+                  disabled={composerBusy || !draft.trim()}
                   aria-label={
                     voiceReviewPending && draft.trim()
                       ? "Send reviewed words"

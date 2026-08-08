@@ -459,7 +459,7 @@ fn launch_alias(query: &str) -> Result<String> {
         other if other.starts_with("shell:") => Ok(query.trim().to_string()),
         _unknown => Err(KernelError::CapabilityRuntime {
             message: format!(
-                "I don’t know how to launch “{}” — and I won’t invent a program name.",
+                "I don’t know how to launch “{}” yet.",
                 query.trim()
             ),
         }),

@@ -1,4 +1,8 @@
 export { handleOperatorUtterance } from "./intelligence";
+export type {
+  HandleOperatorUtteranceOptions,
+  OperatorWorkingNotify,
+} from "./intelligence";
 export { toCapabilityIntent, isCapabilityIntentAction } from "./intentMap";
 export {
   executeCapabilityIntent,

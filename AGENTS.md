@@ -10,7 +10,7 @@ Before any implementation work:
 4. Read the engineering handoff: **[`docs/project/ENGINEERING_HANDOFF.md`](docs/project/ENGINEERING_HANDOFF.md)**
 5. Reassess `docs/project-health.json`.
 
-Current handoff posture: **Sustainable Engineering Operations.** Spec v2.1 + EES v1 are stable constraints. Production: **Gate Spec** + **Dependency Authority** + catalog (Operational Acceptance ≠ CI). **P16.PI4 normalize-only** — do not implement A1 until Owner reviews. No further meta-frameworks. Do not jump to updater (blocked by signing). Owner Product Proof still open. P17 blocked.
+Current handoff posture: **Release Hold** (Stage 2 — Owner Acceptance; Accepted with changes). Spec v2.1 + EES v1 stable. F1 unsigned pipeline Complete. P22.S1 Intelligence Kind Routing complete (`docs/capability-runtime/product-proof/P22_S1_INTELLIGENCE_KIND_ROUTING.md`). **Do not begin new engineering** except R2 triggers T1–T5 (`docs/production/R2_RELEASE_HOLD.md`). Next eng event: **A2** after Owner Accept + Authenticode cert. File Provider P17 blocked.
 
 ## Cursor Cloud specific instructions
 

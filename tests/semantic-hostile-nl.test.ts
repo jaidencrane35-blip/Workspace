@@ -153,7 +153,10 @@ describe("P16.32 hostile NL semantic validation", () => {
     ]) {
       const evidence = resolveIntentWithEvidence(utterance);
       expect(evidence.action.kind).toBe("unknown");
-      expect(evidence.action.reply.toLowerCase()).toMatch(/invent a program name/);
+      expect(evidence.action.reply.toLowerCase()).toMatch(
+        /don.?t recognize|don.?t know how to launch|can.?t open|not something i can/,
+      );
+      expect(evidence.action.reply.toLowerCase()).not.toMatch(/\.exe/);
       if ("query" in evidence.action) {
         expect(isInventedExecutableQuery(String(evidence.action.query))).toBe(
           false,

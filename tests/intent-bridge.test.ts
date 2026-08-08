@@ -16,10 +16,11 @@ describe("intent bridge", () => {
   it("refuses unknown desktop claims honestly without mechanical churn", () => {
     const unknown = resolveIntent("teleport my windows to Mars");
     expect(unknown.kind).toBe("unknown");
-    expect(unknown.reply.toLowerCase()).toMatch(/window|can.?t|won.?t invent/);
+    expect(unknown.reply.toLowerCase()).toMatch(/window|can.?t/);
+    expect(unknown.reply.toLowerCase()).not.toMatch(/won.?t invent|won.?t pretend/);
     expect(unknown.suggestion).toBeTruthy();
     expect(unknown.suggestion?.toLowerCase()).toMatch(
-      /what windows are open|bring chrome|snap/,
+      /name the window|what.?s open|we.ll pick/,
     );
     expect(unknown.reply.toLowerCase()).not.toMatch(
       /provider|runtime|winrt|kernel|don.?t have that yet/,

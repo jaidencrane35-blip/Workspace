@@ -74,10 +74,23 @@ for (const token of [
   "isVoiceCheckUtterance",
   "softenUtterance",
   "GENERIC_REPLIES",
+  "companionGreetingReply",
+  "maybeRecovery",
 ]) {
   if (!guidance.includes(token)) {
     fail(`conversationGuidance.ts missing ${token}`);
   }
+}
+if (
+  guidance.includes("won’t invent") ||
+  guidance.includes("won't invent") ||
+  guidance.includes("won’t pretend") ||
+  guidance.includes("won't pretend")
+) {
+  fail("conversationGuidance must not use defensive invent/pretend chorus");
+}
+if (guidance.includes("Try “what windows are open?”")) {
+  fail("conversationGuidance must not append default command catalogues");
 }
 
 const bridge = fs.readFileSync(

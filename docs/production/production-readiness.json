@@ -7,7 +7,8 @@
     "C-single-instance",
     "B1-diagnostics-support-bundle",
     "A1-artifact-checksums",
-    "E1-tray-lifecycle"
+    "E1-tray-lifecycle",
+    "F1-ci-automation"
   ],
   "gatesAuthority": "docs/production/PRODUCTION_GATES.md",
   "gateSpecification": "docs/production/PRODUCTION_GATE_SPECIFICATION.md",
@@ -61,8 +62,8 @@
     { "id": "installerRepair", "maturity": "MinorImprovement", "confidence": "Supported", "evidence": "NSIS reinstall/upgrade path; process close hooks; allowDowngrades false" },
     { "id": "uninstallCleanliness", "maturity": "MinorImprovement", "confidence": "Supported", "evidence": "hooks POSTUNINSTALL; optional user-data purge; silent preserves data" },
     { "id": "dependencyManagement", "maturity": "MinorImprovement", "confidence": "Supported", "evidence": "pnpm + Cargo.lock; CI installs" },
-    { "id": "releaseAutomation", "maturity": "TrackARequired", "confidence": "Verified", "evidence": ".github/workflows/ci-pr.yml validates only; no release/sign job" },
-    { "id": "releaseVerification", "maturity": "MinorImprovement", "confidence": "Verified", "evidence": "pnpm verify:release exists; no signed artifact verify" },
+    { "id": "releaseAutomation", "maturity": "MinorImprovement", "confidence": "Verified", "evidence": "F1: ci-pr on main+v2-dev; ci-release unsigned installer+checksums+manifest; signing still A2" },
+    { "id": "releaseVerification", "maturity": "MinorImprovement", "confidence": "Verified", "evidence": "pnpm verify:release + verify:release-pipeline; no signed artifact verify (A2)" },
     { "id": "windowsCompatibility", "maturity": "MinorImprovement", "confidence": "Supported", "evidence": "Windows-targeted; CI windows-latest" },
     { "id": "securityHardening", "maturity": "TrackARequired", "confidence": "Verified", "evidence": "CSP present; 197 IPC vs 20 product (surface-size)" },
     { "id": "ipcSurface", "maturity": "TrackARequired", "confidence": "Verified", "evidence": "docs/project-health.json architecturalRisks surface-size" },

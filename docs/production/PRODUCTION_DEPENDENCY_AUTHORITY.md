@@ -98,7 +98,7 @@ B1-diagnostics ✓
         ├─► D1-ipc-quarantine       [ReadyNow]  ← next
         ├─► E1-tray                 [Complete]
         ├─► C1-config-db-ux         [ReadyNow]
-        └─► F1-ci-automation        [ReleaseOnly]
+        └─► F1-ci-automation        [Complete]
 
 A2-signing ──(external cert)──► B2-updater ► A3-rollback
                  └─────────────► F2-signed-release

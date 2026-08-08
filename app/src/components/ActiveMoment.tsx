@@ -39,6 +39,8 @@ export type MomentPresence =
   | "guided";
 
 interface ActiveMomentValue {
+  /** Full resumable list from `list_saved_contexts` — shared Home/Continue authority. */
+  moments: SavedContext[];
   primary: SavedContext | null;
   neighbours: SavedContext[];
   /** Relevance scores for calm neighbour rebalancing (id → 0–1). */
@@ -176,7 +178,11 @@ export function ActiveMomentProvider({
 
   useEffect(() => {
     setExpanding(false);
-    setPinned(false);
+    // P18.S2: keep pin across Home / Continue / Save; drop only when leaving Moments.
+    const momentsViews = view === "home" || view === "resume" || view === "save";
+    if (!momentsViews) {
+      setPinned(false);
+    }
     // Destinations refine presence; Save starts as place until writing begins.
     if (view === "save") {
       setPresence("presence");
@@ -301,6 +307,7 @@ export function ActiveMomentProvider({
 
   const value = useMemo(
     () => ({
+      moments: contexts,
       primary,
       neighbours,
       neighbourScores,
@@ -315,6 +322,7 @@ export function ActiveMomentProvider({
       reloadMoments,
     }),
     [
+      contexts,
       primary,
       neighbours,
       neighbourScores,
@@ -360,6 +368,7 @@ export function useActiveMoment(): ActiveMomentValue {
   const value = useContext(ActiveMomentContext);
   if (!value) {
     return {
+      moments: [],
       primary: null,
       neighbours: [],
       neighbourScores: {},

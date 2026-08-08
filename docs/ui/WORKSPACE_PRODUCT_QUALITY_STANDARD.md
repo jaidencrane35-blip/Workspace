@@ -173,7 +173,7 @@ Ship only if answers are honestly yes (or N/A with reason).
 | Dictation stop/cancel | Keyboard Stop/Cancel (PX1) | Already Excellent for keyboard |
 | Listening motion | Calm wave/pulse (PX2) | Already Excellent vs prior neon |
 | Review guidance copy | Long instructional line post-transcript | **Implement Now (PQ1)** |
-| Thinking / executing | Streaming truthful replies | Already Excellent |
+| Thinking / executing | Working ack from Send through IPC; then truthful reply (P17.S4) | Improved — verify in Product Proof |
 | Success / failure / recovery | Conversation-native; soft vs Settings deny | Already Excellent |
 | Notifications | Provider + Conversation language | Track A polish |
 | Motion | Reduced-motion respected; purpose-led | Already Excellent post-PX2/PX3 |

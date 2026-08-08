@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from "motion/react";
 import type { CSSProperties } from "react";
 import { spring } from "../../design-system";
+import { useAgencyKeyboard } from "../../hooks/useAgencyKeyboard";
 import { composeSemanticWindowField } from "../../lib/cognitive";
 import type { ActionPlanItem, ResumePlanPreview } from "../../types/domain";
 import { useActiveMoment } from "../ActiveMoment";
@@ -69,12 +70,23 @@ export function ContinuePreviewBody({
   const quality =
     ratio >= 0.85 ? "high" : ratio >= 0.5 ? "steady" : "limited";
 
+  const agencyRef = useAgencyKeyboard({
+    active: true,
+    busy,
+    onPrimary: onApprove,
+    onDismiss: onCancel,
+  });
+
   return (
     <div
+      ref={agencyRef}
       className="continue-preview-body continue-preview-body--spatial continue-preview-body--remember continue-preview-body--invisible continue-preview-body--cognitive continue-preview-body--semantic"
+      data-agency-card="preview"
       data-quality={quality}
       data-temporal-confidence={temporalConfidence.toFixed(2)}
       data-temporal={primaryPhase ?? "waiting"}
+      role="dialog"
+      aria-label="Approve restore"
     >
       <p className="sr-only">
         Reconstructing this place. {willAttempt} of {total} windows still open.

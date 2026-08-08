@@ -85,8 +85,17 @@ const appProvider = fs.readFileSync(
 if (appProvider.includes('format!("{other}.exe")') || appProvider.includes("format!(\"{other}.exe\")")) {
   fail("Kernel must not invent {other}.exe for unknown launch targets");
 }
-if (!appProvider.includes("won’t invent a program name") && !appProvider.includes("won't invent a program name")) {
+if (
+  !appProvider.includes("I don’t know how to launch") &&
+  !appProvider.includes("I don't know how to launch")
+) {
   fail("Kernel launch_alias must refuse unknown targets with truthful recovery");
+}
+if (
+  appProvider.includes("won’t invent a program name") ||
+  appProvider.includes("won't invent a program name")
+) {
+  fail("Kernel launch_alias must not use defensive invent chorus");
 }
 
 const pipeline = path.join(root, "app/src/lib/intentPipeline.ts");

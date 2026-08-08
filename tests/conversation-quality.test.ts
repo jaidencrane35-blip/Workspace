@@ -38,23 +38,42 @@ describe("conversation quality (P16.6)", () => {
   });
 
   it("rotates unsupported replies instead of identical churn", () => {
-    const first = resolveUnknownGuidance("teleport my windows to mars");
+    const first = resolveUnknownGuidance("teleport me to mars");
     const second = resolveUnknownGuidance("invent a flying car");
     expect(first.reply).not.toBe(second.reply);
     expect(first.reply.toLowerCase()).not.toMatch(/don.?t have that yet/);
-    expect(second.suggestion).toBeTruthy();
+    expect(first.reply.toLowerCase()).not.toMatch(/won.?t invent|won.?t pretend/);
+    expect(second.reply.toLowerCase()).not.toMatch(/won.?t invent|won.?t pretend/);
+    // Ordinary unknowns do not append capability catalogues.
+    expect(first.suggestion).toBeUndefined();
+    expect(second.suggestion).toBeUndefined();
   });
 
-  it("guides near-miss desktop topics truthfully", () => {
+  it("guides near-miss desktop topics truthfully without Help catalogues", () => {
     const files = resolveIntent("please organize my downloads folder");
     expect(files.kind).toBe("unknown");
     expect(files.reply.toLowerCase()).toMatch(/files?|folders?/);
-    expect(files.suggestion?.toLowerCase()).toMatch(/open|windows|screenshot/);
+    expect(files.reply.toLowerCase()).not.toMatch(/won.?t invent|won.?t pretend/);
+    expect(files.suggestion?.toLowerCase()).toMatch(/app|window|desktop/);
+    expect(files.suggestion?.toLowerCase()).not.toMatch(/try “open|try "open/);
 
+    // P22.S1 — world knowledge hands off to ChatGPT (not desktop refusal).
     const chat = resolveIntent("what's the weather in paris today");
-    expect(chat.kind).toBe("unknown");
-    expect(chat.reply.toLowerCase()).toMatch(/desktop/);
+    expect(chat.kind).toBe("browserOpen");
+    expect(chat).toMatchObject({
+      kind: "browserOpen",
+      url: expect.stringContaining("chatgpt.com"),
+    });
+    expect(chat.reply.toLowerCase()).toMatch(/chatgpt/);
     expect(chat.reply.toLowerCase()).not.toMatch(/provider|runtime|winrt/);
+  });
+
+  it("greets as a companion without advertising commands", () => {
+    const hi = resolveIntent("hello");
+    expect(hi.kind).toBe("unknown");
+    expect(hi.reply.toLowerCase()).toMatch(/hi|here|desktop/);
+    expect(hi.suggestion).toBeUndefined();
+    expect(hi.reply.toLowerCase()).not.toMatch(/try “|try "/);
   });
 
   it("accepts ordinary wording for Product Proof voice paths", () => {
@@ -155,8 +174,12 @@ describe("conversation quality (P16.6)", () => {
   });
 
   it("does not send casual how-to chat into Guide", () => {
+    // P22.S1 — how-to knowledge → ChatGPT handoff; never Guide chrome.
     const pasta = resolveIntent("how do I cook pasta");
-    expect(pasta.kind).toBe("unknown");
+    expect(pasta.kind).toBe("browserOpen");
     expect(pasta).not.toMatchObject({ view: "help" });
+    expect(pasta).toMatchObject({
+      url: expect.stringContaining("chatgpt.com"),
+    });
   });
 });

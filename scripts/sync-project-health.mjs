@@ -55,6 +55,16 @@ const verifiers = {
   "verify:product-proof-harness": "scripts/verify-product-proof-harness.mjs",
   "verify:product-gravity": "scripts/verify-product-gravity.mjs",
   "verify:product-quality": "scripts/verify-product-quality.mjs",
+  "verify:moments-success-cohesion":
+    "scripts/verify-moments-success-cohesion.mjs",
+  "verify:moments-agency-keyboard":
+    "scripts/verify-moments-agency-keyboard.mjs",
+  "verify:conversation-working-state":
+    "scripts/verify-conversation-working-state.mjs",
+  "verify:moments-status-ownership":
+    "scripts/verify-moments-status-ownership.mjs",
+  "verify:moments-browse-truth": "scripts/verify-moments-browse-truth.mjs",
+  "verify:moments-tool-session": "scripts/verify-moments-tool-session.mjs",
   "verify:operator-intelligence": "scripts/verify-operator-intelligence.mjs",
   "verify:notifications-provider": "scripts/verify-notifications-provider.mjs",
   "verify:browser-provider": "scripts/verify-browser-provider.mjs",
@@ -77,6 +87,13 @@ const verifiers = {
   "verify:artifact-checksums": "scripts/verify-artifact-checksums.mjs",
   "verify:single-instance": "scripts/verify-single-instance.mjs",
   "verify:tray-lifecycle": "scripts/verify-tray-lifecycle.mjs",
+  "verify:tray-shellmode": "scripts/verify-tray-shellmode.mjs",
+  "verify:conversation-first-session":
+    "scripts/verify-conversation-first-session.mjs",
+  "verify:version-consistency": "scripts/verify-version-consistency.mjs",
+  "verify:release-pipeline": "scripts/verify-release-pipeline.mjs",
+  "verify:f1-ci-automation": "scripts/verify-f1-ci-automation.mjs",
+  "verify:release-hold": "scripts/verify-release-hold.mjs",
   "verify:support-bundle": "scripts/verify-support-bundle.mjs",
   "verify:production-dependency-authority":
     "scripts/verify-production-dependency-authority.mjs",
@@ -474,7 +491,7 @@ const remainingBacklog = [
 ];
 
 const launchStatus = argValue("launch-status", "pending");
-const readyForOwnerReview = argValue("ready-for-owner-review", "false") === "true";
+const readyForOwnerReview = argValue("ready-for-owner-review", "true") === "true";
 const milestoneCommit = argValue("milestone-commit", "pending");
 
 const health = {
@@ -498,7 +515,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P17.S1: Conversation Capability Failure Compose — Owner-facing hard fails via Operator compose; diagnostics preserved. File Provider P17 blocked. nextReadyNow D1. Owner PP pending.",
+    note: "Release Hold (R2) — Stage 2 Owner Acceptance. P22.S1 Intelligence Kind Routing complete (after P21.S1/S2). No active eng program. Next: A2 after Accept+Authenticode cert. F1 Complete. P17–P20 closed. File Provider blocked. nextReadyNow D1.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -772,7 +789,8 @@ const health = {
     productIpcCommandCount: 20,
     launchStatus,
     readyForOwnerReview,
-    reviewDocument: "docs/product-proof-review.md",
+    reviewDocument:
+      "docs/capability-runtime/product-proof/P21_S2_COMPOUND_GOAL_DECOMPOSITION.md",
   },
   architecturalRisks: [
     {
@@ -814,12 +832,12 @@ const health = {
     ],
   },
   lastMilestone: {
-    date: "2026-08-07",
+    date: "2026-08-08",
     document: "docs/engineering-milestone-report.md",
     title:
-      "Engineering Execution Standard v1 — meta-architecture complete; P16 Product Proof still pending",
+      "P22.S1 Intelligence Kind Routing — Release Hold",
     reviewBrief:
-      "docs/00-Constitution/WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md",
+      "docs/capability-runtime/product-proof/P22_S1_INTELLIGENCE_KIND_ROUTING.md",
   },
   handoffStatus: "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   nextRecommendedExecutionProgram: {

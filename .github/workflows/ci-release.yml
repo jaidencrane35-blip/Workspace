@@ -1,0 +1,87 @@
+# F1 — unsigned release pipeline (installer + checksums + manifest).
+# Signing (A2) and updater (B2) are intentionally absent.
+name: CI Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [v2-dev]
+    tags: ["v*"]
+
+jobs:
+  release-pipeline:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install Node dependencies
+        run: pnpm install
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Release validation (verify:release)
+        run: pnpm verify:release
+
+      - name: Build NSIS installer (unsigned)
+        run: pnpm installer:build
+
+      - name: Generate checksums
+        run: pnpm checksums:generate
+
+      - name: Emit release manifest
+        run: pnpm release:manifest
+
+      - name: Assert artifact naming
+        shell: pwsh
+        run: |
+          $dirs = @(
+            "target/release/bundle/nsis",
+            "app/src-tauri/target/release/bundle/nsis"
+          )
+          $found = @()
+          foreach ($d in $dirs) {
+            if (Test-Path $d) {
+              $found += Get-ChildItem $d -Filter "Workspace_*_x64-setup.exe" -ErrorAction SilentlyContinue
+            }
+          }
+          if ($found.Count -lt 1) {
+            Write-Error "No Workspace_*_x64-setup.exe produced"
+            exit 1
+          }
+          foreach ($f in $found) {
+            Write-Host "artifact: $($f.FullName)"
+            if (-not (Test-Path "$($f.FullName).sha256")) {
+              Write-Error "Missing checksum sidecar for $($f.Name)"
+              exit 1
+            }
+          }
+
+      - name: Upload unsigned release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace-unsigned-nsis
+          path: |
+            target/release/bundle/nsis/Workspace_*_x64-setup.exe
+            target/release/bundle/nsis/Workspace_*_x64-setup.exe.sha256
+            target/release/bundle/nsis/Workspace_*_release-manifest.json
+            app/src-tauri/target/release/bundle/nsis/Workspace_*_x64-setup.exe
+            app/src-tauri/target/release/bundle/nsis/Workspace_*_x64-setup.exe.sha256
+            app/src-tauri/target/release/bundle/nsis/Workspace_*_release-manifest.json
+          if-no-files-found: error

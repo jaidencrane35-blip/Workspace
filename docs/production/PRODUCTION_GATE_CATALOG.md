@@ -200,21 +200,21 @@ Every unit below uses the **same field set**. Operational Acceptance is human-tr
 | Field | Value |
 | --- | --- |
 | **Gate family** | F |
-| **Production classification** | ReleaseOnly |
+| **Production classification** | Complete |
 | **Purpose** | Automate validation and artifact checks on the active development branch. |
 | **User value** | Indirect — fewer broken builds reach humans. |
-| **Engineering value** | CI on v2-dev; checksum/verify jobs. |
+| **Engineering value** | CI on v2-dev; checksum/verify jobs; unsigned installer+manifest pipeline. |
 | **Constitutional justification** | Repository Standards — no architectural change. |
 | **Prerequisites** | A0-installer-foundation |
 | **Dependents** | — |
 | **Blocking conditions** | — |
 | **Entry criteria** | `Gate Spec satisfied`; `Owner authorizes release engineering work` |
-| **Exit criteria** | `Workflow covers v2-dev`; `verify:release or subset in CI` |
-| **Verification** | `GitHub Actions green on sample PR` |
-| **Production readiness delta** | Release engineering maturity; not Release Ready alone. |
-| **Regression risks** | CI flakiness blocking merges |
+| **Exit criteria** | `Workflow covers v2-dev`; `verify:release or subset in CI`; `ci-release unsigned installer+checksums+manifest`; `verify:f1-ci-automation` |
+| **Verification** | `pnpm verify:f1-ci-automation`; `pnpm verify:release-pipeline`; `GitHub Actions ci-pr + ci-release` |
+| **Production readiness delta** | Engineering Complete for release pipeline; not Release Ready (unsigned; A2 open). |
+| **Regression risks** | CI flakiness blocking merges; Tauri installer build time on GHA |
 | **Rollback strategy** | Narrow workflow triggers; make jobs advisory temporarily. |
-| **Success metrics** | CI runs on v2-dev push/PR |
+| **Success metrics** | CI runs on v2-dev push/PR; Unsigned setup.exe + sha256 + manifest produced in ci-release |
 
 ### Operational Acceptance
 

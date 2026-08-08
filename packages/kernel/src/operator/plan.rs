@@ -90,6 +90,38 @@ pub struct OperatorPlan {
     pub composition_id: Option<String>,
 }
 
+/// Window-title hint for the surface opened by Browser Open.
+/// `snap` may carry a process/title hint from Intent (not a left/right edge).
+fn browser_window_hint(intent: &CapabilityIntent) -> String {
+    if let Some(raw) = intent.snap.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        let lower = raw.to_ascii_lowercase();
+        if !matches!(lower.as_str(), "left" | "right" | "top" | "bottom") {
+            return raw.to_string();
+        }
+    }
+    let url = intent
+        .path
+        .as_deref()
+        .or(intent.query.as_deref())
+        .unwrap_or("")
+        .trim();
+    let host = url
+        .split_once("://")
+        .map(|(_, rest)| rest)
+        .unwrap_or(url)
+        .split(['/', '?', '#'])
+        .next()
+        .unwrap_or("")
+        .trim()
+        .trim_start_matches("www.");
+    let label = host.split('.').next().unwrap_or("").trim();
+    if label.len() >= 2 {
+        // Prefer site label (e.g. chatgpt) over a hard-coded browser brand.
+        return label.to_string();
+    }
+    "Chrome".into()
+}
+
 fn step_from_intent(
     domain: CapabilityDomainId,
     operation: CapabilityOperation,
@@ -120,6 +152,69 @@ fn step_from_intent(
 pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan> {
     let domain = parse_domain(&intent.domain)?;
     let op_raw = intent.operation.trim().to_ascii_lowercase();
+
+    // P21.S2 — Compound Goal Decomposition: sequential open of known targets.
+    // Intent encodes targets in text: `app:Cursor|app:Google Chrome|browser:https://…`
+    if domain == CapabilityDomainId::application() && op_raw == "open_compound" {
+        let encoded = intent.text.as_deref().unwrap_or("").trim();
+        if encoded.is_empty() {
+            return Err(KernelError::CapabilityRuntime {
+                message: "Which apps or sites should I open?".into(),
+            });
+        }
+        let mut steps = Vec::new();
+        for part in encoded.split('|') {
+            let part = part.trim();
+            if part.is_empty() {
+                continue;
+            }
+            if let Some(url) = part.strip_prefix("browser:") {
+                let url = url.trim();
+                if url.is_empty() || !is_plausible_website_url(url) {
+                    return Err(KernelError::CapabilityRuntime {
+                        message: "Which website should I open?".into(),
+                    });
+                }
+                let mut open_intent = intent.clone();
+                open_intent.path = Some(url.to_string());
+                open_intent.query = Some(url.to_string());
+                steps.push(step_from_intent(
+                    CapabilityDomainId::browser(),
+                    CapabilityOperation::Open,
+                    &open_intent,
+                ));
+            } else if let Some(query) = part.strip_prefix("app:") {
+                let query = query.trim();
+                if query.is_empty() {
+                    return Err(KernelError::CapabilityRuntime {
+                        message: "Which app should I open?".into(),
+                    });
+                }
+                let mut find_intent = intent.clone();
+                find_intent.query = Some(query.to_string());
+                find_intent.path = None;
+                find_intent.text = None;
+                steps.push(step_from_intent(
+                    CapabilityDomainId::application(),
+                    CapabilityOperation::Find,
+                    &find_intent,
+                ));
+            } else {
+                return Err(KernelError::CapabilityRuntime {
+                    message: "I need a clearer desktop request before I can open that.".into(),
+                });
+            }
+        }
+        if steps.len() < 2 {
+            return Err(KernelError::CapabilityRuntime {
+                message: "I need at least two known apps or sites to open together.".into(),
+            });
+        }
+        return Ok(OperatorPlan {
+            composition_id: Some("desktop.open_compound".into()),
+            steps,
+        });
+    }
 
     // High-level composition: application open = find → focus | launch
     if domain == CapabilityDomainId::application()
@@ -193,7 +288,8 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
         });
     }
 
-    // Browser open beside = open URL then Window snap composition
+    // Browser open beside = Open → locate beside → snap beside left →
+    // snap opened surface right → enumerate (Capability Completion Contract).
     if domain == CapabilityDomainId::browser() && op_raw == "open_beside" {
         let url = intent
             .path
@@ -212,16 +308,70 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
                 message: "Beside which window should I place it?".into(),
             });
         }
+        let browser_hint = browser_window_hint(intent);
         let mut open_intent = intent.clone();
         open_intent.path = Some(url.to_string());
         open_intent.query = Some(url.to_string());
+
+        let mut locate_beside = intent.clone();
+        locate_beside.query = Some(beside.to_string());
+        locate_beside.title = Some(beside.to_string());
+        locate_beside.snap = None;
+
+        let mut snap_beside = locate_beside.clone();
+        snap_beside.snap = Some("left".into());
+
+        let mut snap_opened = intent.clone();
+        snap_opened.query = Some(browser_hint);
+        snap_opened.title = None;
+        snap_opened.snap = Some("right".into());
+        snap_opened.path = None;
+
+        let verify = OperatorPlanStep {
+            domain: CapabilityDomainId::window(),
+            operation: CapabilityOperation::Enumerate,
+            text: None,
+            query: None,
+            path: None,
+            hwnd: None,
+            pid: None,
+            x: None,
+            y: None,
+            width: None,
+            height: None,
+            monitor_index: None,
+            snap: None,
+            title: None,
+            category: None,
+            priority: None,
+            duration: None,
+        };
+
         return Ok(OperatorPlan {
             composition_id: Some("browser.open_beside".into()),
-            steps: vec![step_from_intent(
-                CapabilityDomainId::browser(),
-                CapabilityOperation::Open,
-                &open_intent,
-            )],
+            steps: vec![
+                step_from_intent(
+                    CapabilityDomainId::browser(),
+                    CapabilityOperation::Open,
+                    &open_intent,
+                ),
+                step_from_intent(
+                    CapabilityDomainId::window(),
+                    CapabilityOperation::Focus,
+                    &locate_beside,
+                ),
+                step_from_intent(
+                    CapabilityDomainId::window(),
+                    CapabilityOperation::Snap,
+                    &snap_beside,
+                ),
+                step_from_intent(
+                    CapabilityDomainId::window(),
+                    CapabilityOperation::Snap,
+                    &snap_opened,
+                ),
+                verify,
+            ],
         });
     }
 

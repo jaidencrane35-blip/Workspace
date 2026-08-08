@@ -89,10 +89,16 @@ if (!appProvider.includes("url.dll,FileProtocolHandler")) {
   fail("application launch must materialize ms-* protocols (never spaced .exe)");
 }
 if (
-  !appProvider.includes("won’t invent a program name") &&
-  !appProvider.includes("won't invent a program name")
+  !appProvider.includes("I don’t know how to launch") &&
+  !appProvider.includes("I don't know how to launch")
 ) {
   fail("launch_alias must refuse unknown targets without inventing .exe names");
+}
+if (
+  appProvider.includes("won’t invent a program name") ||
+  appProvider.includes("won't invent a program name")
+) {
+  fail("launch_alias must not use defensive invent chorus");
 }
 if (appProvider.includes('format!("{other}.exe")') || appProvider.includes('format!("{_unknown}.exe")')) {
   fail("launch_alias must not invent {other}.exe");

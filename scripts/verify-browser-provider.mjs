@@ -77,5 +77,8 @@ const plan = fs.readFileSync(
 if (!plan.includes("browser") || !plan.includes("open_beside")) {
   fail("Kernel Operator plan must allow browser domain and open_beside");
 }
+if (!plan.includes("CapabilityOperation::Snap")) {
+  fail("open_beside must compose Window Snap (Capability Completion Contract)");
+}
 
 console.log("verify-browser-provider: ok");

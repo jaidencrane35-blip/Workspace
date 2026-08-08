@@ -58,9 +58,11 @@ pnpm install
 |---------|---------|
 | `pnpm dev` | Launch Tauri dev shell (React + Rust IPC) |
 | `pnpm build` | Build React frontend (`app/dist`) |
-| `pnpm tauri:build` | Produce Windows installers (MSI + NSIS) under `target/release/bundle/` |
+| `pnpm installer:build` | Produce Windows NSIS setup.exe (`Workspace_*_x64-setup.exe`) |
+| `pnpm checksums:generate` | Write SHA-256 sidecars beside setup.exe |
+| `pnpm verify:release` | Full unsigned release validation (no signing) |
 | `pnpm typecheck` | TypeScript validation |
-| `pnpm test` | Run Vitest + boundary/CSP verifiers |
+| `pnpm test` | Run Vitest + boundary/CSP/production verifiers |
 | `cargo check --workspace` | Validate Rust workspace |
 | `cargo build --workspace` | Build all Rust crates including Tauri shell |
 | `cargo test -p workspace-kernel --lib -- --test-threads=1` | Kernel tests (serial; observation flight) |

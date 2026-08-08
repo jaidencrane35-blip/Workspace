@@ -4,10 +4,44 @@
 | Field | Value |
 | --- | --- |
 | **Authority** | This document + machine state in `docs/project-health.json` |
-| **Updated** | 2026-08-07 |
+| **Updated** | 2026-08-08 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P17.S1 — Conversation Capability Failure Compose; await Owner |
+| **Engineering status** | **Release Hold** — no new engineering program by default |
+| **Current phase** | **Stage 2 — Owner Acceptance** (Accepted with changes; T1 slice complete) |
+| **Next engineering event** | **A2 (Code Signing)** after Owner Acceptance **and** Authenticode certificate |
+| **Current priority** | Maintain repository stability — await Owner Product Proof re-review (or T3–T5) |
+| **Resume triggers** | `docs/production/R2_RELEASE_HOLD.md` (T1–T5 only) |
+| **Latest program** | P22.S1 — Intelligence Kind Routing & Reasoning Provider (complete) |
+| **P22.S1 report** | `docs/capability-runtime/product-proof/P22_S1_INTELLIGENCE_KIND_ROUTING.md` |
+| **P22.A1 audit** | `docs/capability-runtime/product-proof/P22_A1_INTELLIGENCE_ROUTING_AUDIT.md` |
+| **P21.S2 report** | `docs/capability-runtime/product-proof/P21_S2_COMPOUND_GOAL_DECOMPOSITION.md` |
+| **P21.A2 audit** | `docs/capability-runtime/product-proof/P21_A2_TASK_DECOMPOSITION_INITIATIVE_AUDIT.md` |
+| **P21.S1 report** | `docs/capability-runtime/product-proof/P21_S1_CAPABILITY_COMPLETION_CONTRACT.md` |
+| **P21.A1 audit** | `docs/capability-runtime/product-proof/P21_A1_GOAL_COMPLETION_AUDIT.md` |
+| **T1 report** | `docs/capability-runtime/product-proof/T1_COMPANION_CONVERSATION_BEHAVIOR.md` |
+| **T2 audit** | `docs/capability-runtime/product-proof/T2_PRODUCT_PROOF_REJECTION_AUDIT.md` |
+| **R2 hold** | `docs/production/R2_RELEASE_HOLD.md` |
+| **A2/F2 playbook** | `docs/production/A2_F2_RELEASE_EXECUTION_PLAYBOOK.md` |
+| **F1 report** | `docs/production/P16_F1_CI_AUTOMATION.md` · `docs/production/RELEASE_PIPELINE.md` |
+| **R1 report** | `docs/production/R1_RELEASE_ENGINEERING_READINESS.md` |
+| **Product-quality arc** | P17–P20 Engineering Complete — **do not reopen**; no UX optimization under Hold |
+| **P20.S1 report** | `docs/capability-runtime/product-proof/P20_S1_EMPTY_CONVERSATION_FIRST_SESSION_CUE.md` |
+| **P20.A1 audit** | `docs/capability-runtime/product-proof/P20_A1_RELEASE_CANDIDATE_PRODUCT_PROOF.md` |
+| **P19.S1 report** | `docs/capability-runtime/product-proof/P19_S1_TRAY_SHELLMODE_CONTINUITY.md` |
+| **P19.A1 audit** | `docs/capability-runtime/product-proof/P19_A1_PRODUCTION_PRODUCT_PROOF_AUDIT.md` |
+| **P18.S2 report** | `docs/capability-runtime/product-proof/P18_S2_MOMENTS_TOOL_SESSION_CONTINUITY.md` |
+| **P18.A2 audit** | `docs/capability-runtime/product-proof/P18_A2_RUNTIME_CONTINUITY_AUDIT.md` |
+| **P18.S1 report** | `docs/capability-runtime/product-proof/P18_S1_MOMENTS_BROWSE_TRUTH.md` |
+| **P18.A1 audit** | `docs/capability-runtime/product-proof/P18_A1_PRODUCT_PROOF_REGRESSION_AUDIT.md` |
+| **S5 report** | `docs/ui/P17_S5_MOMENTS_STATUS_OWNERSHIP.md` |
+| **A5 audit** | `docs/ui/P17_A5_ATTENTION_ORCHESTRATION_AUDIT.md` |
+| **S4 report** | `docs/ui/P17_S4_CONVERSATION_WORKING_STATE_CONTINUITY.md` |
+| **A4 audit** | `docs/ui/P17_A4_RESPONSIVE_INTERACTION_AUDIT.md` |
+| **S3 report** | `docs/ui/P17_S3_MOMENTS_AGENCY_KEYBOARD_CONTINUITY.md` |
+| **A3 audit** | `docs/ui/P17_A3_INTERACTION_CONTINUITY_AUDIT.md` |
+| **S2 report** | `docs/ui/P17_S2_MOMENTS_SUCCESS_COHESION.md` |
+| **A2 audit** | `docs/ui/P17_A2_WORKSPACE_STATE_SURFACE_AUDIT.md` |
 | **S1 report** | `docs/ui/P17_S1_CONVERSATION_CAPABILITY_FAILURE_COMPOSE.md` |
 | **A1 audit** | `docs/ui/P17_A1_UNIFIED_ERROR_EXPERIENCE_AUDIT.md` |
 | **PX4 audit** | `docs/ui/P16_PX4_PRODUCT_COHESION_AUDIT.md` |
@@ -18,7 +52,8 @@
 | **Interaction language** | `docs/ui/WORKSPACE_INTERACTION_LANGUAGE.md` — product feel heuristics (not Spec) |
 | **PX2 report** | `docs/capability-runtime/product-proof/P16_PX2_PREMIUM_CONVERSATION_EXPERIENCE.md` |
 | **PX1 audit** | `docs/capability-runtime/product-proof/P16_PX1_CONVERSATION_EXPERIENCE_AUDIT.md` |
-| **Production note** | Prior PI4 Gate Spec unchanged; await Owner before A1; **do not begin P17** |
+| **Production note** | **Release Hold.** Owner Accepted with changes; T1 Companion Conversation complete. F1 Complete. A2 blocked on cert. Resume only via R2 triggers T1–T5. **Do not begin File Provider P17** until Voice Accept |
+| **Release cadence** | Stage 2 Owner Accept (now) → A2 (cert) → F2 → B2. Hold: `R2_RELEASE_HOLD.md` · Playbook: `A2_F2_RELEASE_EXECUTION_PLAYBOOK.md` |
 | **Product heuristic** | Prefer reducing user friction over exposing engineering complexity, unless Spec or Product Proof forbids it (not constitutional law) |
 | **Production gate schema** | `docs/production/PRODUCTION_GATE_SPECIFICATION.md` |
 | **Production dependency authority** | `docs/production/PRODUCTION_DEPENDENCY_AUTHORITY.md` |
@@ -33,7 +68,7 @@
 | **Product Proof workbook** | `docs/capability-runtime/product-proof/P16_O2_PRODUCT_PROOF_SESSION_WORKBOOK.md` |
 | **Rule** | Spec v2 = sole architectural authority. Execution Standard v1 = how all programs run. Classify work, max layer, lowest-layer invariant, compliance checklist. Do not reopen Spec without a Review Trigger. |
 
-**Milestone:** Workspace operates in **Sustainable Engineering Operations**. Spec v2 and EES v1 are stable constraints. **PR1** records production truth: not public-release ready (installer/signing/updater/tray/diagnostics/IPC). Highest-value work alternates **product experience refinements** (Owner Product Proof quality) and **production gates** (release readiness) — both inside Spec/EES. No meta-governance. Architecture stable by default; Review Trigger required for constitutional change. **Do not begin P17** until P16 Product Proof Accept.
+**Milestone:** Workspace is on **Release Hold** (Stage 2 — Owner Acceptance). T1 Companion Conversation complete. P21.S1 / P21.S2 complete. P22.S1 Intelligence Kind Routing complete. Spec v2 and EES v1 remain stable. F1 unsigned pipeline Complete; A2 awaits Authenticode cert. **No new engineering program** except Owner-authorized Hold work. **Do not begin File Provider P17** until P16 Product Proof Accept. Architecture stable by default; Review Trigger required for constitutional change.
 
 **Start here before any execution program.**
 

@@ -122,7 +122,7 @@ describe("P16.37 hostile cognitive layers", () => {
 
   it("Recovery layer — guidance never claims invented success", () => {
     const g = generateRecoveryGuidance("teleport to mars");
-    expect(g.reply).toMatch(/won’t invent|can't do that|can’t do that/i);
+    expect(g.reply).toMatch(/can't do that|can’t do that|exactly as asked/i);
     expect(g.reply).not.toMatch(/successfully teleported/i);
   });
 
