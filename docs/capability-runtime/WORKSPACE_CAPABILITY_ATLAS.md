@@ -764,23 +764,23 @@ Overall .................  57%
 | --- | --- |
 | **Name** | Prepare Coding Workspace |
 | **Layer** | L8 Procedures |
-| **Status** | **PLANNED** |
-| **Lifecycle** | Audited → Planned — contract corrected after pre-implementation audit; implementation not started |
+| **Status** | **IMPLEMENTED** |
+| **Lifecycle** | Audited → Planned → **Engineering complete** — Owner Product Proof required; Trusted/Production incomplete |
 | **Dependencies** | C-ITL-002/003/004; C-ACT-001; C-ACT-006; C-CMP-002; C-CMP-001; C-CMP-004; C-VER-001; C-VER-003; C-OBS-001 |
-| **Verification** | `verify-prepare-coding-workspace-definition` (definition only); future runtime composition + regression verification required |
-| **Product Proof** | Defined in §C-PROC-002.8; **not run — Owner session required after implementation** |
-| **Priority** | P0 (next Owner-authorized Atlas implementation slice) |
-| **Engineering Notes** | Procedure-level composition over C-CMP-002 + C-ACT-001/006 + C-VER-003 + C-CMP-001. No private planner, Find loop, Launch retry, or final-focus inference. No default coding app set. Runtime behaviour unchanged until Owner-authorized implementation. |
-| **Readiness** | Overall **~31%** (definition + dependencies; implementation partial handoff only; runtime Verification/PP/Trusted/Production 0%) |
+| **Verification** | `verify-prepare-coding-workspace-definition`; `verify-prepare-coding-workspace`; `tests/prepare-coding-workspace.test.ts`; Kernel plan/preflight/compose tests |
+| **Product Proof** | Defined in §C-PROC-002.8; **not run — Owner session required** |
+| **Priority** | P0 (highest eng-complete Atlas capability awaiting Owner Product Proof) |
+| **Engineering Notes** | Intent `prepareCodingWorkspace` → Kernel `desktop.prepare_coding_workspace`: PCW-001 whole-set `launch_alias`/URL preflight → PCW-002 reuse C-ACT-001/C-CMP-002/C-ACT-006 open units → PCW-003 C-VER-003 `window_available` (hwnd preferred) → PCW-004 Completion Contract on `identity_confirmed`. No Launch retry; no C-VER-002; no final-focus inference; no default app set. |
+| **Readiness** | Overall **~57%** (Arch/Deps/Impl/Ver 100%; PP/Trusted/Production 0%) |
 | | ```text
 Architecture ............ 100%  (deterministic corrected contract)
 Dependencies ............ 100%  (required capability primitives eng-complete)
-Implementation ..........  20%  (situationGoals Continue handoff only)
-Verification ............   0%  (definition verifier is not runtime verification)
+Implementation .......... 100%  (Intent + Kernel composition wired)
+Verification ............ 100%  (definition + runtime verifiers + focused tests)
 Product Proof ...........   0%
 Trusted .................   0%
 Production ..............   0%
-Overall ................. ~31%
+Overall ................. ~57%
 ``` |
 
 ##### C-PROC-002.1 Scope and completion
@@ -933,7 +933,7 @@ repository evidence. Therefore:
 
 ##### C-PROC-002.8 Future Owner Product Proof
 
-**Status:** Definition corrected; not executed; not accepted.
+**Status:** Engineering complete; Product Proof **not executed; not accepted**.
 
 Primary Product Proof must validate a credible coding-workspace preparation
 using only repository-supported dual-authority targets. Neutral multi-app
@@ -1160,7 +1160,7 @@ PLANNED spine:
 
   C-ITL-002/003/004 + C-ACT-001/006 + C-CMP-002
        + C-VER-001/003 + C-OBS-001 + C-CMP-001/004
-                     └─► C-PROC-002 (**PLANNED**; contract corrected)
+                     └─► C-PROC-002 (**IMPLEMENTED** eng; Owner PP required)
                               └─► C-WF-001 (later)
 
 BLOCKED spine:
@@ -1193,7 +1193,7 @@ BLOCKED spine:
 
 | ID | Resolution | Evidence | Lifecycle effect |
 | --- | --- | --- | --- |
-| **B-DEF-001** | **RESOLVED 2026-08-08** — initial procedure body landed; **contract corrected** after pre-implementation audit (compose C-CMP-002, remove Launch retry / invented deadlines / mandatory final-focus, dual Intent+Kernel target authority, Continue vs clarify routing). | C-PROC-002.1–.9; `verify-prepare-coding-workspace-definition` | C-PROC-002 remains **PLANNED**. Implementation, Product Proof, Trusted, and Production remain incomplete. |
+| **B-DEF-001** | **RESOLVED 2026-08-08** — initial procedure body landed; **contract corrected** after pre-implementation audit; **runtime implemented** 2026-08-08 (Intent + Kernel composition). | C-PROC-002.1–.9; `verify-prepare-coding-workspace-definition`; `verify-prepare-coding-workspace` | C-PROC-002 is **IMPLEMENTED** (eng). Product Proof, Trusted, and Production remain incomplete. |
 
 ---
 
@@ -1206,7 +1206,8 @@ BLOCKED spine:
 | Desktop Control Interaction | Invoke/SetValue + Operator compose | `verify-desktop-control-interaction` | Owner P22.S4 (joint) |
 | Wait Conditions | Bounded WaitCondition + compose | `verify-wait-conditions` | Owner P22.S5 |
 | Bounded Retry | Operator retry + Wait reuse | `verify-bounded-retry` | Owner P22.S6 |
-| Prepare Coding Workspace definition | Atlas C-PROC-002.1–.9 | `verify-prepare-coding-workspace-definition` | Corrected contract; Owner session only after runtime implementation |
+| Prepare Coding Workspace definition | Atlas C-PROC-002.1–.9 | `verify-prepare-coding-workspace-definition` | Contract corrected |
+| Prepare Coding Workspace runtime | Intent `prepareCodingWorkspace` + Kernel `desktop.prepare_coding_workspace` | `verify-prepare-coding-workspace`; `tests/prepare-coding-workspace.test.ts` | Eng complete; Owner Product Proof required |
 | Providers | `cargo` + verify scripts | `pnpm test` | Owner NL |
 | Composition | Kernel + completion/compound | Hostile NL | Live confirm |
 | Reasoning | intelligence-routing | verify script | Owner re-proof |
@@ -1227,7 +1228,7 @@ BLOCKED spine:
 | C-ACT-005 Keyboard Input | **Yes** | **Required — joint with C-ACT-004** |
 | C-VER-003 Wait Conditions | **Yes** | **Required — pending Owner** |
 | C-VER-002 Retry | **Yes** | **Required — pending Owner** |
-| C-PROC-002 Prepare Coding Workspace | **No — definition only** | **Defined; not run; required after implementation** |
+| C-PROC-002 Prepare Coding Workspace | **Yes (eng)** | **Required — pending Owner** |
 | Core desktop providers | Yes | Mixed Owner trust |
 | Voice | Yes | Pending Accept |
 | Intelligence routing | Yes | Owner re-proof |
@@ -1269,7 +1270,7 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 | **C-VER-002** | **Retry** | **IMPLEMENTED (eng)** | **57%** |
 | **C-VER-003** | **Wait Conditions** | **IMPLEMENTED (eng)** | **57%** |
 | C-CMP-002..004 | Composition | IMPLEMENTED | ~71% |
-| **C-PROC-002** | **Prepare Coding Workspace** | **PLANNED** | **~31%** (contract corrected; implementation/PP open) |
+| **C-PROC-002** | **Prepare Coding Workspace** | **IMPLEMENTED (eng)** | **~57%** (PP/Trusted/Production open) |
 | C-PROC-* / C-WF-* (other) | Procedures / Workflows | Mixed | see records |
 | C-INT-001..003 | Intelligence | IMPLEMENTED | ~57–71% |
 | C-INT-004..005 | Memory / Agent | REJECTED | 0% |
@@ -1282,7 +1283,7 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 
 | Rank | ID | Capability | Status | Why |
 | --- | --- | --- | --- | --- |
-| **1** | **C-PROC-002** | Prepare Coding Workspace | **PLANNED** | Contract corrected; next only when Owner authorizes implementation |
+| **1** | **C-PROC-002** | Prepare Coding Workspace | **IMPLEMENTED (eng)** | Owner Product Proof required; do not mark Trusted/Production |
 | 2 | C-REL-002 | Code Signing A2 | BLOCKED (cert) | Parallel release track |
 | 3 | C-ACT-011 | File Provider | BLOCKED (Voice) | Production Before Expansion |
 | 4 | C-OBS-007 | Tokenized perception | FUTURE | After interaction PP |
@@ -1291,30 +1292,28 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 
 **Rejected (do not queue):** C-ACT-013; C-INT-004; C-INT-005.
 
-**Latest definition slice:** B-DEF-001 resolved and contract corrected after
-pre-implementation audit. C-PROC-002 is **PLANNED**; runtime implementation
-has not started. No silent scope expansion.
+**Latest runtime slice:** C-PROC-002 engineering complete. Owner Product Proof
+is required before Trusted/Production. No silent scope expansion.
 
 ---
 
 ## 9. Current highest remaining executable capability
 
-### **C-PROC-002 — PLANNED (not active)**
+### **C-PROC-002 — IMPLEMENTED (eng); Product Proof pending**
 
-C-PROC-002 now has a corrected deterministic contract that composes existing
-authorities (C-CMP-002, C-ACT-001/006, C-VER-003, C-CMP-001). It is the highest
-planned implementation candidate, but Release Hold remains active:
-implementation starts only after a new explicit Owner authorization. This
-definition correction does not authorize implementation.
+C-PROC-002 composes existing authorities (C-CMP-002, C-ACT-001/006, C-VER-003,
+C-CMP-001) via Intent `prepareCodingWorkspace` and Kernel
+`desktop.prepare_coding_workspace`. Release Hold remains active for Product
+Proof launch — Owner session only.
 
 | Candidate | Status |
 | --- | --- |
-| C-PROC-002 | **PLANNED** — contract corrected; await Owner implementation authorization |
+| C-PROC-002 | **IMPLEMENTED (eng)** — await Owner Product Proof |
 | C-REL-002 | **BLOCKED** — B-EXT-001 (Authenticode cert) |
 | C-ACT-011 | **BLOCKED** — B-PP-001 / B-CAP-001 (Voice Accept) |
 
-**Recommended Owner action for C-PROC-002:** Review C-PROC-002.1–.9 and,
-when desired, explicitly authorize one bounded runtime implementation slice.
+**Recommended Owner action for C-PROC-002:** Launch Workspace once and run the
+§C-PROC-002.8 Product Proof session. Do not auto-restart Workspace.
 
 Parallel: Owner Product Proof for C-OBS-003/004, C-ACT-004/005, C-VER-003, C-VER-002; Authenticode → A2.
 
@@ -1341,12 +1340,12 @@ LOOP:
 
 - [x] C-PROC-002 deterministic procedure body complete
 - [x] Pre-implementation audit defects corrected in Atlas contract
-- [x] C-PROC-002 **BLOCKED → PLANNED**; B-DEF-001 resolved
-- [x] Readiness Score ~31% (definition/dependencies only)
-- [x] Definition verifier wired into `pnpm test`
+- [x] C-PROC-002 **BLOCKED → PLANNED → IMPLEMENTED (eng)**; B-DEF-001 resolved
+- [x] Readiness Score ~57% (Arch/Deps/Impl/Ver; PP open)
+- [x] Definition + runtime verifiers wired into `pnpm test`
 - [x] Priority queue / highest-planned candidate synchronized
-- [ ] Owner authorizes C-PROC-002 runtime implementation
-- [ ] C-PROC-002 runtime implementation / engineering verification
+- [x] Owner authorized C-PROC-002 runtime implementation
+- [x] C-PROC-002 runtime implementation / engineering verification
 - [ ] C-PROC-002 Owner Product Proof / Trusted / Production
 - [ ] Owner Product Proof for C-OBS-003 / C-OBS-004 / C-ACT-004+005 / C-VER-003 / C-VER-002  
 
@@ -1383,5 +1382,5 @@ Two-digit IDs are **retired**. Meanings remapped to permanent three-digit IDs (*
 ## Stop
 
 **Workspace Capability Atlas v2.0** is the authoritative capability roadmap.  
-C-PROC-002 Prepare Coding Workspace → **PLANNED; contract corrected; B-DEF-001 resolved**.
-Do not implement C-PROC-002 or begin another capability without a new explicit Owner authorization.
+C-PROC-002 Prepare Coding Workspace → **IMPLEMENTED (eng); Owner Product Proof required**.
+Do not launch Workspace, run Product Proof, mark Trusted/Production, or begin another capability without a new explicit Owner authorization.

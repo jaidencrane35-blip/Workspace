@@ -124,6 +124,19 @@ export function toCapabilityIntent(action: IntentAction): CapabilityIntent | nul
           : null,
         title: action.targets.map((t) => t.label).join(" and "),
       };
+    case "prepareCodingWorkspace":
+      return {
+        domain: "application",
+        operation: "prepare_coding_workspace",
+        // Same app:/browser: encoding as C-CMP-002; Kernel preflights then opens.
+        text: action.encode,
+        query: action.targets[0]
+          ? action.targets[0].kind === "browser"
+            ? action.targets[0].url
+            : action.targets[0].query
+          : null,
+        title: action.targets.map((t) => t.label).join(" and "),
+      };
     case "appOpenMaximize":
       return {
         domain: "application",

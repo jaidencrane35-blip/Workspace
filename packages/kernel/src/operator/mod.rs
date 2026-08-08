@@ -10,7 +10,9 @@ mod retry;
 
 pub use compose::{compose_failure_reply, compose_user_reply, sanitize_owner_message};
 pub use intent::{CapabilityIntent, OperatorTurnResult};
-pub use plan::{plan_capability_intent, OperatorPlan, OperatorPlanStep};
+pub use plan::{
+    plan_capability_intent, preflight_prepare_coding_workspace, OperatorPlan, OperatorPlanStep,
+};
 pub use retry::{
     action_attempt_count, execute_interaction_with_retry, is_non_retryable_status,
     is_retryable_status, last_interaction_legs, may_retry, MAX_INTERACTION_ATTEMPTS,
@@ -101,7 +103,184 @@ impl KernelOperator {
 
         let mut results: Vec<ProviderInvokeResponse> = Vec::new();
 
-        if plan.composition_id.as_deref() == Some("desktop.open_compound") {
+        if plan.composition_id.as_deref() == Some("desktop.prepare_coding_workspace") {
+            // C-PROC-002: PCW-001 preflight (zero effects) → PCW-002 open → PCW-003 wait.
+            // C-VER-002 is out of scope — never retry Launch/Open.
+            if let Err(error) =
+                preflight_prepare_coding_workspace(intent.text.as_deref().unwrap_or(""))
+            {
+                let message = match error {
+                    KernelError::CapabilityRuntime { message } => message,
+                    other => other.to_public().message,
+                };
+                return Ok(OperatorTurnResult {
+                    ok: false,
+                    message,
+                    status: Some("clarify".into()),
+                    domain: intent.domain.clone(),
+                    operation: intent.operation.clone(),
+                    target: intent.query.clone(),
+                    preview: None,
+                    text: None,
+                    items: None,
+                    monitors: None,
+                    composition_id: plan.composition_id.clone(),
+                });
+            }
+
+            let labels = prepare_target_labels(&intent);
+            let mut unit_queries: Vec<String> = Vec::new();
+            let mut observed_hwnds: Vec<Option<String>> = Vec::new();
+
+            for step in &plan.steps {
+                if step.domain == CapabilityDomainId::application()
+                    && step.operation == CapabilityOperation::Find
+                {
+                    // Reuse C-ACT-001 Find → Focus|Launch (also used by C-CMP-002).
+                    let query = step.query.clone().unwrap_or_default();
+                    let find = Self::invoke_step(step)?;
+                    let has_match =
+                        find.ok && find.items.as_ref().is_some_and(|i| !i.is_empty());
+                    let hwnd = find
+                        .items
+                        .as_ref()
+                        .and_then(|items| items.first())
+                        .map(|item| item.hwnd.clone());
+                    // Multiple substring matches: do not treat first-match as identity.
+                    let unique_enough = find
+                        .items
+                        .as_ref()
+                        .map(|items| items.len() == 1)
+                        .unwrap_or(false);
+                    results.push(find);
+                    let next_op = if has_match {
+                        CapabilityOperation::Focus
+                    } else {
+                        CapabilityOperation::Launch
+                    };
+                    let next = Self::invoke_step(&OperatorPlanStep {
+                        domain: CapabilityDomainId::application(),
+                        operation: next_op,
+                        text: None,
+                        query: Some(query.clone()),
+                        path: None,
+                        hwnd: if has_match && unique_enough {
+                            hwnd.clone()
+                        } else {
+                            None
+                        },
+                        pid: None,
+                        x: None,
+                        y: None,
+                        width: None,
+                        height: None,
+                        monitor_index: None,
+                        snap: None,
+                        title: None,
+                        category: None,
+                        priority: None,
+                        duration: None,
+                    })?;
+                    let ok = next.ok;
+                    results.push(next);
+                    unit_queries.push(query);
+                    observed_hwnds.push(if has_match && unique_enough {
+                        hwnd
+                    } else {
+                        None
+                    });
+                    if !ok {
+                        // Stop further opens (C-CMP-002 stop-on-failure); still wait what opened.
+                        break;
+                    }
+                } else if step.domain == CapabilityDomainId::browser()
+                    && step.operation == CapabilityOperation::Open
+                {
+                    let result = Self::invoke_step(step)?;
+                    let ok = result.ok;
+                    let query = step
+                        .query
+                        .clone()
+                        .or_else(|| step.path.clone())
+                        .unwrap_or_default();
+                    results.push(result);
+                    unit_queries.push(query);
+                    observed_hwnds.push(None);
+                    if !ok {
+                        break;
+                    }
+                } else {
+                    let result = Self::invoke_step(step)?;
+                    let ok = result.ok;
+                    results.push(result);
+                    if !ok {
+                        break;
+                    }
+                }
+            }
+
+            // PCW-003 — one C-VER-003 window_available wait per opened/attempted target unit.
+            let opened_units = observed_hwnds.len();
+            for unit in 0..opened_units {
+                let label = labels
+                    .get(unit)
+                    .cloned()
+                    .or_else(|| unit_queries.get(unit).cloned())
+                    .unwrap_or_else(|| "that window".into());
+                let preferred_hwnd = observed_hwnds[unit].clone();
+                let wait = Self::invoke_step(&OperatorPlanStep {
+                    domain: CapabilityDomainId::window(),
+                    operation: CapabilityOperation::WaitCondition,
+                    text: None,
+                    query: Some(label.clone()),
+                    path: None,
+                    hwnd: preferred_hwnd.clone(),
+                    pid: None,
+                    x: None,
+                    y: None,
+                    width: None,
+                    height: None,
+                    monitor_index: None,
+                    snap: None,
+                    title: None,
+                    category: Some("window_available".into()),
+                    priority: None,
+                    duration: None,
+                })?;
+                results.push(wait.clone());
+
+                // Confirm identity: prefer hwnd; otherwise require a unique Find match.
+                let confirmed = confirm_prepare_target_identity(
+                    preferred_hwnd.as_deref(),
+                    &label,
+                    &wait,
+                    |query, hwnd| {
+                        Self::invoke_step(&OperatorPlanStep {
+                            domain: CapabilityDomainId::application(),
+                            operation: CapabilityOperation::Find,
+                            text: None,
+                            query: Some(query.to_string()),
+                            path: None,
+                            hwnd: hwnd.map(|h| h.to_string()),
+                            pid: None,
+                            x: None,
+                            y: None,
+                            width: None,
+                            height: None,
+                            monitor_index: None,
+                            snap: None,
+                            title: None,
+                            category: None,
+                            priority: None,
+                            duration: None,
+                        })
+                    },
+                )?;
+                if let Some(verify) = confirmed {
+                    results.push(verify);
+                }
+            }
+        } else if plan.composition_id.as_deref() == Some("desktop.open_compound") {
             // P21.S2 — each Find step = open_or_focus unit; each Browser Open = site open.
             for step in &plan.steps {
                 if step.domain == CapabilityDomainId::application()
@@ -235,6 +414,133 @@ impl KernelOperator {
     }
 }
 
+fn prepare_target_labels(intent: &CapabilityIntent) -> Vec<String> {
+    intent
+        .title
+        .as_deref()
+        .unwrap_or("")
+        .split(" and ")
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .collect()
+}
+
+/// PCW-003/004 identity confirmation — hwnd preferred; never first-substring alone.
+fn confirm_prepare_target_identity<F>(
+    preferred_hwnd: Option<&str>,
+    label: &str,
+    wait: &ProviderInvokeResponse,
+    mut find: F,
+) -> Result<Option<ProviderInvokeResponse>>
+where
+    F: FnMut(&str, Option<&str>) -> Result<ProviderInvokeResponse>,
+{
+    let wait_met = wait.ok
+        && wait
+            .status
+            .as_deref()
+            .is_some_and(|s| s == "condition_met" || s == "found");
+
+    if let Some(hwnd) = preferred_hwnd {
+        if wait_met
+            && wait
+                .items
+                .as_ref()
+                .is_some_and(|items| items.iter().any(|item| item.hwnd == hwnd))
+        {
+            return Ok(Some(ProviderInvokeResponse {
+                domain: CapabilityDomainId::application(),
+                operation: CapabilityOperation::Find,
+                ok: true,
+                format: Some("prepare_identity".into()),
+                bytes: Some(1),
+                text: None,
+                preview: Some(label.into()),
+                message: Some(format!("verified hwnd for “{label}”.")),
+                status: Some("identity_confirmed".into()),
+                target: Some(label.into()),
+                items: wait.items.clone(),
+                monitors: None,
+            }));
+        }
+        let observed = find(label, Some(hwnd))?;
+        let ok = observed.ok
+            && observed
+                .items
+                .as_ref()
+                .is_some_and(|items| items.iter().any(|item| item.hwnd == hwnd));
+        return Ok(Some(ProviderInvokeResponse {
+            domain: CapabilityDomainId::application(),
+            operation: CapabilityOperation::Find,
+            ok,
+            format: Some("prepare_identity".into()),
+            bytes: observed.items.as_ref().map(|i| i.len()),
+            text: None,
+            preview: Some(label.into()),
+            message: Some(if ok {
+                format!("verified hwnd for “{label}”.")
+            } else {
+                format!("could not confirm “{label}”.")
+            }),
+            status: Some(if ok {
+                "identity_confirmed".into()
+            } else {
+                "identity_unconfirmed".into()
+            }),
+            target: Some(label.into()),
+            items: observed.items,
+            monitors: None,
+        }));
+    }
+
+    if !wait_met {
+        return Ok(Some(ProviderInvokeResponse {
+            domain: CapabilityDomainId::application(),
+            operation: CapabilityOperation::Find,
+            ok: false,
+            format: Some("prepare_identity".into()),
+            bytes: Some(0),
+            text: None,
+            preview: Some(label.into()),
+            message: Some(format!("“{label}” was not observed in time.")),
+            status: Some("identity_unconfirmed".into()),
+            target: Some(label.into()),
+            items: None,
+            monitors: None,
+        }));
+    }
+
+    // No hwnd: require exactly one Find match — refuse first-of-many substring hits.
+    let observed = find(label, None)?;
+    let count = observed.items.as_ref().map(|i| i.len()).unwrap_or(0);
+    let ok = observed.ok && count == 1;
+    Ok(Some(ProviderInvokeResponse {
+        domain: CapabilityDomainId::application(),
+        operation: CapabilityOperation::Find,
+        ok,
+        format: Some("prepare_identity".into()),
+        bytes: Some(count),
+        text: None,
+        preview: Some(label.into()),
+        message: Some(if ok {
+            format!("verified unique window for “{label}”.")
+        } else if count > 1 {
+            format!("multiple windows matched “{label}” — left unconfirmed.")
+        } else {
+            format!("could not confirm “{label}”.")
+        }),
+        status: Some(if ok {
+            "identity_confirmed".into()
+        } else {
+            "identity_unconfirmed".into()
+        }),
+        target: Some(label.into()),
+        items: observed.items,
+        monitors: None,
+    }))
+}
+
 pub fn parse_domain(raw: &str) -> Result<CapabilityDomainId> {
     match raw.trim().to_ascii_lowercase().as_str() {
         "clipboard" => Ok(CapabilityDomainId::clipboard()),
@@ -304,6 +610,57 @@ mod tests {
         assert_eq!(plan.steps[0].query.as_deref(), Some("Cursor"));
         assert_eq!(plan.steps[1].operation, CapabilityOperation::Find);
         assert_eq!(plan.steps[1].query.as_deref(), Some("Google Chrome"));
+    }
+
+    #[test]
+    fn plans_prepare_coding_workspace_composition() {
+        let plan = KernelOperator::plan(&CapabilityIntent {
+            domain: "application".into(),
+            operation: "prepare_coding_workspace".into(),
+            text: Some("app:Cursor|app:Notepad".into()),
+            title: Some("Cursor and Notepad".into()),
+            ..Default::default()
+        })
+        .unwrap();
+        assert_eq!(
+            plan.composition_id.as_deref(),
+            Some("desktop.prepare_coding_workspace")
+        );
+        assert_eq!(plan.steps.len(), 2);
+        assert_eq!(plan.steps[0].query.as_deref(), Some("Cursor"));
+        assert_eq!(plan.steps[1].query.as_deref(), Some("Notepad"));
+    }
+
+    #[test]
+    fn plans_prepare_coding_workspace_single_app_uses_find_step() {
+        let plan = KernelOperator::plan(&CapabilityIntent {
+            domain: "application".into(),
+            operation: "prepare_coding_workspace".into(),
+            text: Some("app:Notepad".into()),
+            title: Some("Notepad".into()),
+            ..Default::default()
+        })
+        .unwrap();
+        assert_eq!(
+            plan.composition_id.as_deref(),
+            Some("desktop.prepare_coding_workspace")
+        );
+        assert_eq!(plan.steps.len(), 1);
+        assert_eq!(plan.steps[0].operation, CapabilityOperation::Find);
+    }
+
+    #[test]
+    fn prepare_preflight_rejects_kernel_unexecutable_before_effects() {
+        let err = preflight_prepare_coding_workspace("app:Cursor|app:Visual Studio Code")
+            .expect_err("VS Code is Intent-known but not launch_alias");
+        let msg = err.to_string().to_ascii_lowercase();
+        assert!(msg.contains("visual studio code") || msg.contains("nothing was opened"));
+        assert!(preflight_prepare_coding_workspace("app:Cursor|app:Notepad").is_ok());
+    }
+
+    #[test]
+    fn prepare_preflight_rejects_unknown_app() {
+        assert!(preflight_prepare_coding_workspace("app:NoSuchCodingAppZZZ").is_err());
     }
 
     #[test]

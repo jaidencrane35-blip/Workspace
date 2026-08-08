@@ -122,6 +122,118 @@ fn browser_window_hint(intent: &CapabilityIntent) -> String {
     "Chrome".into()
 }
 
+/// Plan Find/Open steps from `app:` / `browser:` encoding (C-CMP-002 / C-PROC-002).
+fn plan_encoded_open_steps(
+    intent: &CapabilityIntent,
+    require_multi: bool,
+) -> Result<Vec<OperatorPlanStep>> {
+    let encoded = intent.text.as_deref().unwrap_or("").trim();
+    if encoded.is_empty() {
+        return Err(KernelError::CapabilityRuntime {
+            message: "Which apps or sites should I open?".into(),
+        });
+    }
+    let mut steps = Vec::new();
+    for part in encoded.split('|') {
+        let part = part.trim();
+        if part.is_empty() {
+            continue;
+        }
+        if let Some(url) = part.strip_prefix("browser:") {
+            let url = url.trim();
+            if url.is_empty() || !is_plausible_website_url(url) {
+                return Err(KernelError::CapabilityRuntime {
+                    message: "Which website should I open?".into(),
+                });
+            }
+            let mut open_intent = intent.clone();
+            open_intent.path = Some(url.to_string());
+            open_intent.query = Some(url.to_string());
+            steps.push(step_from_intent(
+                CapabilityDomainId::browser(),
+                CapabilityOperation::Open,
+                &open_intent,
+            ));
+        } else if let Some(query) = part.strip_prefix("app:") {
+            let query = query.trim();
+            if query.is_empty() {
+                return Err(KernelError::CapabilityRuntime {
+                    message: "Which app should I open?".into(),
+                });
+            }
+            let mut find_intent = intent.clone();
+            find_intent.query = Some(query.to_string());
+            find_intent.path = None;
+            find_intent.text = None;
+            steps.push(step_from_intent(
+                CapabilityDomainId::application(),
+                CapabilityOperation::Find,
+                &find_intent,
+            ));
+        } else {
+            return Err(KernelError::CapabilityRuntime {
+                message: "I need a clearer desktop request before I can open that.".into(),
+            });
+        }
+    }
+    if steps.is_empty() {
+        return Err(KernelError::CapabilityRuntime {
+            message: "Which apps or sites should I open?".into(),
+        });
+    }
+    if require_multi && steps.len() < 2 {
+        return Err(KernelError::CapabilityRuntime {
+            message: "I need at least two known apps or sites to open together.".into(),
+        });
+    }
+    Ok(steps)
+}
+
+/// C-PROC-002 PCW-001 — whole-set Kernel executability before any Effect.
+pub fn preflight_prepare_coding_workspace(encoded: &str) -> Result<()> {
+    let encoded = encoded.trim();
+    if encoded.is_empty() {
+        return Err(KernelError::CapabilityRuntime {
+            message: "Which application(s) or site(s) should I prepare for your coding workspace?"
+                .into(),
+        });
+    }
+    for part in encoded.split('|') {
+        let part = part.trim();
+        if part.is_empty() {
+            continue;
+        }
+        if let Some(url) = part.strip_prefix("browser:") {
+            let url = url.trim();
+            if url.is_empty() || !is_plausible_website_url(url) {
+                return Err(KernelError::CapabilityRuntime {
+                    message: format!(
+                        "I can’t prepare “{}” — that site isn’t openable yet. Nothing was opened.",
+                        url
+                    ),
+                });
+            }
+        } else if let Some(query) = part.strip_prefix("app:") {
+            let query = query.trim();
+            if query.is_empty()
+                || !crate::capability_runtime::application_query_is_launchable(query)
+            {
+                return Err(KernelError::CapabilityRuntime {
+                    message: format!(
+                        "I can’t prepare “{}” yet — I don’t know how to launch it. Nothing was opened.",
+                        if query.is_empty() { "that app" } else { query }
+                    ),
+                });
+            }
+        } else {
+            return Err(KernelError::CapabilityRuntime {
+                message: "I need a clearer desktop request before I can prepare that. Nothing was opened.".into(),
+            });
+        }
+    }
+    Ok(())
+}
+
 fn step_from_intent(
     domain: CapabilityDomainId,
     operation: CapabilityOperation,
@@ -156,62 +268,19 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
     // P21.S2 — Compound Goal Decomposition: sequential open of known targets.
     // Intent encodes targets in text: `app:Cursor|app:Google Chrome|browser:https://…`
     if domain == CapabilityDomainId::application() && op_raw == "open_compound" {
-        let encoded = intent.text.as_deref().unwrap_or("").trim();
-        if encoded.is_empty() {
-            return Err(KernelError::CapabilityRuntime {
-                message: "Which apps or sites should I open?".into(),
-            });
-        }
-        let mut steps = Vec::new();
-        for part in encoded.split('|') {
-            let part = part.trim();
-            if part.is_empty() {
-                continue;
-            }
-            if let Some(url) = part.strip_prefix("browser:") {
-                let url = url.trim();
-                if url.is_empty() || !is_plausible_website_url(url) {
-                    return Err(KernelError::CapabilityRuntime {
-                        message: "Which website should I open?".into(),
-                    });
-                }
-                let mut open_intent = intent.clone();
-                open_intent.path = Some(url.to_string());
-                open_intent.query = Some(url.to_string());
-                steps.push(step_from_intent(
-                    CapabilityDomainId::browser(),
-                    CapabilityOperation::Open,
-                    &open_intent,
-                ));
-            } else if let Some(query) = part.strip_prefix("app:") {
-                let query = query.trim();
-                if query.is_empty() {
-                    return Err(KernelError::CapabilityRuntime {
-                        message: "Which app should I open?".into(),
-                    });
-                }
-                let mut find_intent = intent.clone();
-                find_intent.query = Some(query.to_string());
-                find_intent.path = None;
-                find_intent.text = None;
-                steps.push(step_from_intent(
-                    CapabilityDomainId::application(),
-                    CapabilityOperation::Find,
-                    &find_intent,
-                ));
-            } else {
-                return Err(KernelError::CapabilityRuntime {
-                    message: "I need a clearer desktop request before I can open that.".into(),
-                });
-            }
-        }
-        if steps.len() < 2 {
-            return Err(KernelError::CapabilityRuntime {
-                message: "I need at least two known apps or sites to open together.".into(),
-            });
-        }
+        let steps = plan_encoded_open_steps(intent, /* require_multi */ true)?;
         return Ok(OperatorPlan {
             composition_id: Some("desktop.open_compound".into()),
+            steps,
+        });
+    }
+
+    // C-PROC-002 — Prepare Coding Workspace: same open encoding as C-CMP-002,
+    // allowing one or more targets. Kernel execute owns preflight → open → wait.
+    if domain == CapabilityDomainId::application() && op_raw == "prepare_coding_workspace" {
+        let steps = plan_encoded_open_steps(intent, /* require_multi */ false)?;
+        return Ok(OperatorPlan {
+            composition_id: Some("desktop.prepare_coding_workspace".into()),
             steps,
         });
     }

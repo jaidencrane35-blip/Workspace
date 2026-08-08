@@ -621,7 +621,74 @@ fn compose_completion(
                 "failed",
             ))
         }
-        _ => None,
+        "desktop.prepare_coding_workspace" => {
+            // C-PROC-002 PCW-004 — Completion Contract from observed identity evidence only.
+            let labels = intent
+                .title
+                .as_deref()
+                .unwrap_or("")
+                .split(" and ")
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .collect::<Vec<_>>();
+            let expected = intent
+                .text
+                .as_deref()
+                .unwrap_or("")
+                .split('|')
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .count()
+                .max(labels.len());
+
+            let verified = results
+                .iter()
+                .filter(|r| {
+                    r.format.as_deref() == Some("prepare_identity")
+                        && r.status.as_deref() == Some("identity_confirmed")
+                        && r.ok
+                })
+                .count();
+
+            let label_list = if labels.len() >= 2 {
+                format!(
+                    "{} and {}",
+                    labels[..labels.len() - 1]
+                        .iter()
+                        .map(|l| format!("“{l}”"))
+                        .collect::<Vec<_>>()
+                        .join(", "),
+                    format!("“{}”", labels[labels.len() - 1])
+                )
+            } else if let Some(one) = labels.first() {
+                format!("“{one}”")
+            } else {
+                "your coding workspace targets".into()
+            };
+
+            if expected > 0 && verified >= expected {
+                return Some((
+                    true,
+                    format!("Prepared your coding workspace with {label_list}."),
+                    "completed",
+                ));
+            }
+            if verified > 0 {
+                return Some((
+                    false,
+                    format!(
+                        "Prepared {verified} of {expected} — I couldn’t verify everything you named."
+                    ),
+                    "partial",
+                ));
+            }
+            Some((
+                false,
+                "I couldn’t prepare the coding workspace you asked for.".into(),
+                "failed",
+            ))
+        }
+        _ => None
     }
 }
 
@@ -1194,6 +1261,114 @@ mod tests {
         assert_eq!(turn.status.as_deref(), Some("partial"));
         assert!(!turn.message.to_ascii_lowercase().contains("opened beside"));
         assert!(turn.message.to_ascii_lowercase().contains("side-by-side"));
+    }
+
+    #[test]
+    fn prepare_coding_workspace_completed_when_all_identities_confirmed() {
+        let mut intent = intent("application", "prepare_coding_workspace");
+        intent.text = Some("app:Cursor|app:Notepad".into());
+        intent.title = Some("Cursor and Notepad".into());
+        let plan = OperatorPlan {
+            composition_id: Some("desktop.prepare_coding_workspace".into()),
+            steps: vec![],
+        };
+        let identity = |label: &str| ProviderInvokeResponse {
+            domain: CapabilityDomainId::application(),
+            operation: CapabilityOperation::Find,
+            ok: true,
+            format: Some("prepare_identity".into()),
+            bytes: Some(1),
+            text: None,
+            preview: Some(label.into()),
+            message: Some(format!("verified hwnd for “{label}”.")),
+            status: Some("identity_confirmed".into()),
+            target: Some(label.into()),
+            items: None,
+            monitors: None,
+        };
+        let results = [
+            ok_resp(
+                CapabilityDomainId::application(),
+                CapabilityOperation::Find,
+                "found",
+            ),
+            ok_resp(
+                CapabilityDomainId::application(),
+                CapabilityOperation::Focus,
+                "focused",
+            ),
+            ok_resp(
+                CapabilityDomainId::application(),
+                CapabilityOperation::Find,
+                "found",
+            ),
+            ok_resp(
+                CapabilityDomainId::application(),
+                CapabilityOperation::Launch,
+                "launched",
+            ),
+            ok_resp(
+                CapabilityDomainId::window(),
+                CapabilityOperation::WaitCondition,
+                "available",
+            ),
+            identity("Cursor"),
+            ok_resp(
+                CapabilityDomainId::window(),
+                CapabilityOperation::WaitCondition,
+                "available",
+            ),
+            identity("Notepad"),
+        ];
+        let turn = compose_user_reply(&intent, &plan, &results);
+        assert!(turn.ok);
+        assert_eq!(turn.status.as_deref(), Some("completed"));
+        assert!(turn.message.to_ascii_lowercase().contains("prepared"));
+    }
+
+    #[test]
+    fn prepare_coding_workspace_partial_when_one_identity_unconfirmed() {
+        let mut intent = intent("application", "prepare_coding_workspace");
+        intent.text = Some("app:Cursor|app:Notepad".into());
+        intent.title = Some("Cursor and Notepad".into());
+        let plan = OperatorPlan {
+            composition_id: Some("desktop.prepare_coding_workspace".into()),
+            steps: vec![],
+        };
+        let results = [
+            ProviderInvokeResponse {
+                domain: CapabilityDomainId::application(),
+                operation: CapabilityOperation::Find,
+                ok: true,
+                format: Some("prepare_identity".into()),
+                bytes: Some(1),
+                text: None,
+                preview: Some("Cursor".into()),
+                message: Some("verified".into()),
+                status: Some("identity_confirmed".into()),
+                target: Some("Cursor".into()),
+                items: None,
+                monitors: None,
+            },
+            ProviderInvokeResponse {
+                domain: CapabilityDomainId::application(),
+                operation: CapabilityOperation::Find,
+                ok: false,
+                format: Some("prepare_identity".into()),
+                bytes: Some(0),
+                text: None,
+                preview: Some("Notepad".into()),
+                message: Some("unconfirmed".into()),
+                status: Some("identity_unconfirmed".into()),
+                target: Some("Notepad".into()),
+                items: None,
+                monitors: None,
+            },
+        ];
+        let turn = compose_user_reply(&intent, &plan, &results);
+        assert!(!turn.ok);
+        assert_eq!(turn.status.as_deref(), Some("partial"));
+        assert!(turn.message.to_ascii_lowercase().contains("1 of 2"));
     }
 
     #[test]

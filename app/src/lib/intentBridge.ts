@@ -40,6 +40,7 @@ import {
   resolveCompoundOpen,
   type CompoundOpenTarget,
 } from "./compoundOpen";
+import { resolvePrepareCodingWorkspace } from "./prepareCodingWorkspace";
 import { resolveIntelligenceRoute } from "./intelligenceRouting";
 
 export type IntentAction =
@@ -87,6 +88,12 @@ export type IntentAction =
     }
   | {
       kind: "compoundOpen";
+      targets: CompoundOpenTarget[];
+      encode: string;
+      reply: string;
+    }
+  | {
+      kind: "prepareCodingWorkspace";
       targets: CompoundOpenTarget[];
       encode: string;
       reply: string;
@@ -1628,12 +1635,22 @@ function resolveIntentCore(raw: string): IntentAction {
   }
 
   // Semantic Intent Engine — grammar + entity reasoning before app/exe fallthrough.
+  // Situation Goals (Continue) run inside semantic and must win over prepare phrasing.
   const semantic =
     resolveSemanticIntent(raw.trim()) ??
     resolveSemanticIntent(softRaw) ??
     resolveSemanticIntent(matchText);
   if (semantic) {
     return semantic;
+  }
+
+  // C-PROC-002 — Prepare Coding Workspace (after Situation Goals Continue ownership).
+  const prepare =
+    resolvePrepareCodingWorkspace(raw.trim()) ??
+    resolvePrepareCodingWorkspace(softRaw) ??
+    resolvePrepareCodingWorkspace(matchText);
+  if (prepare) {
+    return prepare;
   }
 
   if (

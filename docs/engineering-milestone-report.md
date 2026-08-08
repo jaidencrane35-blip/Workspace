@@ -1,4 +1,30 @@
 ﻿# Engineering Milestone Report
+## C-PROC-002 - Prepare Coding Workspace Runtime Implementation
+
+| Field | Value |
+| --- | --- |
+| **Capability ID** | C-PROC-002 |
+| **Artifacts** | Atlas C-PROC-002.1–.9, `prepareCodingWorkspace.ts`, Kernel `desktop.prepare_coding_workspace`, `verify-prepare-coding-workspace`, `tests/prepare-coding-workspace.test.ts` |
+| **Date** | 2026-08-08 |
+| **Status** | **Engineering complete** — Owner Product Proof required; Trusted/Production incomplete |
+| **Max layer** | Intent Layer + Kernel Operator composition (reuse C-ACT-001/006, C-CMP-002, C-VER-003, C-CMP-001) |
+| **Readiness** | Overall **~57%** (Arch/Deps/Impl/Ver 100%; PP/Trusted/Production 0%) |
+| **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) |
+
+### Summary
+
+Authorized runtime slice implements the corrected C-PROC-002 contract:
+Intent resolves prepare-with-targets phrasing into an ordered set; Kernel
+preflights whole-set `launch_alias`/URL executability before any Effect;
+opens via existing Find→Focus|Launch / browser Open units; waits with
+C-VER-003 `window_available` (hwnd preferred; unique identity required);
+aggregates completed/partial/failed from observed identity evidence only.
+No Launch retry, no C-VER-002, no final-focus inference, no default apps.
+Targetless Continue and bare prepare clarification preserved. Product Proof
+defined, not run, not accepted.
+
+---
+
 ## B-DEF-001 - Prepare Coding Workspace Definition (C-PROC-002)
 
 | Field | Value |
@@ -6,25 +32,15 @@
 | **Capability ID** | C-PROC-002 |
 | **Artifacts** | Atlas C-PROC-002.1–.9, `verify-prepare-coding-workspace-definition`, `P22_S7_PREPARE_CODING_WORKSPACE_BLOCKED.md` resolution record |
 | **Date** | 2026-08-08 |
-| **Status** | **Contract corrected** — B-DEF-001 resolved; runtime implementation not started |
+| **Status** | **Contract corrected** — superseded by runtime implementation milestone above |
 | **Max layer** | Capability definition + Repository Standards + Documentation |
-| **Readiness** | Overall **~31%** (Architecture/Dependencies 100%; partial Continue handoff 20%; runtime Verification/PP/Trusted/Production 0%) |
+| **Readiness** | Was ~31%; runtime now ~57% |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) |
 
 ### Summary
 
-Takeover found clean synchronized `v2-dev` at `ac8c050a` and no partial
-B-DEF-001 work. An initial PCW-001–PCW-006 definition resolved incompleteness,
-then a pre-implementation audit blocked it for contract defects. The Atlas now
-defines a corrected composition over existing authorities:
-PCW-001 whole-set resolve/preflight → PCW-002 execute via C-CMP-002 /
-C-ACT-001/006 → PCW-003 C-VER-003 wait/observe → PCW-004 C-CMP-001 aggregate.
-No Launch retry, invented operation deadlines, duplicate Find, private
-A→B→C planner, or mandatory final-focus inference. Targetless coding/setup
-owned by Situation Goals remains Continue; prepare-without-targets otherwise
-clarifies. Primary Product Proof uses Cursor + Notepad. No runtime execution
-behaviour changed. C-PROC-002 is **PLANNED** and requires a new Owner
-authorization before implementation.
+Definition/correction slice established PCW-001…PCW-004 composition over
+existing authorities. Runtime implementation followed under Owner authorization.
 
 ---
 

@@ -20,7 +20,9 @@ mod screenshot_provider;
 mod types;
 mod window_provider;
 
-pub use application_provider::{ApplicationPorts, ApplicationProvider};
+pub use application_provider::{
+    application_query_is_launchable, ApplicationPorts, ApplicationProvider,
+};
 pub use browser_provider::BrowserProvider;
 pub use clipboard_provider::ClipboardProvider;
 pub use notification_provider::NotificationProvider;

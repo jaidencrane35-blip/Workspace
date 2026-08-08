@@ -405,7 +405,10 @@ export function commitWorkspaceContext(
         : state.pendingKinds.filter((k) => k !== "clarification"),
   };
 
-  if (action.kind === "compoundOpen") {
+  if (
+    action.kind === "compoundOpen" ||
+    action.kind === "prepareCodingWorkspace"
+  ) {
     for (const t of action.targets) {
       if (t.kind === "app") {
         state.lastAppQuery = t.query;

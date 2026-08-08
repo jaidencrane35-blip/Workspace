@@ -35,8 +35,7 @@ if (start < 0 || end < 0) {
 const procedure = atlas.slice(start, end);
 
 for (const token of [
-  "| **Status** | **PLANNED** |",
-  "contract corrected after pre-implementation audit; implementation not started",
+  // Status may be PLANNED (definition) or IMPLEMENTED (runtime eng complete; PP open).
   "C-PROC-002.1 Scope and completion",
   "C-PROC-002.2 Entry routing (Continue vs clarification vs procedure)",
   "C-PROC-002.3 Target authority and launchability",
@@ -50,6 +49,20 @@ for (const token of [
   if (!procedure.includes(token)) {
     fail(`C-PROC-002 missing required section/token: ${token}`);
   }
+}
+
+if (
+  !procedure.includes("| **Status** | **PLANNED** |") &&
+  !procedure.includes("| **Status** | **IMPLEMENTED** |")
+) {
+  fail("C-PROC-002 Status must be PLANNED or IMPLEMENTED");
+}
+if (
+  procedure.includes("Trusted ................. 100%") ||
+  procedure.includes("Production .............. 100%") ||
+  procedure.includes("Product Proof ........... 100%")
+) {
+  fail("definition/runtime slice must not mark Product Proof, Trusted, or Production complete");
 }
 
 const requiredHeader =
@@ -162,7 +175,6 @@ for (const failure of [
 }
 
 for (const proofToken of [
-  "**Status:** Definition corrected; not executed; not accepted.",
   "Prepare my coding workspace with Cursor and Notepad.",
   "Prepare my coding workspace with Notepad and Calculator.",
   "Prepare my coding workspace.",
@@ -175,6 +187,14 @@ for (const proofToken of [
   if (!procedure.includes(proofToken)) {
     fail(`future Product Proof definition missing: ${proofToken}`);
   }
+}
+if (
+  !procedure.includes("**Status:** Definition corrected; not executed; not accepted.") &&
+  !procedure.includes(
+    "**Status:** Engineering complete; Product Proof **not executed; not accepted**.",
+  )
+) {
+  fail("future Product Proof status line missing or invalid");
 }
 
 const blockedRegisterStart = atlas.indexOf("## 5. Blocked Capability Register");

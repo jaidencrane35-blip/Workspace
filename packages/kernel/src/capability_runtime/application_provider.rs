@@ -434,6 +434,12 @@ impl CapabilityProvider for ApplicationProvider {
     }
 }
 
+/// C-PROC-002 PCW-001 — Kernel executability probe using the real `launch_alias`
+/// table (no third Intent/Kernel alias authority).
+pub fn application_query_is_launchable(query: &str) -> bool {
+    launch_alias(query).is_ok()
+}
+
 /// Resolve a launch target only for known Windows apps / protocols / explicit paths.
 /// P16.32: never invent `{token}.exe` for unknown names (Owner evidence override).
 fn launch_alias(query: &str) -> Result<String> {

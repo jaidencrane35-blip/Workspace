@@ -31,7 +31,8 @@ function stripPart(raw: string): string {
     .trim();
 }
 
-function resolveOpenTarget(raw: string): CompoundOpenTarget | null {
+/** Resolve one Owner-named open part into an existing compound target. */
+export function resolveOpenTarget(raw: string): CompoundOpenTarget | null {
   const part = stripPart(raw);
   if (!part) {
     return null;

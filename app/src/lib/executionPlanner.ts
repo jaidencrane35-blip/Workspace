@@ -343,6 +343,37 @@ export function buildExecutionPlan(
         ],
       };
     }
+    case "prepareCodingWorkspace": {
+      const n = "targets" in action ? action.targets.length : 1;
+      return {
+        goal,
+        capabilities: caps("open-app", "browser"),
+        multiStep: true,
+        action,
+        steps: [
+          step(
+            "resolve",
+            `Resolve and preflight ${n} coding-workspace target(s)`,
+            "open-app",
+          ),
+          step(
+            "execute",
+            n >= 2
+              ? "Open via Kernel compound composition"
+              : "Open via existing app/browser open composition",
+            "open-app",
+            "delegated_to_kernel",
+          ),
+          step(
+            "verify",
+            "Wait/observe each target (C-VER-003 window_available)",
+            "open-app",
+            "delegated_to_kernel",
+          ),
+          step("complete", "Aggregate Completion Contract outcome", null),
+        ],
+      };
+    }
     default: {
       const domainGuess =
         action.kind.startsWith("screenshot")
