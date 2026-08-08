@@ -335,6 +335,32 @@ Production .............. 0%
 Overall ................. 57%
 ```
 
+#### C-ITL-007 Substitution Prohibition Enforcement
+| | |
+| --- | --- |
+| **Name** | Substitution Prohibition Enforcement |
+| **Layer** | L3 Intent |
+| **Status** | **IMPLEMENTED** |
+| **Lifecycle** | Engineering complete |
+| **Dependencies** | C-ITL-006 (Goal Contract); C-REA-001 (Intelligence Routing) |
+| **Verification** | `verify-substitution-prohibition`; `tests/substitution-prohibition.test.ts` |
+| **Product Proof** | Owner Product Proof required — Owner-visible reply behaviour for knowledge, computation, and social requests |
+| **Priority** | Architecture slice P23.S2 |
+| **Engineering Notes** | Refuses a desktop effect resolved from action-shaped vocabulary when the Goal Contract says the request is fulfilled by knowledge. Only removes effects; may construct nothing but speaking actions (verifier-enforced). Refusal requires positive comprehension evidence, so the bare-question default can never disable a capability. Hybrid and observation goals are exempt. External handoff remains C-REA-003's decision, marked with `informationHandoff`; a KNOW outcome never implies it. |
+
+Capability Readiness Score:
+
+```text
+Architecture ............ 100%
+Dependencies ............ 100%
+Implementation .......... 100%
+Verification ............ 100%
+Product Proof ........... 0%
+Trusted ................. 0%
+Production .............. 0%
+Overall ................. 57%
+```
+
 ---
 
 ### Layer 4 — Desktop Observation
@@ -1280,6 +1306,7 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 | C-REA-004 | In-Conversation Model | FUTURE | ~14% |
 | C-ITL-001..005 | Intent stack | IMPLEMENTED | ~71% |
 | **C-ITL-006** | **Goal Contract (Outcome-First Comprehension)** | **IMPLEMENTED (eng)** | **57%** |
+| **C-ITL-007** | **Substitution Prohibition Enforcement** | **IMPLEMENTED (eng)** | **57%** |
 | C-OBS-001 | Enumerate Windows | IMPLEMENTED | ~71% |
 | C-OBS-002 | Active Window | IMPLEMENTED | ~71% |
 | **C-OBS-003** | **Desktop UI Tree** | **IMPLEMENTED (eng)** | **57%** |

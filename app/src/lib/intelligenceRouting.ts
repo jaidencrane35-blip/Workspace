@@ -558,6 +558,8 @@ export function resolveIntelligenceRoute(raw: string): IntentAction | null {
       url,
       reply:
         "Opening ChatGPT with your question — reasoning continues there. I won’t invent an answer here.",
+      // P23.S2: this route, not the comprehended outcome, selected the handoff.
+      informationHandoff: true,
     };
   }
 

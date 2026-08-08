@@ -43,6 +43,7 @@ import {
 import { resolvePrepareCodingWorkspace } from "./prepareCodingWorkspace";
 import { resolveIntelligenceRoute } from "./intelligenceRouting";
 import { comprehend, type GoalContract } from "./goalContract";
+import { enforceSubstitutionProhibition } from "./substitutionProhibition";
 
 export type IntentAction =
   | { kind: "navigate"; view: PilotPrimaryView; reply: string }
@@ -74,7 +75,16 @@ export type IntentAction =
     }
   | { kind: "notifyDismiss"; id?: string; reply: string }
   | { kind: "browserStatus"; reply: string }
-  | { kind: "browserOpen"; url: string; reply: string }
+  | {
+      kind: "browserOpen";
+      url: string;
+      reply: string;
+      /**
+       * P23.S2 — set only when intelligence routing independently selected an
+       * external information mechanism. A KNOW outcome never implies this.
+       */
+      informationHandoff?: boolean;
+    }
   | {
       kind: "browserOpenFocus";
       url: string;
@@ -164,7 +174,13 @@ export type IntentAction =
       height: number;
       reply: string;
     }
-  | { kind: "unknown"; reply: string; suggestion?: string };
+  | {
+      kind: "unknown";
+      reply: string;
+      suggestion?: string;
+      /** P23.S2 — this reply is a desktop soft miss, not an answer. */
+      softMiss?: boolean;
+    };
 
 function normalize(input: string): string {
   return input
@@ -1594,6 +1610,14 @@ function resolveWindowIntent(raw: string, text: string): IntentAction | null {
  * Never invents desktop awareness or memory.
  * Raw transcripts never become executable names (Semantic Intent Engine — P16.31).
  */
+/** True when the Owner is asking about something rather than commanding it. */
+function isQuestionForm(raw: string, text: string): boolean {
+  return (
+    /\?\s*$/.test(raw.trim()) ||
+    /^(what|why|when|who|which|how come|does|did|is it|are they)\b/.test(text)
+  );
+}
+
 function resolveIntentCore(raw: string): IntentAction {
   const text = normalize(raw);
   if (!text) {
@@ -1793,8 +1817,11 @@ function resolveIntentCore(raw: string): IntentAction {
     };
   }
 
+  // P23.S2: a question that merely contains this vocabulary is not a command
+  // to collapse the surface.
   if (
-    /\b(collapse|minimize|minimise|float|icon)\b/.test(text) ||
+    (/\b(collapse|minimize|minimise|float|icon)\b/.test(text) &&
+      !isQuestionForm(raw, text)) ||
     text === "desktop operator"
   ) {
     return {
@@ -2263,10 +2290,16 @@ export function resolveIntentWithGoal(raw: string): {
   const goal = comprehend(raw);
   const fromContext = resolveFromWorkspaceContext(raw);
   if (fromContext) {
-    commitWorkspaceContext(raw, fromContext.action, null, goal);
-    return { goal, action: fromContext.action };
+    const contextual = enforceSubstitutionProhibition(goal, fromContext.action);
+    commitWorkspaceContext(raw, contextual, null, goal);
+    return { goal, action: contextual };
   }
-  const action = applyGoalResolution(raw, resolveIntentCore(raw));
+  // P23.S2: a request fulfilled by knowledge must not resolve to a desktop
+  // effect. Enforcement may only refuse an effect — it never selects one.
+  const action = enforceSubstitutionProhibition(
+    goal,
+    applyGoalResolution(raw, resolveIntentCore(raw)),
+  );
   commitWorkspaceContext(raw, action, null, goal);
   return { goal, action };
 }

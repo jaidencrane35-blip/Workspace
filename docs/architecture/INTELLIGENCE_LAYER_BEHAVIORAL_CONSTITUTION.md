@@ -1133,10 +1133,32 @@ Implemented as **C-ITL-006 Goal Contract**, `app/src/lib/goalContract.ts`. What 
 - The result is preserved: `resolveIntentWithGoal` returns it beside the action, `commitWorkspaceContext` stores it as `currentGoal`, and `handleOperatorUtterance` returns it on `OperatorOutcome`.
 - `scripts/verify-goal-contract.mjs` fails the build if comprehension imports a planner, provider, or transport surface, if the contract shape grows an execution field, or if `CapabilityIntent` grows a meaning field.
 
-What did **not** ship, deliberately:
+What did **not** ship in S1, deliberately:
 
-- **Enforcement.** The Substitution Prohibition is represented but not enforced. A `KNOW` outcome can still reach the ChatGPT handoff (P22.S1), because routing is downstream of comprehension and changing it is a separate slice.
-- **Consumption.** No consumer reads the contract to decide anything. It is preserved, not yet authoritative.
+- **Enforcement.** Delivered separately in P23.S2 (below).
+- **Consumption.** No consumer reads the contract to decide *which capability runs*. It is preserved and now constrains refusal, but it does not select.
+
+### Status — P23.S2 delivered (enforcement half)
+
+Implemented as **C-ITL-007 Substitution Prohibition Enforcement**, `app/src/lib/substitutionProhibition.ts`, applied at the single Intent entry point after the action resolves.
+
+Measured substitutions that existed before the slice, and what changed:
+
+| Utterance | Before | After |
+| --- | --- | --- |
+| "What does minimize mean?" | Collapsed the conversation surface, because a vocabulary regex matched "minimize" anywhere | No effect; the collapse branch now requires a command, not a question |
+| "How's your day?" | Opened a browser | Conversational reply |
+| "How are you?" | "Want to try a desktop step…" | Conversational reply, no desktop suggestion |
+| "Do you know the time in Queensland?" | "I can't take that on yet." | Limitation stated in terms of the Owner's goal |
+
+Two constraints keep enforcement from becoming a second planner:
+
+- It may only *remove* an effect. The verifier rejects the file if it constructs any action that is not a speaking action.
+- Refusal requires **positive** comprehension evidence. Comprehension classifies any unrecognised question as `KNOW` by default, and a default is not evidence; allowing it to override a specific desktop match silently disabled real capabilities (measured: 14 failing tests, three Owner batteries dropping to 76–83%). The bare-question default now never refuses.
+
+External handoff is unchanged. `C-REA-003` marks its own decision with `informationHandoff`, and only routing may set that mark (verifier-enforced). A `KNOW` outcome never implies opening ChatGPT by itself.
+
+**Still open.** Workspace still cannot *answer* "What time is it in Queensland?" — it hands off. Obtaining the answer is an intelligence-routing problem, not a substitution problem, and remains out of scope.
 
 **Blocking dependency — the missing interface.** The contract stops at the Conversation façade. `CapabilityIntent` is a flat `{ domain, operation, arguments }` record with no field for meaning, and the Intent Layer Specification forbids Intent from planning or choosing providers while the Kernel Authority Rule makes the Kernel Operator the sole composition authority. Sending the Goal Contract over `execute_capability_intent` today would either place a second planning input in front of the Operator or require Intent to pre-select the capability — both violations. Conflict C (§30) must be resolved, and the Kernel must expose a meaning-accepting entry point, before comprehension can drive execution.
 

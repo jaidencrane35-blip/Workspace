@@ -111,7 +111,7 @@ export interface GoalContract {
  * position, so "what windows do I have open" is not read as a request to open.
  */
 const EFFECT_VERBS =
-  "open|launch|start|run|close|quit|play|pause|focus|switch|bring|move|snap|maximi[sz]e|minimi[sz]e|restore|centre|center|resize|type|click|press|copy|paste|prepare|put|make|set|go|navigate|arrange|place|search|capture|save";
+  "open|launch|start|run|close|quit|play|pause|focus|switch|bring|move|snap|maximi[sz]e|minimi[sz]e|restore|centre|center|resize|type|click|press|copy|paste|prepare|put|make|set|go|navigate|arrange|place|search|capture|save|take";
 
 /** Verbs that request knowledge without necessarily changing state. */
 const OBSERVATION_VERBS = "find|locate|list|enumerate|count|check|look|read|see";
@@ -403,6 +403,8 @@ export function comprehend(utterance: string): GoalContract {
   const meta = any(META_PATTERNS, text);
   const interrogative =
     /^(what|where|when|why|who|how|which|is|are|can|do|does|did)\b/.test(text) ||
+    // "I want to know X" and "tell me X" seek knowledge without a question mark.
+    /^(i (?:want|need|'?d like) to know|tell me|do you know|any idea)\b/.test(text) ||
     /\?$/.test(utterance.trim());
   const machineObject = MACHINE_OBJECTS.test(text);
   const contentObject = CONTENT_OBJECTS.test(text);
@@ -435,8 +437,9 @@ export function comprehend(utterance: string): GoalContract {
     evidence.push("social_only");
   } else if (computational) {
     outcome = "COMPUTE";
-    mode = "computation";
-    evidence.push("computational_signal");
+    // "What's 15% of 80 and open Notepad" wants the number *and* the app.
+    mode = hasEffectVerb ? "hybrid" : "computation";
+    evidence.push(`computational_signal:${mode}`);
   } else if (
     (requestedResult === "current time" || requestedResult === "current date") &&
     !hasEffectVerb

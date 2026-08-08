@@ -1,4 +1,34 @@
 ﻿# Engineering Milestone Report
+## P23.S2 - Substitution Prohibition Enforcement (C-ITL-007)
+
+| Field | Value |
+| --- | --- |
+| **Capability ID** | C-ITL-007 |
+| **Artifacts** | `app/src/lib/substitutionProhibition.ts`, `informationHandoff` mark, `softMiss` mark, collapse question guard, `verify-substitution-prohibition`, `tests/substitution-prohibition.test.ts`, Atlas C-ITL-007 |
+| **Date** | 2026-08-08 |
+| **Status** | **Engineering complete** — Owner Product Proof required (Owner-visible reply behaviour) |
+| **Max layer** | Intent Layer only (no Kernel, no provider, no IPC change) |
+| **Readiness** | Overall **57%** (Arch/Deps/Impl/Ver 100%; PP/Trusted/Production 0%) |
+| **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) |
+
+### Summary
+
+Workspace no longer substitutes a desktop effect for an answer it does not
+have. When the Goal Contract says a request is fulfilled by knowledge,
+computation, or conversation, an effect resolved from action-shaped vocabulary
+is refused and replaced with a truthful reply framed in the Owner's goal.
+
+Three substitutions were measured and corrected: a question containing
+"minimize" collapsed the conversation surface, a social pleasantry opened a
+browser, and a greeting was answered with a desktop suggestion. Enforcement may
+only remove an effect — the verifier rejects the module if it constructs any
+non-speaking action — and refusal requires positive comprehension evidence, so
+the bare-question default cannot disable a capability. Hybrid, observation, and
+action goals are untouched. The external handoff remains C-REA-003's decision,
+marked `informationHandoff`; a KNOW outcome never implies it.
+
+---
+
 ## P23.S1 - Outcome-First Comprehension (C-ITL-006 Goal Contract)
 
 | Field | Value |

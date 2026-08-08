@@ -7,6 +7,11 @@ export type UnknownGuidance = {
   kind: "unknown";
   reply: string;
   suggestion?: string;
+  /**
+   * P23.S2 — marks a bare desktop refusal, so enforcement can tell it from an
+   * answer or from targeted near-miss guidance.
+   */
+  softMiss?: boolean;
 };
 
 export type HeardGuidance = {
@@ -201,6 +206,7 @@ export function resolveUnknownGuidance(text: string): UnknownGuidance {
     if (miss.test(text)) {
       if (miss.reply !== lastUnknownReply) {
         lastUnknownReply = miss.reply;
+        // Near misses carry targeted, truthful guidance — not a bare refusal.
         return {
           kind: "unknown",
           reply: miss.reply,
@@ -208,8 +214,8 @@ export function resolveUnknownGuidance(text: string): UnknownGuidance {
         };
       }
       // Same near-miss twice → rotate generic; still no command catalogue.
-      return pickGeneric(text);
+      return { ...pickGeneric(text), softMiss: true };
     }
   }
-  return pickGeneric(text);
+  return { ...pickGeneric(text), softMiss: true };
 }
