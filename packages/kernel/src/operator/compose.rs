@@ -340,22 +340,42 @@ fn compose_completion(
                 .as_deref()
                 .or(intent.title.as_deref())
                 .unwrap_or("that control");
-            let locate_ok = step_ok(results, 0);
-            let click_ok = step_ok(results, 1);
-            let verify_ok = step_ok(results, 2);
+            // C-VER-002: results may include Wait + a second attempt; use last action legs.
+            let (locate_ok, click_ok, verify_ok) = crate::operator::retry::last_interaction_legs(
+                results,
+                crate::capability_runtime::CapabilityOperation::InvokeControl,
+            )
+            .unwrap_or_else(|| {
+                (
+                    step_ok(results, 0),
+                    step_ok(results, 1),
+                    step_ok(results, 2),
+                )
+            });
             if locate_ok && click_ok && verify_ok {
                 return Some((true, format!("Clicked “{control}”."), "completed"));
             }
             if !locate_ok {
                 let msg = results
-                    .first()
+                    .iter()
+                    .rev()
+                    .find(|r| {
+                        r.operation
+                            == crate::capability_runtime::CapabilityOperation::FindControl
+                            && !r.ok
+                    })
                     .and_then(|r| r.message.as_deref())
                     .unwrap_or("I couldn’t find that control.");
                 return Some((false, sanitize_owner_message(msg), "failed"));
             }
             if !click_ok {
                 let msg = results
-                    .get(1)
+                    .iter()
+                    .rev()
+                    .find(|r| {
+                        r.operation
+                            == crate::capability_runtime::CapabilityOperation::InvokeControl
+                    })
                     .and_then(|r| r.message.as_deref())
                     .unwrap_or("I couldn’t click that control.");
                 return Some((false, sanitize_owner_message(msg), "partial"));
@@ -368,22 +388,41 @@ fn compose_completion(
         }
         "window.type_control" => {
             let control = intent.title.as_deref().unwrap_or("that field");
-            let locate_ok = step_ok(results, 0);
-            let type_ok = step_ok(results, 1);
-            let verify_ok = step_ok(results, 2);
+            let (locate_ok, type_ok, verify_ok) = crate::operator::retry::last_interaction_legs(
+                results,
+                crate::capability_runtime::CapabilityOperation::SetControlValue,
+            )
+            .unwrap_or_else(|| {
+                (
+                    step_ok(results, 0),
+                    step_ok(results, 1),
+                    step_ok(results, 2),
+                )
+            });
             if locate_ok && type_ok && verify_ok {
                 return Some((true, format!("Typed into “{control}”."), "completed"));
             }
             if !locate_ok {
                 let msg = results
-                    .first()
+                    .iter()
+                    .rev()
+                    .find(|r| {
+                        r.operation
+                            == crate::capability_runtime::CapabilityOperation::FindControl
+                            && !r.ok
+                    })
                     .and_then(|r| r.message.as_deref())
                     .unwrap_or("I couldn’t find that field.");
                 return Some((false, sanitize_owner_message(msg), "failed"));
             }
             if !type_ok {
                 let msg = results
-                    .get(1)
+                    .iter()
+                    .rev()
+                    .find(|r| {
+                        r.operation
+                            == crate::capability_runtime::CapabilityOperation::SetControlValue
+                    })
                     .and_then(|r| r.message.as_deref())
                     .unwrap_or("I couldn’t type into that field.");
                 return Some((false, sanitize_owner_message(msg), "partial"));

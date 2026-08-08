@@ -180,7 +180,7 @@ export function buildExecutionPlan(
     case "winClickControl":
       return {
         goal,
-        capabilities: caps("mouse-click", "window-control-discovery"),
+        capabilities: caps("mouse-click", "window-control-discovery", "bounded-retry"),
         multiStep: true,
         action,
         steps: [
@@ -191,13 +191,17 @@ export function buildExecutionPlan(
             "delegated_to_kernel",
           ),
           step("act", "Click the control", "mouse-click", "delegated_to_kernel"),
-          step("verify", "Confirm the control is still observable", "mouse-click"),
+          step(
+            "verify",
+            "Confirm the control; bounded retry+wait only if retryable",
+            "bounded-retry",
+          ),
         ],
       };
     case "winTypeControl":
       return {
         goal,
-        capabilities: caps("keyboard-input", "window-control-discovery"),
+        capabilities: caps("keyboard-input", "window-control-discovery", "bounded-retry"),
         multiStep: true,
         action,
         steps: [
@@ -208,7 +212,11 @@ export function buildExecutionPlan(
             "delegated_to_kernel",
           ),
           step("act", "Type deterministic text", "keyboard-input", "delegated_to_kernel"),
-          step("verify", "Confirm the field is still observable", "keyboard-input"),
+          step(
+            "verify",
+            "Confirm the field; bounded retry+wait only if retryable",
+            "bounded-retry",
+          ),
         ],
       };
     case "winWaitCondition":

@@ -6,10 +6,16 @@
 mod compose;
 mod intent;
 mod plan;
+mod retry;
 
 pub use compose::{compose_failure_reply, compose_user_reply, sanitize_owner_message};
 pub use intent::{CapabilityIntent, OperatorTurnResult};
 pub use plan::{plan_capability_intent, OperatorPlan, OperatorPlanStep};
+pub use retry::{
+    action_attempt_count, execute_interaction_with_retry, is_non_retryable_status,
+    is_retryable_status, last_interaction_legs, may_retry, MAX_INTERACTION_ATTEMPTS,
+    RETRY_WAIT_DURATION,
+};
 
 use crate::capability_runtime::{
     runtime, CapabilityDomainId, CapabilityOperation, ProviderInvokeRequest, ProviderInvokeResponse,
@@ -198,6 +204,22 @@ impl KernelOperator {
                 })?;
                 results.push(maximize);
             }
+        } else if plan.composition_id.as_deref() == Some("window.click_control") {
+            // C-VER-002 — bounded retry of the same authorized click (reuses Wait Conditions).
+            results = execute_interaction_with_retry(
+                &intent,
+                &plan,
+                CapabilityOperation::InvokeControl,
+                Self::invoke_step,
+            )?;
+        } else if plan.composition_id.as_deref() == Some("window.type_control") {
+            // C-VER-002 — bounded retry of the same authorized type (reuses Wait Conditions).
+            results = execute_interaction_with_retry(
+                &intent,
+                &plan,
+                CapabilityOperation::SetControlValue,
+                Self::invoke_step,
+            )?;
         } else {
             for step in &plan.steps {
                 let result = Self::invoke_step(step)?;

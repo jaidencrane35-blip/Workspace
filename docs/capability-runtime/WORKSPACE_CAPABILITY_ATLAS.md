@@ -643,13 +643,24 @@ Overall .................  57%
 | --- | --- |
 | **Name** | Retry |
 | **Layer** | L6 Verification |
-| **Status** | **PLANNED** |
-| **Lifecycle** | Planned (partial truthful sanitize exists) |
-| **Dependencies** | C-VER-001; control actions |
-| **Verification** | Planned with C-ACT-004/005 |
-| **Product Proof** | With UI action slice |
-| **Priority** | P1 |
-| **Engineering Notes** | Bounded retry — not silent loops |
+| **Status** | **IMPLEMENTED** (engineering) |
+| **Lifecycle** | Verifying → **Product Proof required** |
+| **Dependencies** | C-VER-001; C-ACT-004/005; **C-VER-003** (Wait reuse) |
+| **Verification** | `verify-bounded-retry`, `tests/bounded-retry.test.ts`, kernel `operator::retry` |
+| **Product Proof** | `P22_S6_BOUNDED_RETRY.md` — Owner session required |
+| **Priority** | P0 (PP pending) |
+| **Engineering Notes** | Operator-owned. Max 2 attempts. Retryable: control_not_found / unverified click|type / window not_found. Non-retryable: need_* / click_failed / type_failed. Reuses WaitCondition (400ms). Same authorized control only — not an agent loop. Happy-path click/type unchanged (no wait when first attempt completes). |
+| **Readiness** | Overall **57%** |
+| | ```text
+Architecture ............ 100%
+Dependencies ............ 100%
+Implementation .......... 100%
+Verification ............ 100%
+Product Proof ...........   0%
+Trusted .................   0%
+Production ..............   0%
+Overall .................  57%
+``` |
 
 #### C-VER-003 Wait Conditions
 | | |
@@ -945,8 +956,9 @@ C-CON-001 Conversation
 
 PLANNED spine:
   C-OBS-003/004 + C-ACT-004/005 (eng done → PP)
-       └─► C-VER-003 Wait (eng done → PP) ──► C-VER-002 Retry
-                                              └─► C-PROC / C-WF (later)
+       └─► C-VER-003 Wait (eng done → PP)
+              └─► C-VER-002 Retry (eng done → PP)
+                     └─► C-PROC / C-WF (later)
 
 BLOCKED spine:
   B-PP-001 Voice Accept ──► C-ACT-011 File Provider
@@ -971,6 +983,7 @@ BLOCKED spine:
 | **B-PP-004** | C-OBS-004 Window Control Discovery Product Proof pending | High | C-OBS-004 Trusted | Owner live session per P22.S3 |
 | **B-PP-005** | C-ACT-004/005 Desktop Control Interaction Product Proof pending | High | C-ACT-004 + C-ACT-005 Trusted | Joint Owner session per P22.S4 |
 | **B-PP-006** | C-VER-003 Wait Conditions Product Proof pending | High | C-VER-003 Trusted | Owner live session per P22.S5 |
+| **B-PP-007** | C-VER-002 Bounded Retry Product Proof pending | High | C-VER-002 Trusted | Owner live session per P22.S6 |
 | **B-PLAT-001** | Windows-only product | Low | All desktop | Accepted scope |
 
 ---
@@ -983,6 +996,7 @@ BLOCKED spine:
 | Window Control Discovery | `find_control` + Intent | `verify-window-control-discovery` | Owner P22.S3 |
 | Desktop Control Interaction | Invoke/SetValue + Operator compose | `verify-desktop-control-interaction` | Owner P22.S4 (joint) |
 | Wait Conditions | Bounded WaitCondition + compose | `verify-wait-conditions` | Owner P22.S5 |
+| Bounded Retry | Operator retry + Wait reuse | `verify-bounded-retry` | Owner P22.S6 |
 | Providers | `cargo` + verify scripts | `pnpm test` | Owner NL |
 | Composition | Kernel + completion/compound | Hostile NL | Live confirm |
 | Reasoning | intelligence-routing | verify script | Owner re-proof |
@@ -1002,6 +1016,7 @@ BLOCKED spine:
 | C-ACT-004 Mouse Click | **Yes** | **Required — joint with C-ACT-005** |
 | C-ACT-005 Keyboard Input | **Yes** | **Required — joint with C-ACT-004** |
 | C-VER-003 Wait Conditions | **Yes** | **Required — pending Owner** |
+| C-VER-002 Retry | **Yes** | **Required — pending Owner** |
 | Core desktop providers | Yes | Mixed Owner trust |
 | Voice | Yes | Pending Accept |
 | Intelligence routing | Yes | Owner re-proof |
@@ -1040,7 +1055,7 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 | C-ACT-012 | Terminal | FUTURE | ~14% |
 | C-ACT-013 | Agent Loop | REJECTED | 0% |
 | C-VER-001 / C-CMP-001 | Completion | IMPLEMENTED | ~71% |
-| C-VER-002 | Retry | PLANNED | ~29% |
+| **C-VER-002** | **Retry** | **IMPLEMENTED (eng)** | **57%** |
 | **C-VER-003** | **Wait Conditions** | **IMPLEMENTED (eng)** | **57%** |
 | C-CMP-002..004 | Composition | IMPLEMENTED | ~71% |
 | C-PROC-* / C-WF-* | Procedures / Workflows | Mixed | see records |
@@ -1055,34 +1070,34 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 
 | Rank | ID | Capability | Status | Why |
 | --- | --- | --- | --- | --- |
-| **1** | **C-VER-002** | Retry | **PLANNED** | Bounded retry after wait/verify |
+| **1** | **C-PROC-002** | Prepare Coding Workspace | **PLANNED** (partial) | Procedures after verify stack eng |
 | 2 | C-REL-002 | Code Signing A2 | BLOCKED (cert) | Parallel release track |
 | 3 | C-ACT-011 | File Provider | BLOCKED (Voice) | Production Before Expansion |
 | 4 | C-OBS-007 | Tokenized perception | FUTURE | After interaction PP |
 | 5 | C-REA-004 | In-Conversation Model | FUTURE | Research |
-| 6 | C-PROC-002 / C-WF-001 | Coding procedures | FUTURE | After wait/retry Trusted |
+| 6 | C-WF-001 | Daily Coding Session | FUTURE | After procedures |
 
 **Rejected (do not queue):** C-ACT-013; C-INT-004; C-INT-005.
 
-**Just completed eng:** C-VER-003 Wait Conditions → **Owner Product Proof** required (`P22_S5`).
+**Just completed eng:** C-VER-002 Bounded Retry → **Owner Product Proof** required (`P22_S6`).
 
 ---
 
 ## 9. Current highest remaining executable capability
 
-### **C-VER-002 Retry** (next executable after Wait eng)
+### **C-PROC-002 Prepare Coding Workspace** (next executable after Retry eng)
 
 | Factor | Assessment |
 | --- | --- |
-| Owner Value | High (bounded recovery after wait/timeout) |
-| Dependencies | C-VER-001; C-VER-003 eng; control actions |
-| Effort | S–M |
-| Risk | Med (must not become silent loops) |
-| Pair note | Complements Wait; keep separate IDs |
+| Owner Value | High (named coding setup procedure) |
+| Dependencies | C-ACT-001; C-OBS-001; preferably Trusted control surface |
+| Effort | M |
+| Risk | Med (must not become workflows/agent loops) |
+| Note | Atlas procedures layer — Owner must authorize separately from this slice |
 
-**Do not begin in the same session that completed C-VER-003.**
+**Do not begin in the same session that completed C-VER-002.**
 
-Parallel: Owner Product Proof for C-OBS-003/004, C-ACT-004/005, and C-VER-003; Authenticode → A2.
+Parallel: Owner Product Proof for C-OBS-003/004, C-ACT-004/005, C-VER-003, C-VER-002; Authenticode → A2.
 
 ---
 
@@ -1105,12 +1120,12 @@ LOOP:
 
 ## 11. Atlas maintenance checklist (per program)
 
-- [x] Capability row updated (C-VER-003)  
+- [x] Capability row updated (C-VER-002)  
 - [x] Readiness Score 57% (eng)  
-- [x] Verification + Product Proof harness (`P22_S5`)  
-- [x] Blockers register (B-PP-006)  
-- [x] Priority queue re-ranked → C-VER-002  
-- [ ] Owner Product Proof for C-OBS-003 / C-OBS-004 / C-ACT-004+005 / C-VER-003  
+- [x] Verification + Product Proof harness (`P22_S6`)  
+- [x] Blockers register (B-PP-007)  
+- [x] Priority queue re-ranked → C-PROC-002  
+- [ ] Owner Product Proof for C-OBS-003 / C-OBS-004 / C-ACT-004+005 / C-VER-003 / C-VER-002  
 
 ---
 
@@ -1119,8 +1134,8 @@ LOOP:
 - Replacing Conversation, Kernel Operator, or Moments  
 - Adopting VLM computer-use runtimes  
 - Spec / constitutional redesign via Atlas  
-- Starting C-VER-002 Retry or Operator Procedures in the same slice as C-VER-003  
-- Turning Wait into an agent loop, OCR, or workflow engine  
+- Starting Operator Procedures / workflows in the same slice as C-VER-002  
+- Turning Retry into an agent loop, OCR, or multi-app workflow  
 
 ---
 
@@ -1145,5 +1160,5 @@ Two-digit IDs are **retired**. Meanings remapped to permanent three-digit IDs (*
 ## Stop
 
 **Workspace Capability Atlas v2.0** is the authoritative capability roadmap.  
-C-VER-003 Wait Conditions engineering complete → **Owner Product Proof required** (`P22_S5`).  
-Do not begin C-VER-002 Retry or Operator Procedures in this iteration.
+C-VER-002 Bounded Retry engineering complete → **Owner Product Proof required** (`P22_S6`).  
+Do not begin Operator Procedures or the next capability in this iteration.

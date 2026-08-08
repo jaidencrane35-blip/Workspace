@@ -1,4 +1,22 @@
 ﻿# Engineering Milestone Report
+## P22.S6 - Bounded Retry (C-VER-002)
+
+| Field | Value |
+| --- | --- |
+| **Capability ID** | C-VER-002 |
+| **Artifacts** | `P22_S6_BOUNDED_RETRY.md`, `verify-bounded-retry.mjs`, `tests/bounded-retry.test.ts`, `operator/retry.rs` |
+| **Date** | 2026-08-08 |
+| **Status** | Engineering complete — Product Proof required |
+| **Max layer** | Kernel Operator retry policy + Wait reuse + Completion Contract |
+| **Readiness** | Overall **57%** (Arch/Deps/Impl/Ver 100%; PP/Trusted/Production 0%) |
+| **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) |
+
+### Summary
+
+Bounded Retry: at most one re-attempt of the same authorized click/type after a retryable verification miss, using C-VER-003 Wait Conditions between attempts. Non-retryable failures stop immediately. Happy-path click/type unchanged. Not an agent loop. Owner Product Proof per P22.S6.
+
+---
+
 ## P22.S5 - Wait Conditions (C-VER-003)
 
 | Field | Value |

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-08T03:36:44.787Z",
+  "updatedAt": "2026-08-08T03:47:28.674Z",
   "constitution": {
     "document": "docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md",
     "version": "2.1",
@@ -789,6 +789,11 @@
       },
       "verify:wait-conditions": {
         "script": "scripts/verify-wait-conditions.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:bounded-retry": {
+        "script": "scripts/verify-bounded-retry.mjs",
         "present": true,
         "wiredInTest": true
       },

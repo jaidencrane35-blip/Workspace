@@ -10,10 +10,11 @@
 | **Engineering status** | **Release Hold** — Atlas Execution Loop slices when Owner-authorized |
 | **Current phase** | **Stage 2 — Owner Acceptance** (Accepted with changes; T1 slice complete) |
 | **Next engineering event** | **A2 (Code Signing)** after Owner Acceptance **and** Authenticode certificate (parallel) |
-| **Current priority** | Owner Product Proof: C-OBS-003/004 + C-ACT-004/005 + **C-VER-003**; next Atlas eng = **C-VER-002** Retry |
+| **Current priority** | Owner Product Proof: C-OBS-003/004 + C-ACT-004/005 + C-VER-003 + **C-VER-002**; next Atlas eng = **C-PROC-002** (Owner-authorized) |
 | **Resume triggers** | `docs/production/R2_RELEASE_HOLD.md` + Capability Atlas Execution Loop |
 | **Capability Atlas** | `docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md` (**v2.0** — Pair Rule §0.1 active) |
-| **Latest program** | P22.S5 — Wait Conditions (**C-VER-003**) eng complete; Product Proof required |
+| **Latest program** | P22.S6 — Bounded Retry (**C-VER-002**) eng complete; Product Proof required |
+| **P22.S6 report** | `docs/capability-runtime/product-proof/P22_S6_BOUNDED_RETRY.md` |
 | **P22.S5 report** | `docs/capability-runtime/product-proof/P22_S5_WAIT_CONDITIONS.md` |
 | **P22.S4 report** | `docs/capability-runtime/product-proof/P22_S4_DESKTOP_CONTROL_INTERACTION.md` |
 | **P22.S3 report** | `docs/capability-runtime/product-proof/P22_S3_WINDOW_CONTROL_DISCOVERY.md` |
@@ -74,7 +75,7 @@
 | **Product Proof workbook** | `docs/capability-runtime/product-proof/P16_O2_PRODUCT_PROOF_SESSION_WORKBOOK.md` |
 | **Rule** | Spec v2 = sole architectural authority. Execution Standard v1 = how all programs run. Classify work, max layer, lowest-layer invariant, compliance checklist. Do not reopen Spec without a Review Trigger. |
 
-**Milestone:** Workspace is on **Release Hold**. Capability Atlas **v2.0** + Pair Rule §0.1. **C-OBS-003/004**, **C-ACT-004/005**, and **C-VER-003** engineering complete — **Owner Product Proof required**. Next executable Atlas capability: **C-VER-002** Retry. F1 Complete; A2 awaits Authenticode cert. **Do not begin File Provider** until Voice Accept.
+**Milestone:** Workspace is on **Release Hold**. Capability Atlas **v2.0** + Pair Rule §0.1. **C-OBS-003/004**, **C-ACT-004/005**, **C-VER-003**, and **C-VER-002** engineering complete — **Owner Product Proof required**. Next executable Atlas capability: **C-PROC-002** (procedures — Owner authorize). F1 Complete; A2 awaits Authenticode cert. **Do not begin File Provider** until Voice Accept.
 
 **Start here before any execution program.**
 

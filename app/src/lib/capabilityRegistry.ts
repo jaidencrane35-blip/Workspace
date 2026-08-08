@@ -231,6 +231,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
       "keyboard-input",
       "desktop-ui-tree",
       "wait-conditions",
+      "bounded-retry",
     ],
     similar: ["window-control-discovery"],
     alternatives: ["window-control-discovery"],
@@ -274,6 +275,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
       "mouse-click",
       "desktop-ui-tree",
       "wait-conditions",
+      "bounded-retry",
     ],
     similar: ["mouse-click"],
     alternatives: ["window-control-discovery"],
@@ -290,6 +292,52 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     ],
     architecturalJustification:
       "Typing is independent interaction that composes with discovery under Operator.",
+  },
+  {
+    id: "bounded-retry",
+    domain: "Windows",
+    summary: "Retry the same authorized action once when verification is still pending",
+    purpose:
+      "Give a click or type one more bounded chance after a transient miss — never invent a new goal",
+    verbs: ["retry", "try again"],
+    aliases: ["bounded retry", "one more try"],
+    objects: ["Save", "Edit", "named control"],
+    modifiers: ["after wait", "same control"],
+    arguments: ["original authorized action"],
+    requirements: [
+      "Action already authorized",
+      "Deterministic verification condition",
+      "Failure classified as retryable",
+    ],
+    limitations: [
+      "At most one retry (two attempts total)",
+      "Never retries unknown controls after the bound, auth failures, or unsupported ops",
+      "Never chooses a different control or expands the request",
+      "Not an agent loop or planner",
+    ],
+    examples: [
+      "Click Save in Notepad (retries once if the control was briefly unavailable)",
+      "Type hello into Edit in Notepad (retries once if typing was unverified)",
+    ],
+    failureRecovery:
+      "Name a discoverable control, or wait until the window is ready, then ask again.",
+    related: ["mouse-click", "keyboard-input", "wait-conditions"],
+    similar: ["wait-conditions"],
+    alternatives: ["wait-conditions"],
+    discoverability:
+      "Happens automatically inside click/type when a transient miss is observed.",
+    documentation:
+      "Operator retries the same click or type after a short wait when verification says retry is safe.",
+    ownership: "Owns retry policy; reuses Wait Conditions; never inside providers",
+    permissions: ["Same as the original click or type"],
+    dependencies: ["Mouse Click", "Keyboard Input", "Wait Conditions", "Completion Contract"],
+    benchmark: "Finite attempts only — never indefinite polling",
+    tests: [
+      "tests/bounded-retry.test.ts",
+      "scripts/verify-bounded-retry.mjs",
+    ],
+    architecturalJustification:
+      "Verification-layer recovery for timing races without becoming an autonomous agent.",
   },
   {
     id: "wait-conditions",
