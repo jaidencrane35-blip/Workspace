@@ -43,8 +43,18 @@ Natural language improvements belong **only** inside:
 - Conversation reply generation  
 
 They do **not** belong inside providers.  
-Providers remain deterministic.  
-Intent resolution remains deterministic (no probabilistic AI matching).
+Providers remain deterministic.
+
+**Authority-bearing Intent resolution** — mapping accepted Meaning to actions /
+`CapabilityIntent`, and all Kernel planning, permission, and Effects — remains
+deterministic (no probabilistic AI matching).
+
+**Comprehension** (Signal → Meaning / `GoalContract`) and **expression**
+(verified Fact Set → Owner wording) **MAY** use a probabilistic Language
+Faculty **only** behind the Language Faculty Boundary
+(`docs/architecture/ADR-P24-CONFLICT-A-LANGUAGE-FACULTY.md`): model output is a
+proposal, deterministically validated, never authority, never Effect, never
+fact invention.
 
 Future execution programs must satisfy **both**:
 

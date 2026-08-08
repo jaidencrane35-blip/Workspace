@@ -13,10 +13,11 @@
 | **Current priority** | Owner Product Proof (C-OBS-003/004 + C-ACT-004/005 + C-VER-003 + C-VER-002 + **C-PROC-002**); C-PROC-002 **IMPLEMENTED (eng)** — Product Proof required |
 | **Resume triggers** | `docs/production/R2_RELEASE_HOLD.md` + Capability Atlas Execution Loop |
 | **Capability Atlas** | `docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md` (**v2.0** — Pair Rule §0.1 active) |
-| **Latest program** | **P24 Personal AI + Intelligence Experience Architecture Reset** — architecture contract only; **not authorised for implementation** |
-| **P24 authorities** | `docs/architecture/WORKSPACE_INTELLIGENCE_EXPERIENCE_CONTRACT.md` · `docs/architecture/WORKSPACE_VISUAL_REFERENCE_SPEC.md` · Nova art `docs/architecture/assets/nova-character-sheet.png` (character #8) |
-| **Prior slices** | P23.S6 Observed Application Identity; P23.S5 Active Window Answer; P23.S4 Observation Answer Bridge; P23.S3 Answer Source Ladder; P23.S2 Substitution Prohibition; P23.S1 Goal Contract — all engineering complete |
-| **Intelligence design** | Behavioral Constitution (pipeline / Conflicts A–C) + **P24 Intelligence Experience Contract** (personal AI identity, memory, Nova, roadmap P0–P6). Capability-by-capability implementation is **paused** until Owner selects a P24 roadmap item |
+| **Latest program** | **P24.S1 Conflict A Resolution** — Language Faculty Boundary **ACCEPTED** (`ADR-P24-CONFLICT-A-LANGUAGE-FACULTY.md`); **no model installed**; Faculty implementation not started |
+| **P24 authorities** | Experience Contract · Visual Spec · **ADR-P24-CONFLICT-A** · Nova art (character #8) |
+| **Prior slices** | P24 architecture reset; P23.S6–S1 intelligence slices — engineering complete where applicable |
+| **Intelligence design** | Conflict A **RESOLVED** (probabilistic comprehension/expression permitted behind Option C validator). Conflict C **open** (generative multi-step binding). Next recommended: P24.S2 Faculty boundary scaffolding **without** a model, or B-RES-001 research |
+| **Capability pause** | New capability programs still require Owner authorization naming a P24 roadmap item or waiver; Conflict A no longer blocks Faculty *architecture* |
 | **Prior program** | C-PROC-002 Prepare Coding Workspace runtime implementation — engineering complete; Owner Product Proof not started |
 | **P22.S7 report** | `docs/capability-runtime/product-proof/P22_S7_PREPARE_CODING_WORKSPACE_BLOCKED.md` |
 | **P22.S6 report** | `docs/capability-runtime/product-proof/P22_S6_BOUNDED_RETRY.md` |

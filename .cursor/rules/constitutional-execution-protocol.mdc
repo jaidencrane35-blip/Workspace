@@ -56,8 +56,9 @@ Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 A provider is not Product Complete merely because commands execute correctly.  
 Product Complete requires that ordinary users can express the same intent naturally.  
 NL improvements belong only in Intent Layer, Kernel Operator planning/compose, and Conversation replies — **never** inside providers.  
-Intent resolution stays deterministic (no probabilistic AI).  
-Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+Authority-bearing Intent resolution (Meaning → action / CapabilityIntent) and Effects stay deterministic.  
+Comprehension and Fact-Set expression MAY be probabilistic only behind the Language Faculty Boundary (ADR-P24-CONFLICT-A).  
+Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`; `docs/architecture/ADR-P24-CONFLICT-A-LANGUAGE-FACULTY.md`.
 
 ## User Adaptation Prohibition (permanent — P16.6)
 

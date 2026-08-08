@@ -34,6 +34,12 @@ Until then: Atlas Execution Loop / Owner Product Proof for already-implemented
 capabilities may still proceed under Release Hold; new capability programs
 require Owner authorization that names a P24 roadmap item or an explicit waiver.
 
+**P24.S1 (2026-08-08):** Conflict A is **ACCEPTED** —
+`docs/architecture/ADR-P24-CONFLICT-A-LANGUAGE-FACULTY.md`. Probabilistic Language
+Faculty comprehension/expression is constitutionally permitted behind a
+deterministic validator. **No Atlas capability was created.** C-REA-004 remains
+FUTURE pending B-RES-001; do not treat the ADR as implementation or Trusted.
+
 ---
 
 ## 0. How to use this Atlas

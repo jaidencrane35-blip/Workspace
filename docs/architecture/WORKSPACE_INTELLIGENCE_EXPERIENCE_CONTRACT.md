@@ -169,7 +169,13 @@ Three gates make this enforceable rather than aspirational:
 
 The essential insight: **the model is never asked to supply content, only to supply words for content Workspace already established.** A system that cannot invent facts cannot hallucinate them. This preserves every truthfulness guarantee Workspace has earned while removing the two limits that make it feel mechanical.
 
-**Status: MISSING and BLOCKED.** Blocked by Conflict A (needs an ADR and Constitutional Review — the Product Proof Rule's wording forbids it, the Specification's wording permits it) and by **B-RES-001** (C-REA-004 has not been researched to an ADOPT/WRAP classification under Evidence Before Commitment). Both are Owner decisions. Nothing in this contract should be read as pre-authorising a model.
+**Status: MISSING — Conflict A cleared; implementation still blocked on engineering + B-RES-001.**
+
+Conflict A is **RESOLVED** by [`ADR-P24-CONFLICT-A-LANGUAGE-FACULTY.md`](ADR-P24-CONFLICT-A-LANGUAGE-FACULTY.md)
+(**ACCEPT**, Option C). Probabilistic comprehension/expression is constitutionally
+permitted behind the Language Faculty Boundary. A concrete model backend is
+still blocked by **B-RES-001** (Evidence Before Commitment). Nothing in this
+contract installs or selects a vendor.
 
 ### 2.3 What Workspace is not
 
@@ -908,9 +914,9 @@ FOUNDATION (unblocked, no new authority)
   Device profile D1–D8 (§4) ────────────┤
   Context hierarchy (§5) ───────────────┤
                                         │
-LANGUAGE (Owner decision required)      │
-  Conflict A ADR ──► Language Faculty ──┤──► personal AI that converses
-    B-RES-001 research ──┘              │
+LANGUAGE                                  │
+  Conflict A ACCEPTED ──► Faculty scaffold / B-RES-001 ──► Language Faculty ──┤──► personal AI that converses
+                                        │
                                         │
 EXPERIENCE                              │
   Execution event stream (§21) ──► Nova states ──► Nova entity (§19–20)
@@ -1100,8 +1106,8 @@ Nova personality refinement; motion quality; conversation surface refinements (S
 
 | Domain | EXISTING | PARTIAL | MISSING | BLOCKED | REJECTED |
 | --- | --- | --- | --- | --- | --- |
-| Conversation understanding | Deterministic cascade | Ordinary phrasing | Language faculty | Conflict A, B-RES-001 | Probabilistic *authority* |
-| Conversation expression | Canned replies | — | Generated wording | Conflict A | Invented facts |
+| Conversation understanding | Deterministic cascade | Ordinary phrasing | Language faculty | B-RES-001 + Faculty scaffold (Conflict A **ACCEPTED**) | Probabilistic *authority* |
+| Conversation expression | Canned replies | — | Generated wording from Fact Set | B-RES-001 + Faculty scaffold | Invented facts |
 | Desktop observation | Windows, active, app, monitors, controls | Device facts | Storage, installed apps | — | Screen scraping |
 | Desktop action | 10 providers | Control interaction PP | — | File, Terminal | Agent loops |
 | Multi-step | 12 fixed compositions | Hybrid goals | Generative binding | Conflict C | Autonomous loops |

@@ -1010,25 +1010,19 @@ This is not additive. Three inversions are required, and each is a real cost.
 
 ### Constitutional conflicts — stated, not resolved
 
-**Conflict A — determinism scope.** Two authorities say different things.
+**Conflict A — determinism scope. RESOLVED (P24.S1).**
 
-`docs/capability-runtime/PRODUCT_PROOF_RULE.md:47`:
+Two authorities appeared to disagree: Spec v2 constrains determinism to Authority
+and Execution for OS Effects; the Product Proof Rule’s NL Robustness line once
+read as forbidding all probabilistic Intent work, including comprehension.
 
-> Intent resolution remains deterministic (no probabilistic AI matching).
-
-`docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md:230`:
-
-> **Determinism** | Authority and Execution are not probabilistic for operating-system Effects
-
-These are not the same rule. The Specification constrains **Authority and Execution**. The Product Proof Rule constrains **Intent resolution** as a whole, which includes comprehension.
-
-§16 concedes that the `KNOW`/`SHOW` discrimination is a genuine language judgement. A fully deterministic implementation of it is possible but will be a keyword table — precisely the if/else tree the Owner rejected, and the mechanism that produced the Case 1 and Case 2 defects.
-
-The design in this document depends on P10: comprehension may be uncertain, authority may not. Under the Specification's wording that is permissible, because a Request Frame is not an Effect. Under the Product Proof Rule's wording it is not.
-
-One further piece of Specification text is relevant and cuts in the design's favour. §7.3 states that "no component MAY acquire Authority implicitly", and it names the categories it is worried about: "interfaces, providers, helpers, **models**, registries, plugins, and agents MUST NOT silently become authoritative." The Specification therefore already contemplates models existing. What it forbids is a model becoming authoritative. That is precisely the line P10 draws, and it suggests the Specification's authors separated comprehension from authority deliberately.
-
-**This conflict is named, not resolved.** Resolving it requires an ADR and Constitutional Review. If the Owner declines to relax it, this document remains valid with one substitution: comprehension stays deterministic, and §16's discrimination is implemented as a declared, inspectable, and *acknowledged-incomplete* rule set rather than a judgement. Every other section is unaffected — which is worth stating plainly, because the value here does not hinge on adopting a model.
+**Resolution:** [`ADR-P24-CONFLICT-A-LANGUAGE-FACULTY.md`](ADR-P24-CONFLICT-A-LANGUAGE-FACULTY.md)
+— **ACCEPT**. Comprehension and Fact-Set expression **MAY** be probabilistic
+behind the Language Faculty Boundary (Option C: proposal → deterministic
+validator → GoalContract). Authority-bearing Intent resolution, Kernel planning,
+permission, and Effects remain deterministic. The Product Proof Rule is amended
+accordingly. P10 stands. No model is installed by that ADR; Conflict C remains
+open for generative multi-step binding.
 
 **Conflict B — one IPC per turn.** The Kernel Authority Rule specifies `Conversation → Intent (TS) → single IPC execute_capability_intent → Kernel Operator → Runtime`. Bounded pursuit needs several intents per Owner turn.
 
@@ -1240,9 +1234,9 @@ embodiment, and the P0–P6 implementation roadmap live in:
 
 This Behavioral Constitution remains the authority for the request-understanding
 pipeline, outcome taxonomies, authorization/completion models, and Conflicts
-A/B/C. P24 does not reopen those conflicts; it records that Conflict C blocks
-only generative multi-step binding, and that Conflict A must be resolved by ADR
-before any Language Faculty implementation.
+A/B/C. Conflict A is **RESOLVED** (P24.S1 ADR — ACCEPT). Conflict C still blocks
+only generative multi-step binding. Language Faculty implementation still
+requires Faculty scaffolding and B-RES-001 before any model backend.
 
 Capability-by-capability slices are paused until the Owner selects a P24 roadmap
 item.

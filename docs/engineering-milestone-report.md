@@ -1,4 +1,32 @@
 ﻿# Engineering Milestone Report
+## P24.S1 - Conflict A Resolution / Language Faculty Authority
+
+| Field | Value |
+| --- | --- |
+| **Capability ID** | None — governance ADR; C-REA-004 remains FUTURE / research-gated (B-RES-001) |
+| **Artifacts** | `docs/architecture/ADR-P24-CONFLICT-A-LANGUAGE-FACULTY.md`; Product Proof Rule NL Robustness amendment; Behavioral Constitution Conflict A → RESOLVED; ADR index row |
+| **Date** | 2026-08-08 |
+| **Status** | **ACCEPTED** — architecture only; Language Faculty **not** implemented; no model |
+| **Max layer** | Governance / Intent Meaning boundary (documentation) |
+| **Decision** | Probabilistic comprehension + Fact-Set expression **permitted** via Option C (proposal → deterministic validator → GoalContract). Authority/Effects remain deterministic. Cascade retained as fallback. |
+| **Handoff** | Conflict C still open; recommended next P24.S2 = Faculty scaffold without model |
+
+### Summary
+
+Conflict A was the contradiction between Spec v2 (determinism for Authority/
+Execution) and an over-broad Product Proof Rule line that treated all Intent
+work as non-probabilistic. Intent Layer Spec already said “model later.” ADR
+ACCEPTS a Language Faculty that may propose Meaning and wording only; GoalContract
+is sufficient; model ≠ authority; Conflict C unchanged.
+
+### Validation
+
+- Constitutional audit (Spec §7.3, §12, Transformation Chain; Intent Spec; Kernel Authority; Product Proof Rule)
+- No runtime/model/Kernel code changes
+- Workspace not launched
+
+---
+
 ## P24 - Personal AI + Intelligence Experience Architecture Reset
 
 | Field | Value |
