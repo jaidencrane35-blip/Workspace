@@ -13,9 +13,10 @@
 | **Current priority** | Owner Product Proof (C-OBS-003/004 + C-ACT-004/005 + C-VER-003 + C-VER-002 + **C-PROC-002**); C-PROC-002 **IMPLEMENTED (eng)** — Product Proof required |
 | **Resume triggers** | `docs/production/R2_RELEASE_HOLD.md` + Capability Atlas Execution Loop |
 | **Capability Atlas** | `docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md` (**v2.0** — Pair Rule §0.1 active) |
-| **Latest program** | P23.S6 Observed Application Identity (**C-OBS-001** / **C-OBS-002** observation enriched with `process_name`, consumed by **C-REA-002**) — engineering complete; Owner Product Proof required for Owner-visible answers |
-| **Prior slices** | P23.S5 Active Window Answer (**C-REA-002** rung 3 second need, reusing **C-OBS-002**); P23.S4 Observation Answer Bridge (**C-REA-002** rung 3, reusing **C-OBS-001**); P23.S3 Answer Source Ladder — local time and date (**C-REA-002**); P23.S2 Substitution Prohibition Enforcement (**C-ITL-007**); P23.S1 Outcome-First Comprehension (**C-ITL-006** Goal Contract) — all engineering complete |
-| **Intelligence design** | `docs/architecture/INTELLIGENCE_LAYER_BEHAVIORAL_CONSTITUTION.md` — P23.S1–S6 status and the unchanged Conflict C dependency recorded at the end |
+| **Latest program** | **P24 Personal AI + Intelligence Experience Architecture Reset** — architecture contract only; **not authorised for implementation** |
+| **P24 authorities** | `docs/architecture/WORKSPACE_INTELLIGENCE_EXPERIENCE_CONTRACT.md` · `docs/architecture/WORKSPACE_VISUAL_REFERENCE_SPEC.md` · Nova art `docs/architecture/assets/nova-character-sheet.png` (character #8) |
+| **Prior slices** | P23.S6 Observed Application Identity; P23.S5 Active Window Answer; P23.S4 Observation Answer Bridge; P23.S3 Answer Source Ladder; P23.S2 Substitution Prohibition; P23.S1 Goal Contract — all engineering complete |
+| **Intelligence design** | Behavioral Constitution (pipeline / Conflicts A–C) + **P24 Intelligence Experience Contract** (personal AI identity, memory, Nova, roadmap P0–P6). Capability-by-capability implementation is **paused** until Owner selects a P24 roadmap item |
 | **Prior program** | C-PROC-002 Prepare Coding Workspace runtime implementation — engineering complete; Owner Product Proof not started |
 | **P22.S7 report** | `docs/capability-runtime/product-proof/P22_S7_PREPARE_CODING_WORKSPACE_BLOCKED.md` |
 | **P22.S6 report** | `docs/capability-runtime/product-proof/P22_S6_BOUNDED_RETRY.md` |

@@ -1230,4 +1230,21 @@ So this slice added no observation, no provider, no IPC channel, and no Windows 
 
 **Conflict C is unchanged**, and this slice is evidence for why it can be approached slowly: the deficit that blocked two slices turned out to be a dropped field, not a missing interface.
 
+## P24 — Personal AI experience authority (pointer)
+
+As of 2026-08-08, product identity, personal/device/memory models, Nova
+embodiment, and the P0–P6 implementation roadmap live in:
+
+- [`WORKSPACE_INTELLIGENCE_EXPERIENCE_CONTRACT.md`](WORKSPACE_INTELLIGENCE_EXPERIENCE_CONTRACT.md)
+- [`WORKSPACE_VISUAL_REFERENCE_SPEC.md`](WORKSPACE_VISUAL_REFERENCE_SPEC.md)
+
+This Behavioral Constitution remains the authority for the request-understanding
+pipeline, outcome taxonomies, authorization/completion models, and Conflicts
+A/B/C. P24 does not reopen those conflicts; it records that Conflict C blocks
+only generative multi-step binding, and that Conflict A must be resolved by ADR
+before any Language Faculty implementation.
+
+Capability-by-capability slices are paused until the Owner selects a P24 roadmap
+item.
+
 ## Stop

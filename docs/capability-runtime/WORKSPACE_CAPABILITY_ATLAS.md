@@ -15,6 +15,25 @@
 **Replaces:** Atlas v1.0 (two-digit IDs retired — see §13 Legacy ID map).  
 **Does not replace:** Constitutional Spec, Kernel Authority, Product Proof Rule, R2 Release Hold.
 
+### P24 pause (2026-08-08)
+
+**Capability-by-capability implementation is paused** pending Owner selection from
+the P24 Intelligence Experience Contract roadmap (P0–P6). Authoritative
+documents:
+
+- `docs/architecture/WORKSPACE_INTELLIGENCE_EXPERIENCE_CONTRACT.md`
+- `docs/architecture/WORKSPACE_VISUAL_REFERENCE_SPEC.md`
+
+Proposed future Atlas records (C-CTX-*, C-MEM-*, C-LRN-*, C-PRO-*, C-NOV-*,
+C-SLF-001) and a re-scope of **C-REA-004** to Language Faculty are listed in
+contract §29.3. **They are not yet Atlas records** — do not implement against
+them until the Owner amends this Atlas. Rejected IDs C-ACT-013, C-INT-004,
+C-INT-005 remain rejected.
+
+Until then: Atlas Execution Loop / Owner Product Proof for already-implemented
+capabilities may still proceed under Release Hold; new capability programs
+require Owner authorization that names a P24 roadmap item or an explicit waiver.
+
 ---
 
 ## 0. How to use this Atlas

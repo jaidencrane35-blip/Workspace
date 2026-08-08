@@ -1,4 +1,49 @@
 ﻿# Engineering Milestone Report
+## P24 - Personal AI + Intelligence Experience Architecture Reset
+
+| Field | Value |
+| --- | --- |
+| **Capability ID** | None created — architecture reset; proposed Atlas IDs listed in contract §29.3 (Owner approval required before Atlas amendment) |
+| **Artifacts** | `docs/architecture/WORKSPACE_INTELLIGENCE_EXPERIENCE_CONTRACT.md`; `docs/architecture/WORKSPACE_VISUAL_REFERENCE_SPEC.md`; `docs/architecture/assets/nova-character-sheet.png` (character #8 canonical) |
+| **Date** | 2026-08-08 |
+| **Status** | **Architecture complete** — **not authorised for implementation**; capability-by-capability work paused pending Owner roadmap selection |
+| **Max layer** | Documentation / governance only (no runtime, no IPC, no providers, no Nova code) |
+| **Readiness** | No capability readiness advanced |
+| **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) — P24 is the new behavioral/experience authority |
+
+### Summary
+
+Owner testing showed Workspace still behaves like a truthful command/help system
+despite substantial desktop capability. Audit measured the cause: ~469 intent
+regexes, zero in-product language models, zero generated Owner sentences,
+session context that dies on exit, and **zero** occurrences of “Nova” in the
+repository. Form A’s 44×44 transparent host already exists — Nova is missing as
+identity, not as window infrastructure. Large personalization substrate
+(`ai_memory_entries`, `user_preferences`, suggestion/decision lifecycle,
+`ProviderRegistry::list`) is **orphaned**: built and IPC-exposed but not on the
+Conversation path.
+
+P24 establishes: product identity (personal AI on-device); Language Faculty
+Boundary (comprehension + expression, never authority); Owner/Device/Memory
+models with register laws; context hierarchy; Nova as Form A embodiment
+(character #8 only; cast rejected); visual frames 1–18; Conflict C assessment
+(blocks only generative multi-step; P0–P4 unblocked); and roadmap P0–P6
+prioritising connection of orphaned substrate and understanding over new
+capabilities.
+
+**Does not implement** the roadmap, Language Faculty, Nova runtime, ambient
+listening, or self-modification. Conflict A ADR and B-RES-001 remain Owner
+decisions before any model work.
+
+### Validation
+
+- Repository audit (Atlas, conversation path, voice lifecycle, memory/device,
+  UI/Nova) — documentation-only deliverables
+- No `pnpm` / Cargo product-code changes in this program
+- Canonical Nova art committed under `docs/architecture/assets/`
+
+---
+
 ## P23.S6 - Observed Application Identity (C-OBS-001 / C-OBS-002 observation data, consumed by C-REA-002)
 
 | Field | Value |
