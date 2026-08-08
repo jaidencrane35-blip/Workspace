@@ -123,10 +123,12 @@ describe("P23.S4 desktop questions become observations", () => {
     }
   });
 
-  it("5. leaves the active-window question to its existing support", () => {
+  it("5. leaves the active-window question to its own observation", () => {
+    // A question about one window is a different question with a different
+    // answer. P23.S5 gave it its own source; this one must never swallow it.
     const goal = comprehend("Which window is active?");
     expect(openWindowsAnswerSource.covers(goal)).toBe(false);
-    expect(observationNeededFor(goal)).toBeNull();
+    expect(observationNeededFor(goal)).toBe("active-window");
 
     // Unchanged: it was already served, by a different observation.
     const action = resolveIntent("Which window is active?");
@@ -291,12 +293,15 @@ describe("P23.S4 authority boundary", () => {
     expect(facade).toContain("executeCapabilityIntent");
     expect(facade).not.toMatch(/execute_window_operation|enumerate/);
 
-    // The bridge asks for one observation and cannot ask for anything else.
+    // The bridge asks only for observations Workspace has semantic names for,
+    // and cannot ask for anything else.
     const contract = readFileSync(
       path.join(root, "app/src/lib/answerSource.ts"),
       "utf8",
     );
-    expect(contract).toMatch(/ObservationNeed\s*=\s*"open-windows";/);
+    expect(contract).toMatch(
+      /ObservationNeed\s*=\s*"open-windows"\s*\|\s*"active-window";/,
+    );
   });
 
   it("18. never overrides an action the Owner actually requested", () => {

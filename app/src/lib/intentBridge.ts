@@ -34,6 +34,7 @@ import {
 import { applyGoalResolution } from "./goalResolution";
 import {
   commitWorkspaceContext,
+  groundGoalInContext,
   resolveFromWorkspaceContext,
 } from "./workspaceContext";
 import {
@@ -47,7 +48,11 @@ import {
   enforceSubstitutionProhibition,
   isSpeakingAction,
 } from "./substitutionProhibition";
-import { answerForGoal, observationNeededFor } from "./answerSource";
+import {
+  answerForGoal,
+  observationNeededFor,
+  type ObservationNeed,
+} from "./answerSource";
 
 export type IntentAction =
   | { kind: "navigate"; view: PilotPrimaryView; reply: string }
@@ -2280,26 +2285,36 @@ export function resolveIntent(raw: string): IntentAction {
 }
 
 /**
- * P23.S4 — Observation Answer Bridge.
+ * P23.S4 / P23.S5 — Observation Answer Bridge.
  *
  * A question about the desktop's current state is answered by observing it. The
  * meaning was already comprehended correctly; only literal matching missed some
  * phrasings of it, and the request fell through to a refusal. This carries the
  * comprehended need to the *existing* authorized observation request — the same
- * one "Which windows are open?" already used — so the Kernel remains the sole
- * observer and no new execution path exists.
+ * ones "Which windows are open?" and "Which window is active?" already used —
+ * so the Kernel remains the sole observer and no new execution path exists.
  *
- * Bounded by construction: one semantic need maps to one existing request, and
- * an action the cascade already resolved is never overridden, so this cannot
- * become a capability selector.
+ * The map is total over the semantic needs, which is what keeps this a
+ * translation rather than a selection: there is nothing to choose, because a
+ * need Workspace can express is a need it already had a request for. A need
+ * with no existing request would not compile, and so cannot be invented here.
  */
+const OBSERVATION_REQUESTS: Record<ObservationNeed, IntentAction> = {
+  "open-windows": {
+    kind: "winEnumerate",
+    reply: "Checking which windows are open.",
+  },
+  "active-window": { kind: "winActive", reply: "Checking the active window." },
+};
+
 function bridgeObservationRequest(
   goal: GoalContract,
   action: IntentAction,
 ): IntentAction {
   if (!isSpeakingAction(action)) return action;
-  if (observationNeededFor(goal) !== "open-windows") return action;
-  return { kind: "winEnumerate", reply: "Checking which windows are open." };
+  const need = observationNeededFor(goal);
+  if (!need) return action;
+  return { ...OBSERVATION_REQUESTS[need] };
 }
 
 /**
@@ -2314,7 +2329,9 @@ export function resolveIntentWithGoal(raw: string): {
   goal: GoalContract;
   action: IntentAction;
 } {
-  const goal = comprehend(raw);
+  // P23.S5: an elliptical question is grounded against the previous turn before
+  // anything reads the meaning, so resolution and the answer agree on it.
+  const goal = groundGoalInContext(comprehend(raw));
   const fromContext = resolveFromWorkspaceContext(raw);
   if (fromContext) {
     const contextual = enforceSubstitutionProhibition(goal, fromContext.action);

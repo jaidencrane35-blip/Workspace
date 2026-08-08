@@ -20,7 +20,10 @@ import {
   isAnswerOnlyGoal,
 } from "./substitutionProhibition";
 import { temporalAnswerSource } from "./temporalAnswerSource";
-import { openWindowsAnswerSource } from "./observationAnswerSource";
+import {
+  activeWindowAnswerSource,
+  openWindowsAnswerSource,
+} from "./observationAnswerSource";
 
 /**
  * Precedence for obtaining an answer. Lower rungs are preferred because they
@@ -80,13 +83,25 @@ export interface AnswerSource {
  * provider, or operation identifier. Translating a need into the existing
  * authorized request is the Intent Layer's job, exactly as it is for an
  * utterance.
+ *
+ * P23.S5 adds the second need. Two needs are what distinguish a vocabulary of
+ * information the Owner can ask for from a registry of things Workspace can
+ * run: the members describe what is worth knowing, and no member can be
+ * satisfied except through a request the Intent Layer already knew how to make.
+ * Each need must be covered by exactly one source, so a request has one
+ * meaning rather than a set of candidates to choose between.
  */
-export type ObservationNeed = "open-windows";
+export type ObservationNeed = "open-windows" | "active-window";
 
-/** Structural view of an authorized observation. Not a transport type. */
+/**
+ * Structural view of an authorized observation. Not a transport type.
+ *
+ * `focused` is carried because the Kernel reports it: which window is active is
+ * observed fact, not something composition may infer from ordering.
+ */
 export interface ObservationResult {
   ok: boolean;
-  items?: Array<{ title: string }> | null;
+  items?: Array<{ title: string; focused?: boolean }> | null;
 }
 
 export interface ObservationAnswerSource {
@@ -102,6 +117,7 @@ const SOURCES: readonly AnswerSource[] = [temporalAnswerSource];
 
 const OBSERVATION_SOURCES: readonly ObservationAnswerSource[] = [
   openWindowsAnswerSource,
+  activeWindowAnswerSource,
 ];
 
 /** Walk the ladder and return the first truthful answer. */

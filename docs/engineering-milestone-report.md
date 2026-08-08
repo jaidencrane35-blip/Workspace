@@ -1,4 +1,52 @@
 ﻿# Engineering Milestone Report
+## P23.S5 - Active Window Answer (C-REA-002 rung 3 second need, reusing C-OBS-002)
+
+| Field | Value |
+| --- | --- |
+| **Capability ID** | C-REA-002 (extended) reusing C-OBS-002 — no new ID |
+| **Artifacts** | `activeWindowAnswerSource`, second `ObservationNeed`, total `Record<ObservationNeed, IntentAction>` translation, `groundGoalInContext` in Workspace Context, extended `verify-observation-answer`, `tests/active-window-answer.test.ts`, Atlas C-OBS-002 + C-REA-002 |
+| **Date** | 2026-08-08 |
+| **Status** | **Engineering complete** — Owner Product Proof required (Owner-visible answers) |
+| **Max layer** | Intent Layer + Conversation façade (no Kernel change, no new IPC, no Rust) |
+| **Readiness** | C-REA-002 **57%**, C-OBS-002 **71%** — unchanged; PP/Trusted/Production not advanced |
+| **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) |
+
+### Summary
+
+Measured before any change: "What window am I using?" and "Which application am
+I using?" were refused, while "Which window is active?" already reached the
+active-window observation and recited the Kernel's operational phrasing. All
+three comprehend identically as PERCEIVE_MACHINE in the desktop domain — the
+same discarded-meaning failure as P23.S4, on a different observation. The audit
+found `window/active` already returning the focused `ApplicationWindowItem`
+through the Permission Gateway to Conversation, so the slice needed no new
+authority, no new IPC, and no Rust.
+
+The architectural question was whether the observation rung was an abstraction
+or a coincidence of having one member. It holds at two, but only because three
+properties were made explicit and enforced: needs are a fixed vocabulary of
+information rather than things Workspace can run; each need is covered by
+exactly one source, so a request has one meaning instead of a shortlist to rank;
+and translation is a **total** `Record<ObservationNeed, IntentAction>`, so a
+need with no pre-existing request does not compile. A conditional chain could
+invent a route — a total map can only translate one that already existed.
+Falsified: a third need, a `Partial` map, and grounding that resolved to
+`REACH_STATE` were each rejected by the verifier.
+
+"Which one am I using?" is grounded through existing Workspace Context, which
+already held the previous turn's meaning. Grounding refines meaning only, and
+only into perception: ungrounded, it still receives the honest limitation and
+performs no IPC at all; "Open that one." remains an effect request.
+
+Application identity is now visible in the product rather than silently wrong —
+asked which application, Workspace answers with the window title and says it
+cannot name the program. This is the second slice blocked by the missing
+`process_name` on `ApplicationWindowItem`, which promotes it to a real
+dependency.
+
+---
+
+# Engineering Milestone Report
 ## P23.S4 - Observation Answer Bridge (C-REA-002 rung 3, reusing C-OBS-001)
 
 | Field | Value |

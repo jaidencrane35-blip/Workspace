@@ -32,7 +32,7 @@ export interface OperatorTurnResult {
   target?: string | null;
   preview?: string | null;
   text?: string | null;
-  items?: Array<{ title: string }> | null;
+  items?: Array<{ title: string; focused?: boolean }> | null;
   monitors?: Array<{
     index: number;
     name: string;

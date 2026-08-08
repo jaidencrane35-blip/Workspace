@@ -1,15 +1,21 @@
 /**
- * P23.S4 — Open-window observation answer source (rung 3: capability-observation).
+ * P23.S4 / P23.S5 — Observation answer sources (rung 3: capability-observation).
  *
- * The first answer source whose data lives on the desktop rather than in this
- * process. It is deliberately incapable of obtaining that data: it declares the
- * observation it needs, and composes an answer from whatever authorized
- * observation comes back. The Kernel remains the sole observer, the Permission
- * Gateway still decides, and nothing here performs IPC or names a capability.
+ * The answer sources whose data lives on the desktop rather than in this
+ * process. They are deliberately incapable of obtaining that data: each
+ * declares the observation it needs, and composes an answer from whatever
+ * authorized observation comes back. The Kernel remains the sole observer, the
+ * Permission Gateway still decides, and nothing here performs IPC or names a
+ * capability.
  *
  * Every word of the answer is derived from the observation. If the observation
  * reports nothing, this source produces nothing — the truthful result of the
  * observation is used instead of an invented inventory.
+ *
+ * The two sources here answer two different questions — what is open, and what
+ * is in front — and their coverage is mutually exclusive, so a request has one
+ * meaning rather than a shortlist to choose from. That exclusivity is what
+ * keeps this a set of answers rather than a selection between capabilities.
  */
 
 import type { GoalContract } from "./goalContract";
@@ -78,5 +84,61 @@ export const openWindowsAnswerSource: ObservationAnswerSource = {
       sourceId: "open-windows",
       rung: "capability-observation",
     };
+  },
+};
+
+/** The Owner is asking about the one window in front of them. */
+const ACTIVE_STATE = /\b(active|focused|foreground|frontmost|current|in front)\b/;
+
+/** The same question asked from the Owner's side rather than the desktop's. */
+const IN_USE = /\b(?:am i|are we)\s+(?:using|working in|working on|in|on)\b/;
+
+/**
+ * What the Owner called it. `one`/`this`/`that` only reach here once meaning
+ * has been grounded, so an ungrounded "which one?" is never treated as a
+ * question about the desktop.
+ */
+const SINGLE_SUBJECT = /\b(windows?|applications?|apps?|programs?|one|this|that)\b/;
+
+/** Asking after the application, which the observation cannot establish. */
+const APPLICATION_IDENTITY = /\b(applications?|apps?|programs?)\b/;
+
+/**
+ * P23.S5 — Active-window observation answer source.
+ *
+ * The observation reports window titles and which window is focused. It does
+ * not report what program owns that window, so this source answers with the
+ * title it was given and says so when the Owner asked after the application.
+ * Naming a program from a title would be a guess, and a confident wrong answer
+ * about what the Owner is doing is worse than a narrow true one.
+ */
+export const activeWindowAnswerSource: ObservationAnswerSource = {
+  id: "active-window",
+  rung: "capability-observation",
+  need: "active-window",
+
+  covers(goal: GoalContract): boolean {
+    if (goal.outcome !== "PERCEIVE_MACHINE" || goal.mode !== "observation") {
+      return false;
+    }
+    const text = goal.normalized;
+    if (!SINGLE_SUBJECT.test(text)) return false;
+    return ACTIVE_STATE.test(text) || IN_USE.test(text);
+  },
+
+  compose(goal: GoalContract, observation: ObservationResult): Answer | null {
+    if (!observation.ok) return null;
+    const items = observation.items ?? [];
+    const active = items.find((item) => item.focused) ?? items[0];
+    const title = active?.title?.trim();
+    if (!title) return null;
+
+    const text = APPLICATION_IDENTITY.test(goal.normalized)
+      ? `The window you’re using is “${title}”. I can see window titles, not which program owns them, so I won’t name the application.`
+      : IN_USE.test(goal.normalized)
+        ? `You’re using “${title}” right now.`
+        : `The active window is “${title}”.`;
+
+    return { text, sourceId: "active-window", rung: "capability-observation" };
   },
 };

@@ -92,6 +92,43 @@ function cloneAction(action: IntentAction): IntentAction {
 }
 
 /**
+ * P23.S5 — ground an elliptical question against what was just discussed.
+ *
+ * "Which one am I using?" means nothing on its own, and means something exact
+ * straight after a question about the Owner's windows. Context already knows
+ * which it is, because it holds the meaning of the previous turn.
+ *
+ * Grounding refines *meaning* only, and only into perception: it can turn an
+ * unanswerable question into an answerable one, never into a desktop effect.
+ * An ungrounded "which one?" is returned untouched, so nothing is invented —
+ * the Owner still gets the honest limitation.
+ *
+ * It runs once per turn, before anything reads the goal, so every later reader
+ * sees the same meaning.
+ */
+export function groundGoalInContext(goal: GoalContract): GoalContract {
+  const elliptical = /^(which|what) one (am i|are we) (using|working in|in|on)\b/;
+  if (!elliptical.test(goal.normalized)) {
+    return goal;
+  }
+  const prior = state.currentGoal;
+  const priorWasDesktopObservation =
+    prior?.outcome === "PERCEIVE_MACHINE" &&
+    prior.mode === "observation" &&
+    prior.domain === "desktop";
+  if (!priorWasDesktopObservation) {
+    return goal;
+  }
+  return {
+    ...goal,
+    outcome: "PERCEIVE_MACHINE",
+    mode: "observation",
+    domain: "desktop",
+    evidence: [...goal.evidence, "grounded_reference=prior_desktop_observation"],
+  };
+}
+
+/**
  * Context-owned intents (continuity / again / pronoun close).
  * Returns null when Grammar → Situation → Goal Resolution should proceed.
  */

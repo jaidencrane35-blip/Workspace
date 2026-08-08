@@ -1196,4 +1196,22 @@ Truthfulness is enforced by derivation: the answer contains only observed titles
 
 **Blocking dependency — the missing interface.** The contract stops at the Conversation façade. `CapabilityIntent` is a flat `{ domain, operation, arguments }` record with no field for meaning, and the Intent Layer Specification forbids Intent from planning or choosing providers while the Kernel Authority Rule makes the Kernel Operator the sole composition authority. Sending the Goal Contract over `execute_capability_intent` today would either place a second planning input in front of the Operator or require Intent to pre-select the capability — both violations. Conflict C (§30) must be resolved, and the Kernel must expose a meaning-accepting entry point, before comprehension can drive execution.
 
+### Status — P23.S5 delivered (the observation rung holds at two)
+
+P23.S4 left one question open: whether a rung with a single need was an abstraction or a coincidence. P23.S5 answered it by adding the second — `active-window`, served by the existing C-OBS-002 observation — and the honest result is that **the abstraction holds, but only because of properties that had to be made explicit and enforced.**
+
+The audit again found the Kernel side complete: `window/active` already returned the focused `ApplicationWindowItem`, and Conversation was already receiving it and reciting the Kernel's operational phrasing. Two of the four primary phrasings ("What window am I using?", "Which application am I using?") were refused outright despite comprehending as `PERCEIVE_MACHINE` in the desktop domain — the same discarded-meaning failure as P23.S4, on a different observation. No new IPC, no Rust change.
+
+Three properties are what keep a second need from being a capability registry in disguise, and each is now verifier-enforced:
+
+1. **The needs are a fixed vocabulary of information**, not a list of things Workspace can run. Members name what is worth knowing (`open-windows`, `active-window`); growth beyond them still needs its own slice.
+2. **Each need is covered by exactly one source.** A request therefore has one meaning rather than a shortlist of candidates — there is no ranking step, and so nothing that could quietly become selection.
+3. **Translation is total, not conditional.** Needs reach the desktop through a `Record<ObservationNeed, IntentAction>` covering every member, so a need with no pre-existing request does not compile. A conditional chain could invent a route; a total map can only translate one that already existed.
+
+The contextual case — "Which one am I using?" after a question about open windows — was resolved through existing Workspace Context rather than a new memory system. Context already held the previous turn's meaning, which is exactly the grounding evidence required. Grounding refines **meaning only, and only into perception**: an ungrounded "Which one?" is returned untouched and still receives the honest limitation, and "Open that one." remains an effect request. Grounding runs once, before anything reads the goal, so intent resolution and answer composition can never disagree about what was asked.
+
+Application identity remains unresolved and is now visible in the product: asked "Which application am I using?", Workspace answers with the window title and says it cannot name the program. This is the second slice to hit the same missing field, which raises it from an inconvenience to a real dependency — `ApplicationWindowItem` carries no `process_name`, and until it does, every answer about *what the Owner is using* is a title.
+
+**Conflict C is unchanged.** Meaning now reaches execution for two semantic needs instead of one, through the same existing `CapabilityIntent`, which still has no meaning field. Scaling this way is bounded by design: each new need costs a slice, and that cost is the mechanism preventing an accidental planner. The general case remains blocked on the interface described above.
+
 ## Stop

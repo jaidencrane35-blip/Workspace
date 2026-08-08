@@ -207,12 +207,12 @@ Execution authority remains: Conversation → Intent → Kernel Operator → Run
 | **Name** | Local Reasoning (arith / units / clock) |
 | **Layer** | L2 Reasoning |
 | **Status** | **IMPLEMENTED** |
-| **Lifecycle** | Engineering complete — P23.S3 extension awaiting Owner Product Proof |
-| **Dependencies** | C-REA-001; C-ITL-006 (Goal Contract); C-ITL-007; C-OBS-001 (observation rung) |
-| **Verification** | `verify-answer-source`; `verify-observation-answer`; `tests/answer-source.test.ts`; `tests/observation-answer.test.ts`; intelligence-routing tests |
-| **Product Proof** | P22.S1 covers arith/units. The P23.S3 and P23.S4 Answer Source Ladder extensions require Owner Product Proof — Owner-visible answers to time, date, and open-window questions |
-| **Priority** | Architecture slices P23.S3, P23.S4 |
-| **Engineering Notes** | No world knowledge invent. P23.S3 gave this capability the **Answer Source Ladder** (`app/src/lib/answerSource.ts`): a rung-ordered contract answering "which trusted source knows this", never "which capability executes". Only the deterministic-local rung is implemented, by the temporal source (`app/src/lib/temporalAnswerSource.ts`), which owns the single time-zone authority for the repository — region phrase → IANA zone, then `Intl.DateTimeFormat`, so daylight saving comes from the runtime's time-zone database and never from offset arithmetic (verifier-enforced). Sources emit text only: no IPC, no action, no capability or provider identity. Ambiguous places (WA, Georgia) resolve to nothing and reach the existing clarification; unlisted places fall through to C-REA-003's handoff, which remains the only external route. Gated by the same predicates as C-ITL-007, so the ladder can never pre-empt a genuine desktop request. P23.S4 added the `capability-observation` rung, whose sources cannot observe: a source declares a semantic `ObservationNeed` and composes an answer from whatever authorized observation returns, so the Kernel stays the sole observer and the Permission Gateway still decides. Exactly one need exists (`open-windows`, served by C-OBS-001) and widening it is verifier-rejected, which is what keeps the rung from becoming a capability selector. |
+| **Lifecycle** | Engineering complete — P23.S3–P23.S5 extensions awaiting Owner Product Proof |
+| **Dependencies** | C-REA-001; C-ITL-006 (Goal Contract); C-ITL-007; C-OBS-001, C-OBS-002 (observation rung); Workspace Context (P23.S5 grounding) |
+| **Verification** | `verify-answer-source`; `verify-observation-answer`; `tests/answer-source.test.ts`; `tests/observation-answer.test.ts`; `tests/active-window-answer.test.ts`; intelligence-routing tests |
+| **Product Proof** | P22.S1 covers arith/units. The P23.S3–P23.S5 Answer Source Ladder extensions require Owner Product Proof — Owner-visible answers to time, date, open-window, and active-window questions |
+| **Priority** | Architecture slices P23.S3, P23.S4, P23.S5 |
+| **Engineering Notes** | No world knowledge invent. P23.S3 gave this capability the **Answer Source Ladder** (`app/src/lib/answerSource.ts`): a rung-ordered contract answering "which trusted source knows this", never "which capability executes". Only the deterministic-local rung is implemented, by the temporal source (`app/src/lib/temporalAnswerSource.ts`), which owns the single time-zone authority for the repository — region phrase → IANA zone, then `Intl.DateTimeFormat`, so daylight saving comes from the runtime's time-zone database and never from offset arithmetic (verifier-enforced). Sources emit text only: no IPC, no action, no capability or provider identity. Ambiguous places (WA, Georgia) resolve to nothing and reach the existing clarification; unlisted places fall through to C-REA-003's handoff, which remains the only external route. Gated by the same predicates as C-ITL-007, so the ladder can never pre-empt a genuine desktop request. P23.S4 added the `capability-observation` rung, whose sources cannot observe: a source declares a semantic `ObservationNeed` and composes an answer from whatever authorized observation returns, so the Kernel stays the sole observer and the Permission Gateway still decides. Exactly one need existed at that point (`open-windows`, served by C-OBS-001) and widening it was verifier-rejected. P23.S5 added the second need (`active-window`, served by C-OBS-002) to test whether the rung scales without becoming a selector. It does, because of three properties the verifier now enforces: the needs are a fixed vocabulary of information (further growth still needs its own slice), each need is covered by exactly one source so a request has one meaning rather than a shortlist, and needs are translated by a **total** `Record<ObservationNeed, IntentAction>` into requests the Intent Layer already had — a need with no existing request does not compile, so nothing can be selected or invented at that boundary. P23.S5 also grounds elliptical questions (“Which one am I using?”) through existing Workspace Context, which refines *meaning* into perception only and never into an effect. |
 
 #### C-REA-003 Reasoning Provider Handoff (ChatGPT)
 | | |
@@ -384,12 +384,12 @@ Overall ................. 57%
 | **Name** | Active Window |
 | **Layer** | L4 Observation |
 | **Status** | **IMPLEMENTED** |
-| **Lifecycle** | Engineering complete |
+| **Lifecycle** | Engineering complete — P23.S5 answer form awaiting Owner Product Proof |
 | **Dependencies** | Window Provider `active` |
-| **Verification** | Window provider / intent map `winActive` |
-| **Product Proof** | Covered by window observation paths |
-| **Priority** | — |
-| **Engineering Notes** | Foreground window truth |
+| **Verification** | Window provider / intent map `winActive`; `verify-observation-answer`; `tests/active-window-answer.test.ts` |
+| **Product Proof** | “Which window is active?” live path — Owner Product Proof required for the P23.S5 answer form |
+| **Priority** | Architecture slice P23.S5 |
+| **Engineering Notes** | Foreground window truth. P23.S5 reuses this observation unchanged as the second answer source at the `capability-observation` rung: the comprehended need reaches the existing `window/active` request, and the returned focused item is composed into a conversational answer. No second observation, no new Kernel interface, no Rust change. Like C-OBS-001, `ApplicationWindowItem` carries no process name, so the answer names the window title and says so when the Owner asked after the application — a program name would be a guess. Carrying `process_name` through the item remains its own slice. |
 
 #### C-OBS-003 Desktop UI Tree
 | | |
@@ -1301,14 +1301,14 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 | C-CON-003 | Soft Send Continuity | IMPLEMENTED | ~71% |
 | C-CON-004 | First-Session Cue | IMPLEMENTED | ~71% |
 | C-REA-001 | Intelligence Routing | IMPLEMENTED | ~57% |
-| C-REA-002 | Local Reasoning (+ P23.S3/S4 Answer Source Ladder) | IMPLEMENTED | ~57% |
+| C-REA-002 | Local Reasoning (+ P23.S3–S5 Answer Source Ladder) | IMPLEMENTED | ~57% |
 | C-REA-003 | Provider Handoff | IMPLEMENTED | ~57% |
 | C-REA-004 | In-Conversation Model | FUTURE | ~14% |
 | C-ITL-001..005 | Intent stack | IMPLEMENTED | ~71% |
 | **C-ITL-006** | **Goal Contract (Outcome-First Comprehension)** | **IMPLEMENTED (eng)** | **57%** |
 | **C-ITL-007** | **Substitution Prohibition Enforcement** | **IMPLEMENTED (eng)** | **57%** |
 | C-OBS-001 | Enumerate Windows | IMPLEMENTED | ~71% |
-| C-OBS-002 | Active Window | IMPLEMENTED | ~71% |
+| C-OBS-002 | Active Window (+ P23.S5 answer form) | IMPLEMENTED | ~71% (answer form PP pending) |
 | **C-OBS-003** | **Desktop UI Tree** | **IMPLEMENTED (eng)** | **57%** |
 | **C-OBS-004** | **Window Control Discovery** | **IMPLEMENTED (eng)** | **57%** |
 | C-OBS-005 | Screenshot | IMPLEMENTED | ~71% |
