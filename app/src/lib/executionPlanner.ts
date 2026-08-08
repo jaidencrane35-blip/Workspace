@@ -177,6 +177,22 @@ export function buildExecutionPlan(
           step("complete", "Present truthful desktop result", null),
         ],
       };
+    case "winEnumerateControls":
+      return {
+        goal,
+        capabilities: caps("desktop-ui-tree", "focus-window"),
+        multiStep: false,
+        action,
+        steps: [
+          step(
+            "observe",
+            "Read named controls in the resolved window",
+            "desktop-ui-tree",
+            "delegated_to_kernel",
+          ),
+          step("complete", "List controls truthfully — never invent clicks", null),
+        ],
+      };
     case "winEnumerate":
     case "winActive":
     case "winMonitors":

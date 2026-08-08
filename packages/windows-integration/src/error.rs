@@ -27,4 +27,7 @@ pub enum WindowsIntegrationError {
 
     #[error("Voice input failed: {0}")]
     VoiceFailed(String),
+
+    #[error("UI Automation failed: {0}")]
+    UiAutomationFailed(String),
 }

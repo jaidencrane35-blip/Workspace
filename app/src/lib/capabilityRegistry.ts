@@ -111,7 +111,7 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     ],
     failureRecovery:
       "Ask what windows are open, or name the app/site window you want.",
-    related: ["window-state", "browser", "open-app"],
+    related: ["window-state", "browser", "open-app", "desktop-ui-tree"],
     similar: ["open-app", "window-state"],
     alternatives: ["open-app", "browser"],
     discoverability: "Ask what windows are open, or say you’ve got an app somewhere.",
@@ -126,6 +126,45 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     ],
     architecturalJustification:
       "Desktop cognition needs truthful focus without inventing window titles.",
+  },
+  {
+    id: "desktop-ui-tree",
+    domain: "Windows",
+    summary: "List named controls inside a window",
+    purpose: "See which buttons, menus, and fields a window exposes",
+    verbs: ["list controls", "what controls", "show control tree", "desktop ui tree"],
+    aliases: ["ui tree", "control list", "accessibility tree"],
+    objects: ["Notepad", "this window", "Cursor", "Chrome"],
+    modifiers: ["in", "for", "inside"],
+    arguments: ["window title hint or this/active"],
+    requirements: ["A matching window is open", "The app exposes named UI Automation controls"],
+    limitations: [
+      "Observation only — does not click or type",
+      "Custom-drawn UI may expose few or no named controls",
+    ],
+    examples: [
+      "What controls are in Notepad?",
+      "List controls in this window",
+      "Show desktop ui tree in Notepad",
+    ],
+    failureRecovery:
+      "Name an open window with standard controls, or ask what windows are open first.",
+    related: ["focus-window", "window-state"],
+    similar: ["focus-window"],
+    alternatives: ["focus-window"],
+    discoverability: "Ask what controls are in a named window.",
+    documentation:
+      "Enumerates named UI Automation controls in a resolved window; never invents clicks.",
+    ownership: "Owns control-list observation; Wraps Windows UI Automation",
+    permissions: ["Window read", "UI Automation tree read"],
+    dependencies: ["Window Provider", "UiAutomationPort", "Kernel Operator"],
+    benchmark: "Accessibility Inspector-like list; not a screen-reader product",
+    tests: [
+      "tests/desktop-ui-tree.test.ts",
+      "scripts/verify-desktop-ui-tree.mjs",
+    ],
+    architecturalJustification:
+      "Desktop observation must expose in-window structure before interaction capabilities.",
   },
   {
     id: "window-state",

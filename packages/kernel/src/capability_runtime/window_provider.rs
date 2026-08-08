@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use workspace_windows_integration::{
     CapturedDesktopMonitor, DesktopCapturer, DesktopWindowSnapshot, MutatorEffectOutcome,
-    WindowEnumerator, WindowMutator, WindowPlacementRequest,
+    UiAutomationPort, WindowEnumerator, WindowMutator, WindowPlacementRequest,
 };
 
 use super::registry::CapabilityProvider;
@@ -21,6 +21,7 @@ pub struct WindowPorts {
     pub enumerator: Arc<dyn WindowEnumerator>,
     pub mutator: Arc<dyn WindowMutator>,
     pub capturer: Arc<dyn DesktopCapturer>,
+    pub ui_automation: Arc<dyn UiAutomationPort>,
 }
 
 /// Window Capability Provider — Discovery, Focus, State, Placement, Information (L1–L2).
@@ -291,6 +292,7 @@ impl CapabilityProvider for WindowProvider {
                 "active",
                 "bounds",
                 "monitors",
+                "enumerate_controls",
                 "focus",
                 "minimize",
                 "restore",
@@ -315,6 +317,60 @@ impl CapabilityProvider for WindowProvider {
         }
 
         match request.operation {
+            CapabilityOperation::EnumerateControls => {
+                let Some(window) = self.resolve_one(&request)? else {
+                    return Ok(Self::not_found(
+                        CapabilityOperation::EnumerateControls,
+                        &request,
+                    ));
+                };
+                let controls = self
+                    .ports
+                    .ui_automation
+                    .enumerate_controls(&window.hwnd, 40)
+                    .map_err(|error| KernelError::WindowsIntegration {
+                        message: error.to_string(),
+                    })?;
+                let lines: Vec<String> = controls
+                    .iter()
+                    .map(|c| {
+                        if c.automation_id.is_empty() {
+                            format!("• {} ({})", c.name, c.control_type)
+                        } else {
+                            format!(
+                                "• {} ({}) id={}",
+                                c.name, c.control_type, c.automation_id
+                            )
+                        }
+                    })
+                    .collect();
+                let body = if lines.is_empty() {
+                    "I didn’t find named controls in that window (custom-drawn UI may not expose them)."
+                        .to_string()
+                } else {
+                    format!(
+                        "Controls in “{}” ({} shown):\n{}",
+                        window.title,
+                        lines.len(),
+                        lines.join("\n")
+                    )
+                };
+                let item = Self::item(&window);
+                Ok(ProviderInvokeResponse {
+                    domain: CapabilityDomainId::window(),
+                    operation: CapabilityOperation::EnumerateControls,
+                    ok: true,
+                    format: Some("control_list".into()),
+                    bytes: Some(controls.len()),
+                    text: Some(lines.join("\n")),
+                    preview: Some(text_preview(&window.title, 80)),
+                    message: Some(body),
+                    status: Some("enumerated_controls".into()),
+                    target: Some(window.title),
+                    items: Some(vec![item]),
+                    monitors: None,
+                })
+            }
             CapabilityOperation::Enumerate => {
                 let items: Vec<_> = self.windows()?.iter().map(Self::item).collect();
                 Ok(ProviderInvokeResponse {

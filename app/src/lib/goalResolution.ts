@@ -117,6 +117,8 @@ function outcomeFor(action: IntentAction): string {
       return "Open a website in the browser";
     case "winEnumerate":
       return "List windows visible on the desktop";
+    case "winEnumerateControls":
+      return "List UI Automation controls inside a window";
     case "unknown":
       return "Clarify or recover without inventing desktop actions";
     default:

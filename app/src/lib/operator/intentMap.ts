@@ -132,6 +132,12 @@ export function toCapabilityIntent(action: IntentAction): CapabilityIntent | nul
       };
     case "winEnumerate":
       return { domain: "window", operation: "enumerate" };
+    case "winEnumerateControls":
+      return {
+        domain: "window",
+        operation: "enumerate_controls",
+        query: action.query,
+      };
     case "winActive":
       return { domain: "window", operation: "active" };
     case "winMonitors":

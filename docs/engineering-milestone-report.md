@@ -1,4 +1,21 @@
 ﻿# Engineering Milestone Report
+## P22.S2 - Desktop UI Tree (C-OBS-003)
+
+| Field | Value |
+| --- | --- |
+| **Capability ID** | C-OBS-003 |
+| **Artifacts** | `docs/capability-runtime/product-proof/P22_S2_DESKTOP_UI_TREE.md`, `scripts/verify-desktop-ui-tree.mjs`, `tests/desktop-ui-tree.test.ts`, Atlas v2.0 |
+| **Date** | 2026-08-08 |
+| **Status** | Engineering complete — Product Proof required |
+| **Max layer** | Windows Integration + Window Provider + Intent |
+| **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) |
+
+### Summary
+
+Desktop UI Tree: WRAP Windows UI Automation for observation-only control enumeration (`enumerate_controls`). Conversation → Intent → Kernel → Window Provider → `UiAutomationPort`. No click/type. Atlas synchronized to v2.0 permanent IDs. Owner Product Proof per P22.S2 workbook.
+
+---
+
 ## P22.S1 - Intelligence Kind Routing & Reasoning Provider
 
 | Field | Value |

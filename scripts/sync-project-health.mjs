@@ -72,6 +72,7 @@ const verifiers = {
   "verify:voice-input": "scripts/verify-voice-input.mjs",
   "verify:voice-regression": "scripts/verify-voice-regression.mjs",
   "verify:conversation-quality": "scripts/verify-conversation-quality.mjs",
+  "verify:desktop-ui-tree": "scripts/verify-desktop-ui-tree.mjs",
   "verify:semantic-intent": "scripts/verify-semantic-intent.mjs",
   "verify:capability-registry": "scripts/verify-capability-registry.mjs",
   "verify:cognitive-desktop": "scripts/verify-cognitive-desktop.mjs",
@@ -515,7 +516,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "Release Hold (R2) — Stage 2 Owner Acceptance. P22.S1 Intelligence Kind Routing complete (after P21.S1/S2). No active eng program. Next: A2 after Accept+Authenticode cert. F1 Complete. P17–P20 closed. File Provider blocked. nextReadyNow D1.",
+    note: "Release Hold (R2) + Capability Atlas v2.0. C-OBS-003 Desktop UI Tree eng complete (P22.S2) — Owner Product Proof required. Next Atlas eng: C-OBS-004. Parallel: A2 after Authenticode cert. File Provider blocked. nextReadyNow D1.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -834,17 +835,16 @@ const health = {
   lastMilestone: {
     date: "2026-08-08",
     document: "docs/engineering-milestone-report.md",
-    title:
-      "P22.S1 Intelligence Kind Routing — Release Hold",
+    title: "P22.S2 Desktop UI Tree (C-OBS-003) — Product Proof pending",
     reviewBrief:
-      "docs/capability-runtime/product-proof/P22_S1_INTELLIGENCE_KIND_ROUTING.md",
+      "docs/capability-runtime/product-proof/P22_S2_DESKTOP_UI_TREE.md",
   },
   handoffStatus: "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   nextRecommendedExecutionProgram: {
-    id: "file-provider-p17",
-    title: "P17 File Provider",
-    blockedUntil: "P16 Owner Product Proof acceptance",
-    note: "Do not begin P17 until P16 is permanently closed by Owner acceptance. Implement under Workspace Constitutional Specification v2. Do not modify constitutional concepts without a review trigger.",
+    id: "c-obs-004-window-control-discovery",
+    title: "C-OBS-004 Window Control Discovery",
+    blockedUntil: "Atlas Execution Loop next session (after C-OBS-003 stop)",
+    note: "Highest remaining Atlas capability after C-OBS-003 eng. File Provider remains blocked on Voice Accept. Release track: A2 after Authenticode cert.",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",

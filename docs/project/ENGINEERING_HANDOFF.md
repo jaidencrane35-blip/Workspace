@@ -7,12 +7,15 @@
 | **Updated** | 2026-08-08 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Engineering status** | **Release Hold** — no new engineering program by default |
+| **Engineering status** | **Release Hold** — Atlas Execution Loop slices when Owner-authorized |
 | **Current phase** | **Stage 2 — Owner Acceptance** (Accepted with changes; T1 slice complete) |
-| **Next engineering event** | **A2 (Code Signing)** after Owner Acceptance **and** Authenticode certificate |
-| **Current priority** | Maintain repository stability — await Owner Product Proof re-review (or T3–T5) |
-| **Resume triggers** | `docs/production/R2_RELEASE_HOLD.md` (T1–T5 only) |
-| **Latest program** | P22.S1 — Intelligence Kind Routing & Reasoning Provider (complete) |
+| **Next engineering event** | **A2 (Code Signing)** after Owner Acceptance **and** Authenticode certificate (parallel) |
+| **Current priority** | C-OBS-003 Product Proof; next Atlas eng = **C-OBS-004** Window Control Discovery |
+| **Resume triggers** | `docs/production/R2_RELEASE_HOLD.md` + Capability Atlas Execution Loop |
+| **Capability Atlas** | `docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md` (**v2.0** — authoritative capability roadmap) |
+| **Latest program** | P22.S2 — Desktop UI Tree (**C-OBS-003**) engineering complete; Product Proof required |
+| **P22.S2 report** | `docs/capability-runtime/product-proof/P22_S2_DESKTOP_UI_TREE.md` |
+| **P22.A2 audit** | `docs/capability-runtime/product-proof/P22_A2_OPEN_SOURCE_TECHNOLOGY_ACQUISITION_AUDIT.md` |
 | **P22.S1 report** | `docs/capability-runtime/product-proof/P22_S1_INTELLIGENCE_KIND_ROUTING.md` |
 | **P22.A1 audit** | `docs/capability-runtime/product-proof/P22_A1_INTELLIGENCE_ROUTING_AUDIT.md` |
 | **P21.S2 report** | `docs/capability-runtime/product-proof/P21_S2_COMPOUND_GOAL_DECOMPOSITION.md` |
@@ -68,7 +71,7 @@
 | **Product Proof workbook** | `docs/capability-runtime/product-proof/P16_O2_PRODUCT_PROOF_SESSION_WORKBOOK.md` |
 | **Rule** | Spec v2 = sole architectural authority. Execution Standard v1 = how all programs run. Classify work, max layer, lowest-layer invariant, compliance checklist. Do not reopen Spec without a Review Trigger. |
 
-**Milestone:** Workspace is on **Release Hold** (Stage 2 — Owner Acceptance). T1 Companion Conversation complete. P21.S1 / P21.S2 complete. P22.S1 Intelligence Kind Routing complete. Spec v2 and EES v1 remain stable. F1 unsigned pipeline Complete; A2 awaits Authenticode cert. **No new engineering program** except Owner-authorized Hold work. **Do not begin File Provider P17** until P16 Product Proof Accept. Architecture stable by default; Review Trigger required for constitutional change.
+**Milestone:** Workspace is on **Release Hold** (Stage 2 — Owner Acceptance). Capability Atlas **v2.0** is the engineering authority. **C-OBS-003 Desktop UI Tree** engineering complete (P22.S2) — **Owner Product Proof required** before Trusted. Next executable Atlas capability: **C-OBS-004**. P22.S1 / P21.S1 / P21.S2 / T1 complete. F1 Complete; A2 awaits Authenticode cert. **Do not begin File Provider** until Voice Accept. Architecture stable by default.
 
 **Start here before any execution program.**
 

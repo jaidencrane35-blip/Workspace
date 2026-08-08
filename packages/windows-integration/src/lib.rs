@@ -17,6 +17,7 @@ mod mutator;
 mod notification;
 mod stub;
 mod stub_mutator;
+mod uia;
 #[cfg(windows)]
 mod win32;
 #[cfg(all(windows, test))]
@@ -65,6 +66,10 @@ pub use mutator::{
 };
 pub use stub::{dual_monitor_fixture, StubDesktopCapturer, StubProcessLauncher, StubWindowEnumerator};
 pub use stub_mutator::StubWindowMutator;
+pub use uia::{
+    platform_ui_automation, MemoryUiAutomationPort, StubUiAutomationPort, UiAutomationPort,
+    UiControlSnapshot,
+};
 #[cfg(windows)]
 pub use win32::{Win32ProcessLauncher, Win32WindowEnumerator};
 

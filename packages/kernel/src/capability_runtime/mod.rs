@@ -36,13 +36,15 @@ pub use window_provider::{WindowPorts, WindowProvider};
 use std::sync::{Arc, OnceLock, RwLock};
 
 use workspace_windows_integration::{
-    platform_desktop_capturer, platform_process_launcher, platform_window_enumerator,
-    platform_window_mutator, BrowserPort, ClipboardPort, NotificationPort, ScreenshotPort,
+    platform_desktop_capturer, platform_process_launcher, platform_ui_automation,
+    platform_window_enumerator, platform_window_mutator, BrowserPort, ClipboardPort,
+    NotificationPort, ScreenshotPort,
 };
 #[cfg(test)]
 use workspace_windows_integration::{
     FixtureWindowEnumerator, MemoryBrowserPort, MemoryClipboard, MemoryNotificationPort,
-    MemoryScreenshotPort, StubDesktopCapturer, StubProcessLauncher, StubWindowMutator,
+    MemoryScreenshotPort, MemoryUiAutomationPort, StubDesktopCapturer, StubProcessLauncher,
+    StubWindowMutator,
 };
 
 use crate::error::{KernelError, Result};
@@ -134,6 +136,7 @@ fn window_ports() -> WindowPorts {
             enumerator: Arc::new(FixtureWindowEnumerator),
             mutator: Arc::new(StubWindowMutator::fixture_dual_monitor()),
             capturer: Arc::new(StubDesktopCapturer::fixture_dual_monitor()),
+            ui_automation: Arc::new(MemoryUiAutomationPort::fixture()),
         }
     }
     #[cfg(not(test))]
@@ -142,6 +145,7 @@ fn window_ports() -> WindowPorts {
             enumerator: Arc::from(platform_window_enumerator()),
             mutator: Arc::from(platform_window_mutator()),
             capturer: Arc::from(platform_desktop_capturer()),
+            ui_automation: Arc::from(platform_ui_automation()),
         }
     }
 }
@@ -266,6 +270,26 @@ mod tests {
             .unwrap();
         assert!(snapped.ok);
         assert_eq!(snapped.status.as_deref(), Some("snapped"));
+    }
+
+    #[test]
+    fn window_enumerate_controls_through_router() {
+        let listed = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::EnumerateControls,
+                query: Some("Fixture Focus".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(listed.ok);
+        assert_eq!(listed.status.as_deref(), Some("enumerated_controls"));
+        assert_eq!(listed.format.as_deref(), Some("control_list"));
+        assert!(listed.bytes.unwrap_or(0) >= 3);
+        assert!(listed
+            .text
+            .as_ref()
+            .is_some_and(|t| t.contains("File") && t.contains("Save")));
     }
 
     #[test]

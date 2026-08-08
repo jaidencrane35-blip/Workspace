@@ -117,6 +117,7 @@ export type IntentAction =
   | { kind: "appRestore"; query: string; reply: string }
   | { kind: "appEnumerate"; reply: string }
   | { kind: "winEnumerate"; reply: string }
+  | { kind: "winEnumerateControls"; query: string; reply: string }
   | { kind: "winActive"; reply: string }
   | { kind: "winMonitors"; reply: string }
   | { kind: "winBounds"; query: string; reply: string }
@@ -1042,6 +1043,32 @@ function resolveWindowIntent(raw: string, text: string): IntentAction | null {
       reply: "I can’t minimize every application at once yet.",
       suggestion: "Name a window and I can minimize that one.",
     };
+  }
+
+  // C-OBS-003 — Desktop UI Tree (control discovery; observation only).
+  {
+    const controlsMatch =
+      text.match(
+        /^(?:what|list|show)(?:\s+(?:are\s+the|the))?\s+controls(?:\s+(?:in|for|inside|on))\s+(.+)$/i,
+      ) ??
+      text.match(/^what controls (?:are )?(?:in|inside|on)\s+(.+)$/i) ??
+      text.match(
+        /^(?:list|show)\s+(?:ui\s+)?(?:controls|control tree|desktop ui tree)(?:\s+(?:in|for|inside|on)\s+(.+))?$/i,
+      );
+    if (controlsMatch) {
+      const target = (controlsMatch[1] ?? "this").trim().replace(/[.!?]+$/g, "");
+      const query = /^(this|it|the window|this window|active|current)?$/i.test(target)
+        ? "this"
+        : target || "this";
+      return {
+        kind: "winEnumerateControls",
+        query,
+        reply:
+          query === "this"
+            ? "Checking controls in the active window."
+            : `Checking controls in “${query}”.`,
+      };
+    }
   }
 
   if (

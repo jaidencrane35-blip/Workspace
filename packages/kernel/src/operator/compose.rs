@@ -594,6 +594,11 @@ pub fn compose_user_reply(
                     last.message.as_deref().unwrap_or("Monitors attached.")
                 )
             }
+            ("window", "enumerate_controls") => strip_jargon(
+                last.message
+                    .as_deref()
+                    .unwrap_or("I couldn’t list controls in that window."),
+            ),
             ("application", "enumerate") => {
                 let titles = last
                     .items

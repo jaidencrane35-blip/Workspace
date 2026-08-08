@@ -108,7 +108,8 @@ impl MutationCommand for ExecuteWindowOperation {
             | CapabilityOperation::Find
             | CapabilityOperation::Active
             | CapabilityOperation::Bounds
-            | CapabilityOperation::Monitors => Capability::window_read(),
+            | CapabilityOperation::Monitors
+            | CapabilityOperation::EnumerateControls => Capability::window_read(),
             CapabilityOperation::Focus => Capability::window_focus(),
             CapabilityOperation::Minimize
             | CapabilityOperation::Restore
@@ -151,6 +152,7 @@ impl MutationCommand for ExecuteWindowOperation {
             | CapabilityOperation::Active
             | CapabilityOperation::Bounds
             | CapabilityOperation::Monitors
+            | CapabilityOperation::EnumerateControls
             | CapabilityOperation::Focus
             | CapabilityOperation::Minimize
             | CapabilityOperation::Restore

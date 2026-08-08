@@ -10,7 +10,7 @@ Before any implementation work:
 4. Read the engineering handoff: **[`docs/project/ENGINEERING_HANDOFF.md`](docs/project/ENGINEERING_HANDOFF.md)**
 5. Reassess `docs/project-health.json`.
 
-Current handoff posture: **Release Hold** (Stage 2 — Owner Acceptance; Accepted with changes). Spec v2.1 + EES v1 stable. F1 unsigned pipeline Complete. P22.S1 Intelligence Kind Routing complete (`docs/capability-runtime/product-proof/P22_S1_INTELLIGENCE_KIND_ROUTING.md`). **Do not begin new engineering** except R2 triggers T1–T5 (`docs/production/R2_RELEASE_HOLD.md`). Next eng event: **A2** after Owner Accept + Authenticode cert. File Provider P17 blocked.
+Current handoff posture: **Release Hold** (Stage 2 — Owner Acceptance; Accepted with changes). Spec v2.1 + EES v1 stable. **Capability roadmap:** [`docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md`](docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md) (**v2.0**). **C-OBS-003** Desktop UI Tree eng complete — Owner Product Proof required. Next Atlas eng: **C-OBS-004**. R2 Hold + Atlas Execution Loop. Next release eng: **A2** after Authenticode cert. File Provider blocked until Voice Accept.
 
 ## Cursor Cloud specific instructions
 

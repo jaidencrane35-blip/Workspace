@@ -475,6 +475,7 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
             | CapabilityOperation::Active
             | CapabilityOperation::Bounds
             | CapabilityOperation::Monitors
+            | CapabilityOperation::EnumerateControls
             | CapabilityOperation::Focus
             | CapabilityOperation::Minimize
             | CapabilityOperation::Restore

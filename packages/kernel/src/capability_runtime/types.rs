@@ -78,6 +78,8 @@ pub enum CapabilityOperation {
     SavePng,
     /// Screenshot Provider — copy last / path PNG to clipboard.
     CopyClipboard,
+    /// Window Provider — C-OBS-003 Desktop UI Tree (UIA control discovery).
+    EnumerateControls,
 }
 
 impl CapabilityOperation {
@@ -109,6 +111,7 @@ impl CapabilityOperation {
             Self::CaptureMonitor => "capture_monitor",
             Self::SavePng => "save_png",
             Self::CopyClipboard => "copy_clipboard",
+            Self::EnumerateControls => "enumerate_controls",
         }
     }
 
@@ -142,6 +145,11 @@ impl CapabilityOperation {
             "capture_monitor" | "screenshot_monitor" => Some(Self::CaptureMonitor),
             "save_png" | "save_screenshot" => Some(Self::SavePng),
             "copy_clipboard" | "copy_screenshot" => Some(Self::CopyClipboard),
+            "enumerate_controls"
+            | "list_controls"
+            | "ui_tree"
+            | "control_tree"
+            | "desktop_ui_tree" => Some(Self::EnumerateControls),
             _ => None,
         }
     }
