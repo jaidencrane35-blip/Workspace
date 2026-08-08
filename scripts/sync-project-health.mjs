@@ -77,6 +77,8 @@ const verifiers = {
   "verify:desktop-control-interaction": "scripts/verify-desktop-control-interaction.mjs",
   "verify:wait-conditions": "scripts/verify-wait-conditions.mjs",
   "verify:bounded-retry": "scripts/verify-bounded-retry.mjs",
+  "verify:prepare-coding-workspace-definition":
+    "scripts/verify-prepare-coding-workspace-definition.mjs",
   "verify:semantic-intent": "scripts/verify-semantic-intent.mjs",
   "verify:capability-registry": "scripts/verify-capability-registry.mjs",
   "verify:cognitive-desktop": "scripts/verify-cognitive-desktop.mjs",
@@ -426,6 +428,16 @@ const completedPrograms = [
       "docs/project/ENGINEERING_HANDOFF.md",
     ],
   },
+  {
+    id: "b-def-001-c-proc-002-definition",
+    backlogRef: "B-DEF-001 — C-PROC-002 Prepare Coding Workspace definition",
+    completed: "2026-08-08",
+    artifacts: [
+      "docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md",
+      "scripts/verify-prepare-coding-workspace-definition.mjs",
+      "docs/capability-runtime/product-proof/P22_S7_PREPARE_CODING_WORKSPACE_BLOCKED.md",
+    ],
+  },
 ];
 
 const remainingBacklog = [
@@ -520,7 +532,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "Release Hold (R2) + Capability Atlas v2.0 Pair Rule. C-OBS-003/004 + C-ACT-004/005 eng complete — Owner Product Proof required (joint for click/type). Next Atlas eng: C-VER-003. Parallel: A2 after Authenticode cert. File Provider blocked. nextReadyNow D1.",
+    note: "Release Hold (R2) remains. Control-surface engineering through C-VER-002 is complete with Owner Product Proof pending. B-DEF-001 is resolved: C-PROC-002 is PLANNED with a deterministic definition, but runtime implementation has not started and requires a new Owner authorization. Parallel A2 still awaits an Authenticode certificate; File Provider remains blocked.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -587,13 +599,14 @@ const health = {
       "Provider Acceptance Standard permanent",
       "Capability Independence Rule permanent (P15)",
       "Operator Authority + Kernel Authority + Composition permanent",
+      "B-DEF-001 resolved — C-PROC-002 definition complete; implementation and Product Proof not started",
       "Canonical agent handoff: docs/project/ENGINEERING_HANDOFF.md",
     ],
   },
   currentMilestone: {
-    id: "operator-intelligence-p16-39",
-    title: "P16.39 Product Operator Intelligence Validation",
-    status: "engineering_complete_product_proof_pending",
+    id: "b-def-001-c-proc-002-definition",
+    title: "C-PROC-002 Prepare Coding Workspace Procedure Definition",
+    status: "definition_complete_implementation_not_started",
     commit: milestoneCommit,
   },
   acceptedReviews: [
@@ -703,6 +716,12 @@ const health = {
         "File / Terminal / Memory providers — P17+ (blocked until P16 Owner acceptance)",
     },
     {
+      id: "c-proc-002-implementation",
+      track: "B",
+      summary:
+        "C-PROC-002 definition complete; runtime implementation and Owner Product Proof not started; requires a new Owner-authorized Atlas slice",
+    },
+    {
       id: "tray-integration",
       track: "A",
       summary: "System tray integration not yet implemented (PR1 Phase 2 Critical)",
@@ -758,6 +777,7 @@ const health = {
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
       "P16.39 Operator Intelligence — Product Proof pending Owner acceptance; WinRT WRAP frozen; Voice not reopened; Owner evidence outranks engineering confidence",
+      "B-DEF-001 resolved; C-PROC-002 PLANNED at ~31% readiness (definition/dependencies only)",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -839,16 +859,17 @@ const health = {
   lastMilestone: {
     date: "2026-08-08",
     document: "docs/engineering-milestone-report.md",
-    title: "P22.S4 Desktop Control Interaction (C-ACT-004+005) — Product Proof pending",
+    title:
+      "B-DEF-001 resolved — C-PROC-002 definition complete; implementation not started",
     reviewBrief:
-      "docs/capability-runtime/product-proof/P22_S4_DESKTOP_CONTROL_INTERACTION.md",
+      "docs/capability-runtime/product-proof/P22_S7_PREPARE_CODING_WORKSPACE_BLOCKED.md",
   },
   handoffStatus: "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   nextRecommendedExecutionProgram: {
-    id: "c-ver-003-wait-conditions",
-    title: "C-VER-003 Wait Conditions",
-    blockedUntil: "Atlas Execution Loop next session (after C-ACT-004/005 stop)",
-    note: "Highest remaining Atlas capability after interaction eng. File Provider remains blocked on Voice Accept. Release track: A2 after Authenticode cert.",
+    id: "c-proc-002-prepare-coding-workspace",
+    title: "C-PROC-002 Prepare Coding Workspace runtime implementation",
+    blockedUntil: "New explicit Owner authorization under the Atlas Execution Loop",
+    note: "Definition is complete and B-DEF-001 is resolved. Implement only the fixed C-PROC-002 contract in one future bounded slice. Do not begin automatically. File Provider remains blocked on Voice Accept; release track A2 remains certificate-blocked.",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",

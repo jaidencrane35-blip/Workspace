@@ -1,19 +1,27 @@
 ﻿# Engineering Milestone Report
-## P22.S7 - Prepare Coding Workspace BLOCKED (C-PROC-002)
+## B-DEF-001 - Prepare Coding Workspace Definition (C-PROC-002)
 
 | Field | Value |
 | --- | --- |
 | **Capability ID** | C-PROC-002 |
-| **Artifacts** | `P22_S7_PREPARE_CODING_WORKSPACE_BLOCKED.md`, Atlas B-DEF-001 |
+| **Artifacts** | Atlas C-PROC-002.1–.8, `verify-prepare-coding-workspace-definition`, `P22_S7_PREPARE_CODING_WORKSPACE_BLOCKED.md` resolution record |
 | **Date** | 2026-08-08 |
-| **Status** | **BLOCKED** — Atlas procedure definition incomplete |
-| **Max layer** | Atlas governance (no Kernel expansion) |
-| **Readiness** | Overall **~14%** |
+| **Status** | **Definition complete** — B-DEF-001 resolved; runtime implementation not started |
+| **Max layer** | Capability definition + Repository Standards + Documentation |
+| **Readiness** | Overall **~31%** (Architecture/Dependencies 100%; partial Continue handoff 20%; runtime Verification/PP/Trusted/Production 0%) |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) |
 
 ### Summary
 
-Execution Loop authorized C-PROC-002, but the Atlas record lacks Step IDs, targets, verify conditions, timeouts, and retry policy. Per mission rule, engineering stopped rather than inventing a procedure or app set. Interim Continue/Moments handoff via `situationGoals` remains. Owner must complete Atlas procedure body (B-DEF-001) before re-authorization. No runtime code change.
+Takeover found clean synchronized `v2-dev` at `ac8c050a` and no partial
+B-DEF-001 work. Repository evidence established no default coding app or app
+set. The Atlas now defines a parameterized Owner-named target procedure:
+PCW-001 Resolve → PCW-002 Observe → PCW-003 Open/Focus → PCW-004 Wait →
+PCW-005 one bounded same-target retry → PCW-006 final observe/complete.
+Missing/ambiguous targets clarify before any effect; Moments remains a separate
+Owner-approved restore path. Product Proof is defined but not run. No runtime
+execution behaviour changed. C-PROC-002 is **PLANNED** and requires a new Owner
+authorization before implementation.
 
 ---
 

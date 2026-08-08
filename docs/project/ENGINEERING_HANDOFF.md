@@ -10,10 +10,10 @@
 | **Engineering status** | **Release Hold** — Atlas Execution Loop slices when Owner-authorized |
 | **Current phase** | **Stage 2 — Owner Acceptance** (Accepted with changes; T1 slice complete) |
 | **Next engineering event** | **A2 (Code Signing)** after Owner Acceptance **and** Authenticode certificate (parallel) |
-| **Current priority** | Owner Product Proof (C-OBS-003/004 + C-ACT-004/005 + C-VER-003 + C-VER-002); **C-PROC-002 BLOCKED (B-DEF-001)** — complete Atlas procedure body before re-auth |
+| **Current priority** | Owner Product Proof (C-OBS-003/004 + C-ACT-004/005 + C-VER-003 + C-VER-002); **C-PROC-002 PLANNED** — B-DEF-001 resolved, implementation requires a new explicit Owner authorization |
 | **Resume triggers** | `docs/production/R2_RELEASE_HOLD.md` + Capability Atlas Execution Loop |
 | **Capability Atlas** | `docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md` (**v2.0** — Pair Rule §0.1 active) |
-| **Latest program** | P22.S7 — Prepare Coding Workspace (**C-PROC-002**) **BLOCKED** (Atlas definition incomplete) |
+| **Latest program** | B-DEF-001 — C-PROC-002 Prepare Coding Workspace procedure definition **complete**; runtime implementation not started |
 | **P22.S7 report** | `docs/capability-runtime/product-proof/P22_S7_PREPARE_CODING_WORKSPACE_BLOCKED.md` |
 | **P22.S6 report** | `docs/capability-runtime/product-proof/P22_S6_BOUNDED_RETRY.md` |
 | **P22.S5 report** | `docs/capability-runtime/product-proof/P22_S5_WAIT_CONDITIONS.md` |
@@ -55,7 +55,7 @@
 | **PX4 audit** | `docs/ui/P16_PX4_PRODUCT_COHESION_AUDIT.md` |
 | **PR2 audit** | `docs/production/P16_PR2_PRODUCTION_EXPERIENCE_AUDIT.md` |
 | **PF1 audit** | `docs/production/P16_PF1_PREMIUM_FINISH_AUDIT.md` |
-| **nextReadyNow** | `D1-ipc-quarantine` |
+| **nextReadyNow** | `D1-ipc-quarantine` on the production track; C-PROC-002 is the highest **PLANNED** capability candidate if Owner explicitly authorizes implementation |
 | **Product quality** | `docs/ui/WORKSPACE_PRODUCT_QUALITY_STANDARD.md` — subordinate quality authority (not Spec) |
 | **Interaction language** | `docs/ui/WORKSPACE_INTERACTION_LANGUAGE.md` — product feel heuristics (not Spec) |
 | **PX2 report** | `docs/capability-runtime/product-proof/P16_PX2_PREMIUM_CONVERSATION_EXPERIENCE.md` |
@@ -76,7 +76,7 @@
 | **Product Proof workbook** | `docs/capability-runtime/product-proof/P16_O2_PRODUCT_PROOF_SESSION_WORKBOOK.md` |
 | **Rule** | Spec v2 = sole architectural authority. Execution Standard v1 = how all programs run. Classify work, max layer, lowest-layer invariant, compliance checklist. Do not reopen Spec without a Review Trigger. |
 
-**Milestone:** Workspace is on **Release Hold**. Capability Atlas **v2.0** + Pair Rule §0.1. Control-surface eng complete through **C-VER-002** — **Owner Product Proof required**. **C-PROC-002 BLOCKED (B-DEF-001)** until Owner completes Atlas procedure definition. No currently executable Atlas eng slice. F1 Complete; A2 awaits Authenticode cert. **Do not begin File Provider** until Voice Accept.
+**Milestone:** Workspace is on **Release Hold**. Capability Atlas **v2.0** + Pair Rule §0.1. Control-surface eng complete through **C-VER-002** — **Owner Product Proof required**. **B-DEF-001 is resolved**: C-PROC-002 has an authoritative deterministic contract and is **PLANNED**, with implementation/PP/Trusted/Production incomplete. Do not implement it without a new explicit Owner authorization. F1 Complete; A2 awaits Authenticode cert. **Do not begin File Provider** until Voice Accept.
 
 **Start here before any execution program.**
 
@@ -331,11 +331,11 @@ After Owner closes Workspace: cleanup only — **never relaunch**.
 
 ## 17. Next eligible execution program
 
-| Program | P17 File Provider |
+| Program | C-PROC-002 Prepare Coding Workspace runtime implementation |
 | --- | --- |
-| When | **Only after** Product Owner permanently closes P16 |
-| Standard | Provider Acceptance Standard + Independence Rule |
-| Instruction | **Do not begin P17 in this handoff.** |
+| When | **Only after a new explicit Product Owner authorization under the Atlas Execution Loop** |
+| Standard | Atlas C-PROC-002.1–.8 + Kernel Authority + Completion Contract + Product Proof Rule |
+| Instruction | **Do not begin automatically.** Definition completion is not implementation authorization. P17 File Provider remains blocked until Voice Accept. |
 
 ---
 
@@ -346,8 +346,8 @@ After Owner closes Workspace: cleanup only — **never relaunch**.
 3. Reassess git (`v2-dev`, clean tree).  
 4. Ignore previous conversational history.  
 5. Treat repository documentation as authoritative.  
-6. Continue from **P16 Product Proof Owner acceptance** — or, after that stamp exists, from **P17** when the Owner starts it.  
-7. No feature work until the Owner issues an execution program.
+6. Treat C-PROC-002 as **PLANNED**, B-DEF-001 resolved, and implementation not started.
+7. Continue only from the next Owner-issued execution program; do not infer authorization from readiness.
 
 ---
 
@@ -361,5 +361,6 @@ cargo check -p workspace-app
 pnpm verify:voice-input
 pnpm verify:conversation-quality
 pnpm verify:project-health
+pnpm verify:prepare-coding-workspace-definition
 pnpm --filter @workspace/app exec tauri dev   # Windows Product Proof launch (Owner-requested only)
 ```

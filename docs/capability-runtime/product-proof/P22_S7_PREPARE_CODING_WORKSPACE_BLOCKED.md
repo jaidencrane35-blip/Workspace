@@ -1,13 +1,15 @@
-# P22.S7 — Prepare Coding Workspace BLOCKED (C-PROC-002)
+# B-DEF-001 — Prepare Coding Workspace Procedure Definition (C-PROC-002)
 
 | Field | Value |
 | --- | --- |
 | **Capability ID** | **C-PROC-002** Prepare Coding Workspace |
-| **Program** | P22.S7 — Operator Procedure attempt |
+| **Program** | B-DEF-001 definition / authority slice following P22.S7 |
 | **Date** | 2026-08-08 |
 | **Branch** | `v2-dev` |
-| **Outcome** | **BLOCKED** — no implementation expansion |
-| **Blocker ID** | **B-DEF-001** |
+| **Outcome** | **RESOLVED** — authoritative definition complete; no runtime implementation |
+| **Blocker ID** | **B-DEF-001 — RESOLVED** |
+| **Lifecycle** | C-PROC-002 **BLOCKED → PLANNED** |
+| **Max layer** | Capability definition + Repository Standards + Documentation |
 
 ---
 
@@ -30,13 +32,17 @@ No Step IDs, known targets, preconditions, success conditions, timeouts, or retr
 
 ---
 
-## 2. Exact blocker
+## 2. Historical blocker
 
-**B-DEF-001 — Incomplete Atlas procedure body.**
+**B-DEF-001 — Incomplete Atlas procedure body** was the correct P22.S7
+finding at commit `ac8c050a`.
 
 The mission requires each procedure step to have Step ID, intended action, required capability, preconditions, observable success condition, timeout, retry policy, and failure outcome. The Atlas does not define those fields for C-PROC-002.
 
 Mission rule: *If the Atlas definition is incomplete or contradictory, stop and report the ambiguity rather than silently expanding scope.*
+
+The takeover found `v2-dev` clean and synchronized with `origin/v2-dev`.
+There was no uncommitted partial definition to recover or discard.
 
 ---
 
@@ -61,20 +67,34 @@ No further coding attempts — inventing a Cursor/Terminal/layout procedure woul
 
 ---
 
-## 5. Missing dependency
+## 5. Definition requirements
 
-Owner-authored Atlas procedure definition for C-PROC-002, including:
+The resolution supplied the required Atlas procedure definition:
 
-1. Ordered Step ID table (action, capability, preconditions, success, timeout, retry, failure).  
-2. Named-target resolution rules (Owner-named apps/windows only).  
-3. Final verified “coding workspace prepared” observation.  
-4. Explicit non-goals (no invent apps, no file/destructive ops).
+1. Ordered Step IDs PCW-001 through PCW-006, each with action, capability,
+   target, preconditions, observable success, timeout, retry, and failure.
+2. Explicitly named / existing known / ambiguous / missing target rules.
+3. Final observed target-window and active-window completion criteria.
+4. Bounded C-VER-002/C-VER-003 policy and authorization classification.
+5. Failure, partial-completion, future Product Proof, and explicit non-goals.
+
+The Atlas is the sole authoritative procedure body; this report records the
+blocker's discovery and resolution without creating duplicate procedure truth.
 
 ---
 
-## 6. Recommended next action
+## 6. Resolution
 
-Owner completes the Atlas C-PROC-002 body → re-authorize Capability Execution Loop → engineering implements composition over existing primitives only.
+C-PROC-002 is now **PLANNED** at approximately **31% readiness**:
+
+- Architecture 100% — deterministic contract defined.
+- Dependencies 100% — required capability primitives are engineering-present.
+- Implementation 20% — existing Situation Goals → Continue handoff only.
+- Runtime verification, Product Proof, Trusted, and Production remain 0%.
+
+B-DEF-001 is removed from the active blocker register and retained in the
+resolved-definition register. No application, control, layout, file, project,
+terminal command, or saved Moment was selected as a default.
 
 Interim product behaviour remains: Situation Goals → Continue (Owner-approved Moments restore).
 
@@ -82,4 +102,32 @@ Interim product behaviour remains: Situation Goals → Continue (Owner-approved 
 
 ## 7. Artifact note
 
-No new runtime verifier: definition blocker prevents a machine-checkable procedure. Atlas + this report are the permanent record.
+`scripts/verify-prepare-coding-workspace-definition.mjs` machine-checks the
+Atlas step schema, named-target rules, authorization/retry/failure coverage,
+future Product Proof, and B-DEF-001 lifecycle. It is wired into `pnpm test`.
+It verifies definition completeness only and does not claim runtime behaviour.
+
+---
+
+## 8. Pre-flight and compliance
+
+| Check | Result |
+| --- | --- |
+| Program type | **Documentation** primary; Capability Definition / Repository Standards secondary |
+| Lowest layer | Documentation plus one repository verifier; no runtime/provider change |
+| Maximum layer | Capability |
+| Constitutional review trigger | None |
+| Information owners | Existing Understanding, Orchestration, Authority, Execution, Evidence, Presentation only |
+| Transformation chain | Preserved; future Effects remain Kernel/Permission-gated |
+| Hidden authority | None; current Owner target request authorizes only exact targets |
+| Presentation purity / composition | Preserved; Kernel Operator remains sole composition authority |
+| Product Proof | Defined, not run, not accepted |
+
+---
+
+## 9. Stop condition
+
+The next possible slice is C-PROC-002 runtime implementation, but it is not
+authorized by this definition program. Release Hold remains active. A future
+agent must receive a new explicit Owner authorization and must implement only
+the fixed Atlas contract. Do not select another capability.
