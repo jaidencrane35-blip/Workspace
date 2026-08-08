@@ -1,4 +1,42 @@
 ﻿# Engineering Milestone Report
+## P23.S3 - Answer Source Ladder: Local Time and Date (C-REA-002 extension)
+
+| Field | Value |
+| --- | --- |
+| **Capability ID** | C-REA-002 (extended — no new ID) |
+| **Artifacts** | `app/src/lib/answerSource.ts`, `app/src/lib/temporalAnswerSource.ts`, clock/date comprehension shapes, `intelligenceRouting` zone-table extraction, `verify-answer-source`, `tests/answer-source.test.ts`, Atlas C-REA-002 |
+| **Date** | 2026-08-08 |
+| **Status** | **Engineering complete** — Owner Product Proof required (Owner-visible answers) |
+| **Max layer** | Intent Layer only (no Kernel, no provider, no IPC change, no Rust) |
+| **Readiness** | Overall **57%** (Arch/Deps/Impl/Ver 100%; PP/Trusted/Production 0%) |
+| **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) |
+
+### Summary
+
+Workspace can now answer a question instead of handing it to another AI. The
+measured Owner failure — "What is the time in Queensland, Australia?" opening
+ChatGPT — resolves locally end to end: comprehension gives KNOW in the time
+domain, Queensland resolves to Australia/Brisbane, and the runtime's clock
+supplies the answer. The desktop cascade never runs for it, so no browser and
+no handoff are reachable.
+
+The mechanism is the point, not the phrase. The **Answer Source Ladder** asks
+which trusted source knows something, never which capability executes; all five
+rungs are named and only the deterministic-local rung is implemented. Sources
+emit `{ text, sourceId, rung }` and nothing executable — the verifier rejects
+either module for touching IPC, a capability registry, an action, or provider
+identity. The temporal source is now the repository's single time-zone
+authority: routing's private alias table was removed rather than duplicated, and
+daylight saving comes from `Intl.DateTimeFormat`, never from offset arithmetic
+(falsification: an injected Brisbane offset constant was rejected by the
+verifier). Ambiguous places resolve to nothing and reach the existing
+clarification; unlisted places fall through to C-REA-003, which remains the only
+external route. Gated by P23.S2's predicates, so the ladder cannot pre-empt
+genuine desktop work.
+
+---
+
+# Engineering Milestone Report
 ## P23.S2 - Substitution Prohibition Enforcement (C-ITL-007)
 
 | Field | Value |

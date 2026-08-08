@@ -13,6 +13,12 @@ import {
 } from "./capabilityRegistry";
 import type { IntentAction } from "./intentBridge";
 import { resolveDesktopEntity } from "./semanticIntentEngine";
+import {
+  dateIn,
+  resolveRegionZone,
+  systemZone,
+  timeIn,
+} from "./temporalAnswerSource";
 
 export type IntelligenceKind =
   | "REASONING_LOCAL"
@@ -255,73 +261,37 @@ function tryLocalUnitConversion(text: string): string | null {
   return null;
 }
 
-const TIMEZONE_ALIASES: { test: RegExp; zone: string; label: string }[] = [
-  { test: /\b(utc|gmt)\b/i, zone: "UTC", label: "UTC" },
-  { test: /\b(perth)\b/i, zone: "Australia/Perth", label: "Perth" },
-  {
-    test: /\b(western australia|wa time)\b/i,
-    zone: "Australia/Perth",
-    label: "Western Australia",
-  },
-  { test: /\b(sydney|nsw)\b/i, zone: "Australia/Sydney", label: "Sydney" },
-  { test: /\b(brisbane|qld)\b/i, zone: "Australia/Brisbane", label: "Brisbane" },
-  { test: /\b(melbourne|vic)\b/i, zone: "Australia/Melbourne", label: "Melbourne" },
-  { test: /\b(adelaide|sa)\b/i, zone: "Australia/Adelaide", label: "Adelaide" },
-  { test: /\b(tokyo|japan)\b/i, zone: "Asia/Tokyo", label: "Tokyo" },
-  { test: /\b(london|uk)\b/i, zone: "Europe/London", label: "London" },
-  { test: /\b(new york|nyc|et)\b/i, zone: "America/New_York", label: "New York" },
-  {
-    test: /\b(los angeles|la|pt|pacific)\b/i,
-    zone: "America/Los_Angeles",
-    label: "Los Angeles",
-  },
-];
-
-function formatInZone(zone: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    timeZone: zone,
-    weekday: "short",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZoneName: "short",
-  }).format(new Date());
-}
-
+/**
+ * Local clock answers. Region resolution and the clock itself belong to the
+ * temporal answer source (P23.S3) so there is exactly one time-zone authority;
+ * routing only decides that this utterance is a clock question.
+ */
 function tryLocalDateTime(
   text: string,
 ): { kind: "answer" | "clarify"; reply: string } | null {
-  // Ambiguous WA — ask once (Western Australia vs Washington).
   if (
     /\bwhat(?:'s| is)?\s+the\s+time\b/i.test(text) ||
     /\bwhat\s+time\b/i.test(text)
   ) {
-    if (/\bin\s+wa\b/i.test(text) && !/\bwestern australia\b/i.test(text)) {
+    const region = resolveRegionZone(text);
+    if (region.kind === "ambiguous") {
       return {
         kind: "clarify",
-        reply:
-          "Did you mean Western Australia or Washington state? I can answer either.",
+        reply: `Did you mean ${region.options[0]} or ${region.options[1]}? I can answer either.`,
       };
     }
-    for (const alias of TIMEZONE_ALIASES) {
-      if (alias.test.test(text)) {
-        return {
-          kind: "answer",
-          reply: `In ${alias.label} it’s ${formatInZone(alias.zone)}.`,
-        };
-      }
+    if (region.kind === "zone") {
+      return {
+        kind: "answer",
+        reply: `It’s ${timeIn(region.zone)} in ${region.label}.`,
+      };
     }
     if (
       /^(what(?:'s| is) the time|what time is it|what(?:'s| is) the current time)$/i.test(
         text,
       )
     ) {
-      return {
-        kind: "answer",
-        reply: `It’s ${formatInZone(Intl.DateTimeFormat().resolvedOptions().timeZone)}.`,
-      };
+      return { kind: "answer", reply: `It’s ${timeIn(systemZone())}.` };
     }
   }
 
@@ -330,13 +300,7 @@ function tryLocalDateTime(
       text,
     )
   ) {
-    const formatted = new Intl.DateTimeFormat(undefined, {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }).format(new Date());
-    return { kind: "answer", reply: `Today is ${formatted}.` };
+    return { kind: "answer", reply: `Today is ${dateIn(systemZone())}.` };
   }
 
   return null;

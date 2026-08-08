@@ -1158,7 +1158,26 @@ Two constraints keep enforcement from becoming a second planner:
 
 External handoff is unchanged. `C-REA-003` marks its own decision with `informationHandoff`, and only routing may set that mark (verifier-enforced). A `KNOW` outcome never implies opening ChatGPT by itself.
 
-**Still open.** Workspace still cannot *answer* "What time is it in Queensland?" — it hands off. Obtaining the answer is an intelligence-routing problem, not a substitution problem, and remains out of scope.
+**Still open at the end of S2.** Workspace still could not *answer* "What time is it in Queensland?" — it handed off. Obtaining the answer is an answer-source problem, not a substitution problem, and was closed by S3 below.
+
+### Status — P23.S3 delivered (the first answer source)
+
+Implemented as an extension of **C-REA-002 Local Reasoning**, not a new capability: that capability already owned deterministic local answering, and a second one would have created a competing authority for the same question.
+
+Two modules, both meaning-only:
+
+- `app/src/lib/answerSource.ts` — the **Answer Source Ladder**. It answers *which trusted source knows this*, and is structurally prevented from answering *which capability executes*: the verifier rejects either file for referencing IPC, a capability registry, an executable action, or provider identity. All five rungs are named so later sources slot in; only `deterministic-local` is implemented. The `authorized-external` rung is deliberately empty — external information remains C-REA-003's existing decision, reached by falling *through* the ladder rather than by a source registered in it.
+- `app/src/lib/temporalAnswerSource.ts` — the local clock, and now the repository's single time-zone authority. Region phrase → IANA zone, then `Intl.DateTimeFormat`. Daylight saving belongs to the runtime's time-zone database; the module contains no offset arithmetic and the verifier fails the build if any appears (falsified: injecting a `10 * 60 * 60 * 1000` Brisbane offset was rejected).
+
+The measured Owner failure now resolves locally: `KNOW → domain time → Queensland → Australia/Brisbane → runtime clock → "It’s 7:41 PM in Queensland."`, with the desktop cascade never running, so no browser and no handoff are reachable for it.
+
+Three properties keep this from becoming a second planner:
+
+- **It cannot pre-empt desktop work.** The ladder is gated by S2's own predicates, so it never acts on the bare-question default and never runs for a goal that wants machine change.
+- **It declines rather than guesses.** Ambiguous places (WA, Georgia) resolve to nothing and reach the existing clarification; unlisted places fall through to the existing external path. Bare "WA" resolves only when the previous turn was already an Australian region — evidence, not assumption.
+- **It emits text.** A source returns `{ text, sourceId, rung }` and nothing else. Nothing it produces could be executed.
+
+Comprehension gained clock/date *shapes* rather than phrases, so "Can you tell me the time in Queensland?" and "What is the time right now in QLD?" comprehend identically to "What time is it in Queensland?".
 
 **Blocking dependency — the missing interface.** The contract stops at the Conversation façade. `CapabilityIntent` is a flat `{ domain, operation, arguments }` record with no field for meaning, and the Intent Layer Specification forbids Intent from planning or choosing providers while the Kernel Authority Rule makes the Kernel Operator the sole composition authority. Sending the Goal Contract over `execute_capability_intent` today would either place a second planning input in front of the Operator or require Intent to pre-select the capability — both violations. Conflict C (§30) must be resolved, and the Kernel must expose a meaning-accepting entry point, before comprehension can drive execution.
 

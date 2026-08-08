@@ -294,16 +294,35 @@ function extractPlace(text: string): string | null {
   return null;
 }
 
+/**
+ * Ways an Owner asks for the clock. Phrasings, not a phrase list: each pattern
+ * covers a shape ("what … time", "tell me the time", "the time in …") so
+ * unseen wordings of the same request still comprehend as a clock question.
+ */
+const TIME_REQUEST_SHAPES = [
+  /\bwhat time\b/,
+  /\bwhat(?:'s| is)?\s+(?:the\s+)?(?:current\s+)?time\b/,
+  /\b(?:tell me|know)\s+(?:the\s+)?(?:current\s+)?time\b/,
+  /\bcurrent time\b/,
+  /\btime right now\b/,
+  /\bthe time (?:in|there|now)\b/,
+];
+
+const DATE_REQUEST_SHAPES = [
+  /\bwhat date\b/,
+  /\bwhat(?:'s| is)?\s+(?:the\s+)?(?:today'?s\s+)?date\b/,
+  /\b(?:tell me|know)\s+(?:the\s+)?(?:today'?s\s+)?date\b/,
+  /\bthe date (?:in|there|today)\b/,
+  /\bwhat day is it\b/,
+];
+
 function requestedResultFor(text: string): string | null {
   if (/\bhow many\b/.test(text) || /\bcount\b/.test(text)) return "count";
-  if (/\bwhat(?:'s| is)? the time\b/.test(text) || /\bwhat time\b/.test(text)) {
-    return "current time";
-  }
-  if (
-    /\bwhat(?:'s| is)? (?:today'?s )?date\b/.test(text) ||
-    /\bwhat day is it\b/.test(text)
-  ) {
+  if (DATE_REQUEST_SHAPES.some((shape) => shape.test(text))) {
     return "current date";
+  }
+  if (TIME_REQUEST_SHAPES.some((shape) => shape.test(text))) {
+    return "current time";
   }
   if (SPATIAL_MARKERS.test(text)) return "location";
   if (/\btell me what\b/.test(text) || /\bwhat does it (show|say)\b/.test(text)) {

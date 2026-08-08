@@ -44,6 +44,7 @@ import { resolvePrepareCodingWorkspace } from "./prepareCodingWorkspace";
 import { resolveIntelligenceRoute } from "./intelligenceRouting";
 import { comprehend, type GoalContract } from "./goalContract";
 import { enforceSubstitutionProhibition } from "./substitutionProhibition";
+import { answerForGoal } from "./answerSource";
 
 export type IntentAction =
   | { kind: "navigate"; view: PilotPrimaryView; reply: string }
@@ -2293,6 +2294,15 @@ export function resolveIntentWithGoal(raw: string): {
     const contextual = enforceSubstitutionProhibition(goal, fromContext.action);
     commitWorkspaceContext(raw, contextual, null, goal);
     return { goal, action: contextual };
+  }
+  // P23.S3: when a trusted source can answer the comprehended request, the
+  // answer is the whole response — the desktop cascade never runs, so no
+  // effect and no external handoff can be reached for it.
+  const answer = answerForGoal(goal);
+  if (answer) {
+    const spoken: IntentAction = { kind: "unknown", reply: answer.text };
+    commitWorkspaceContext(raw, spoken, null, goal);
+    return { goal, action: spoken };
   }
   // P23.S2: a request fulfilled by knowledge must not resolve to a desktop
   // effect. Enforcement may only refuse an effect — it never selects one.

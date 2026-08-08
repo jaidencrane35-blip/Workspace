@@ -207,12 +207,12 @@ Execution authority remains: Conversation → Intent → Kernel Operator → Run
 | **Name** | Local Reasoning (arith / units / clock) |
 | **Layer** | L2 Reasoning |
 | **Status** | **IMPLEMENTED** |
-| **Lifecycle** | Engineering complete |
-| **Dependencies** | C-REA-001 |
-| **Verification** | intelligence-routing tests |
-| **Product Proof** | Covered by P22.S1 |
-| **Priority** | — |
-| **Engineering Notes** | No world knowledge invent |
+| **Lifecycle** | Engineering complete — P23.S3 extension awaiting Owner Product Proof |
+| **Dependencies** | C-REA-001; C-ITL-006 (Goal Contract); C-ITL-007 |
+| **Verification** | `verify-answer-source`; `tests/answer-source.test.ts`; intelligence-routing tests |
+| **Product Proof** | P22.S1 covers arith/units. The P23.S3 Answer Source Ladder extension requires Owner Product Proof — Owner-visible answers to time and date questions |
+| **Priority** | Architecture slice P23.S3 |
+| **Engineering Notes** | No world knowledge invent. P23.S3 gave this capability the **Answer Source Ladder** (`app/src/lib/answerSource.ts`): a rung-ordered contract answering "which trusted source knows this", never "which capability executes". Only the deterministic-local rung is implemented, by the temporal source (`app/src/lib/temporalAnswerSource.ts`), which owns the single time-zone authority for the repository — region phrase → IANA zone, then `Intl.DateTimeFormat`, so daylight saving comes from the runtime's time-zone database and never from offset arithmetic (verifier-enforced). Sources emit text only: no IPC, no action, no capability or provider identity. Ambiguous places (WA, Georgia) resolve to nothing and reach the existing clarification; unlisted places fall through to C-REA-003's handoff, which remains the only external route. Gated by the same predicates as C-ITL-007, so the ladder can never pre-empt a genuine desktop request. |
 
 #### C-REA-003 Reasoning Provider Handoff (ChatGPT)
 | | |
@@ -1301,7 +1301,7 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 | C-CON-003 | Soft Send Continuity | IMPLEMENTED | ~71% |
 | C-CON-004 | First-Session Cue | IMPLEMENTED | ~71% |
 | C-REA-001 | Intelligence Routing | IMPLEMENTED | ~57% |
-| C-REA-002 | Local Reasoning | IMPLEMENTED | ~57% |
+| C-REA-002 | Local Reasoning (+ P23.S3 Answer Source Ladder) | IMPLEMENTED | ~57% |
 | C-REA-003 | Provider Handoff | IMPLEMENTED | ~57% |
 | C-REA-004 | In-Conversation Model | FUTURE | ~14% |
 | C-ITL-001..005 | Intent stack | IMPLEMENTED | ~71% |
