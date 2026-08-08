@@ -764,13 +764,25 @@ Overall .................  57%
 | --- | --- |
 | **Name** | Prepare Coding Workspace |
 | **Layer** | L8 Procedures |
-| **Status** | **PLANNED** (partial via situation goals) |
-| **Lifecycle** | Partial eng via situationGoals |
-| **Dependencies** | C-ACT-001; C-OBS-001; preferably control surface |
-| **Verification** | situation goal tests |
-| **Product Proof** | Required for full procedure |
-| **Priority** | P2 |
-| **Engineering Notes** | Expand after C-ACT-004/005 |
+| **Status** | **BLOCKED** |
+| **Lifecycle** | Partial eng via situationGoals; **full procedure definition missing** |
+| **Dependencies** | C-ACT-001; C-OBS-001; control surface (C-OBS-003/004, C-ACT-004/005, C-VER-002/003 eng present) |
+| **Verification** | situation goal tests (partial Continue handoff only) |
+| **Product Proof** | Required after Owner completes Atlas procedure definition |
+| **Priority** | P0 (definition blocked) |
+| **Engineering Notes** | Interim lawful behaviour: `situationGoals` → Continue/Moments — **never invents app sets** (P21.A1/A2). Full Operator Procedure cannot be implemented until Atlas lists explicit Step IDs, known targets, verify conditions, timeouts, and retry policy. See **B-DEF-001**. |
+| **Readiness** | Overall **~14%** (definition incomplete; Arch partial; Impl/Ver/PP 0% for full procedure) |
+| | ```text
+Architecture ............  40%  (name + layer only)
+Dependencies ............  60%  (primitives exist; targets undefined)
+Implementation ..........  20%  (situationGoals Continue handoff only)
+Verification ............   0%  (no procedure harness)
+Product Proof ...........   0%
+Trusted .................   0%
+Production ..............   0%
+Overall ................. ~14%
+``` |
+| **Blocker** | **B-DEF-001** — Atlas procedure body incomplete |
 
 #### C-PROC-003 Situation Goals (setup / coding / done)
 | | |
@@ -958,9 +970,10 @@ PLANNED spine:
   C-OBS-003/004 + C-ACT-004/005 (eng done → PP)
        └─► C-VER-003 Wait (eng done → PP)
               └─► C-VER-002 Retry (eng done → PP)
-                     └─► C-PROC / C-WF (later)
+                     └─► C-PROC-002 (**BLOCKED** B-DEF-001) ──► C-WF-001 (later)
 
 BLOCKED spine:
+  B-DEF-001 Incomplete Atlas procedure definition ──► C-PROC-002
   B-PP-001 Voice Accept ──► C-ACT-011 File Provider
   B-EXT-001 Cert ──► C-REL-002 A2 ──► C-REL-003 F2/B2
 ```
@@ -984,6 +997,7 @@ BLOCKED spine:
 | **B-PP-005** | C-ACT-004/005 Desktop Control Interaction Product Proof pending | High | C-ACT-004 + C-ACT-005 Trusted | Joint Owner session per P22.S4 |
 | **B-PP-006** | C-VER-003 Wait Conditions Product Proof pending | High | C-VER-003 Trusted | Owner live session per P22.S5 |
 | **B-PP-007** | C-VER-002 Bounded Retry Product Proof pending | High | C-VER-002 Trusted | Owner live session per P22.S6 |
+| **B-DEF-001** | C-PROC-002 Atlas procedure body incomplete (no Step IDs / targets / verify / timeouts) | High | C-PROC-002 full eng | Owner completes Atlas procedure definition; then re-authorize slice |
 | **B-PLAT-001** | Windows-only product | Low | All desktop | Accepted scope |
 
 ---
@@ -1058,7 +1072,8 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 | **C-VER-002** | **Retry** | **IMPLEMENTED (eng)** | **57%** |
 | **C-VER-003** | **Wait Conditions** | **IMPLEMENTED (eng)** | **57%** |
 | C-CMP-002..004 | Composition | IMPLEMENTED | ~71% |
-| C-PROC-* / C-WF-* | Procedures / Workflows | Mixed | see records |
+| **C-PROC-002** | **Prepare Coding Workspace** | **BLOCKED** | **~14%** (B-DEF-001) |
+| C-PROC-* / C-WF-* (other) | Procedures / Workflows | Mixed | see records |
 | C-INT-001..003 | Intelligence | IMPLEMENTED | ~57–71% |
 | C-INT-004..005 | Memory / Agent | REJECTED | 0% |
 | C-REL-001 | F1 Pipeline | IMPLEMENTED | ~71% |
@@ -1070,32 +1085,32 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 
 | Rank | ID | Capability | Status | Why |
 | --- | --- | --- | --- | --- |
-| **1** | **C-PROC-002** | Prepare Coding Workspace | **PLANNED** (partial) | Procedures after verify stack eng |
+| **1** | **C-PROC-002** | Prepare Coding Workspace | **BLOCKED** (B-DEF-001) | Needs Owner Atlas procedure definition |
 | 2 | C-REL-002 | Code Signing A2 | BLOCKED (cert) | Parallel release track |
 | 3 | C-ACT-011 | File Provider | BLOCKED (Voice) | Production Before Expansion |
 | 4 | C-OBS-007 | Tokenized perception | FUTURE | After interaction PP |
 | 5 | C-REA-004 | In-Conversation Model | FUTURE | Research |
-| 6 | C-WF-001 | Daily Coding Session | FUTURE | After procedures |
+| 6 | C-WF-001 | Daily Coding Session | FUTURE | After C-PROC-002 |
 
 **Rejected (do not queue):** C-ACT-013; C-INT-004; C-INT-005.
 
-**Just completed eng:** C-VER-002 Bounded Retry → **Owner Product Proof** required (`P22_S6`).
+**Latest eng attempt:** C-PROC-002 — **BLOCKED** (Atlas definition incomplete). No silent scope expansion.
 
 ---
 
 ## 9. Current highest remaining executable capability
 
-### **C-PROC-002 Prepare Coding Workspace** (next executable after Retry eng)
+### **None — waiting on Owner**
 
-| Factor | Assessment |
+All P0/P1 queue entries are **BLOCKED** or FUTURE:
+
+| Candidate | Status |
 | --- | --- |
-| Owner Value | High (named coding setup procedure) |
-| Dependencies | C-ACT-001; C-OBS-001; preferably Trusted control surface |
-| Effort | M |
-| Risk | Med (must not become workflows/agent loops) |
-| Note | Atlas procedures layer — Owner must authorize separately from this slice |
+| C-PROC-002 | **BLOCKED** — B-DEF-001 (complete Atlas procedure body) |
+| C-REL-002 | **BLOCKED** — B-EXT-001 (Authenticode cert) |
+| C-ACT-011 | **BLOCKED** — B-PP-001 / B-CAP-001 (Voice Accept) |
 
-**Do not begin in the same session that completed C-VER-002.**
+**Recommended Owner action for C-PROC-002:** Add to Atlas an explicit step table (Step ID, action, capability, preconditions, success condition, timeout, retry policy, failure outcome) and named-target resolution rules that forbid inventing applications. Then re-authorize Capability Execution Loop.
 
 Parallel: Owner Product Proof for C-OBS-003/004, C-ACT-004/005, C-VER-003, C-VER-002; Authenticode → A2.
 
@@ -1120,11 +1135,11 @@ LOOP:
 
 ## 11. Atlas maintenance checklist (per program)
 
-- [x] Capability row updated (C-VER-002)  
-- [x] Readiness Score 57% (eng)  
-- [x] Verification + Product Proof harness (`P22_S6`)  
-- [x] Blockers register (B-PP-007)  
-- [x] Priority queue re-ranked → C-PROC-002  
+- [x] Capability row updated (C-PROC-002 → **BLOCKED**)  
+- [x] Readiness Score ~14% (definition incomplete)  
+- [x] Blockers register (**B-DEF-001**)  
+- [x] Priority queue / highest-executable = none (Owner wait)  
+- [ ] Owner completes C-PROC-002 Atlas procedure body  
 - [ ] Owner Product Proof for C-OBS-003 / C-OBS-004 / C-ACT-004+005 / C-VER-003 / C-VER-002  
 
 ---
@@ -1134,8 +1149,8 @@ LOOP:
 - Replacing Conversation, Kernel Operator, or Moments  
 - Adopting VLM computer-use runtimes  
 - Spec / constitutional redesign via Atlas  
-- Starting Operator Procedures / workflows in the same slice as C-VER-002  
-- Turning Retry into an agent loop, OCR, or multi-app workflow  
+- Inventing C-PROC-002 step lists / app sets not present in the Atlas  
+- Turning procedures into agent loops, OCR, or multi-app workflows without Atlas authority  
 
 ---
 
@@ -1160,5 +1175,5 @@ Two-digit IDs are **retired**. Meanings remapped to permanent three-digit IDs (*
 ## Stop
 
 **Workspace Capability Atlas v2.0** is the authoritative capability roadmap.  
-C-VER-002 Bounded Retry engineering complete → **Owner Product Proof required** (`P22_S6`).  
-Do not begin Operator Procedures or the next capability in this iteration.
+C-PROC-002 Prepare Coding Workspace → **BLOCKED (B-DEF-001)**.  
+Do not invent procedure steps. Do not begin another capability until Owner completes the Atlas definition and re-authorizes.

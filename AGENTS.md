@@ -10,7 +10,7 @@ Before any implementation work:
 4. Read the engineering handoff: **[`docs/project/ENGINEERING_HANDOFF.md`](docs/project/ENGINEERING_HANDOFF.md)**
 5. Reassess `docs/project-health.json`.
 
-Current handoff posture: **Release Hold** (Stage 2 — Owner Acceptance; Accepted with changes). Spec v2.1 + EES v1 stable. **Capability roadmap:** [`docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md`](docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md) (**v2.0**). **C-OBS-003/004** + **C-ACT-004/005** + **C-VER-003** + **C-VER-002** eng complete — Owner Product Proof required. Next Atlas eng: **C-PROC-002** (Owner-authorized). R2 Hold + Atlas Execution Loop. Next release eng: **A2** after Authenticode cert. File Provider blocked until Voice Accept.
+Current handoff posture: **Release Hold** (Stage 2 — Owner Acceptance; Accepted with changes). Spec v2.1 + EES v1 stable. **Capability roadmap:** [`docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md`](docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md) (**v2.0**). Control-surface eng through **C-VER-002** — Owner Product Proof required. **C-PROC-002 BLOCKED (B-DEF-001)** — Owner must complete Atlas procedure body before re-auth. R2 Hold + Atlas Execution Loop. Next release eng: **A2** after Authenticode cert. File Provider blocked until Voice Accept.
 
 ## Cursor Cloud specific instructions
 
