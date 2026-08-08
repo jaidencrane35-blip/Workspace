@@ -43,8 +43,11 @@ import {
 import { resolvePrepareCodingWorkspace } from "./prepareCodingWorkspace";
 import { resolveIntelligenceRoute } from "./intelligenceRouting";
 import { comprehend, type GoalContract } from "./goalContract";
-import { enforceSubstitutionProhibition } from "./substitutionProhibition";
-import { answerForGoal } from "./answerSource";
+import {
+  enforceSubstitutionProhibition,
+  isSpeakingAction,
+} from "./substitutionProhibition";
+import { answerForGoal, observationNeededFor } from "./answerSource";
 
 export type IntentAction =
   | { kind: "navigate"; view: PilotPrimaryView; reply: string }
@@ -2277,6 +2280,29 @@ export function resolveIntent(raw: string): IntentAction {
 }
 
 /**
+ * P23.S4 — Observation Answer Bridge.
+ *
+ * A question about the desktop's current state is answered by observing it. The
+ * meaning was already comprehended correctly; only literal matching missed some
+ * phrasings of it, and the request fell through to a refusal. This carries the
+ * comprehended need to the *existing* authorized observation request — the same
+ * one "Which windows are open?" already used — so the Kernel remains the sole
+ * observer and no new execution path exists.
+ *
+ * Bounded by construction: one semantic need maps to one existing request, and
+ * an action the cascade already resolved is never overridden, so this cannot
+ * become a capability selector.
+ */
+function bridgeObservationRequest(
+  goal: GoalContract,
+  action: IntentAction,
+): IntentAction {
+  if (!isSpeakingAction(action)) return action;
+  if (observationNeededFor(goal) !== "open-windows") return action;
+  return { kind: "winEnumerate", reply: "Checking which windows are open." };
+}
+
+/**
  * P23.S1 — Outcome-First Comprehension.
  *
  * Meaning is comprehended before any desktop matching runs, and the resulting
@@ -2308,7 +2334,7 @@ export function resolveIntentWithGoal(raw: string): {
   // effect. Enforcement may only refuse an effect — it never selects one.
   const action = enforceSubstitutionProhibition(
     goal,
-    applyGoalResolution(raw, resolveIntentCore(raw)),
+    bridgeObservationRequest(goal, applyGoalResolution(raw, resolveIntentCore(raw))),
   );
   commitWorkspaceContext(raw, action, null, goal);
   return { goal, action };

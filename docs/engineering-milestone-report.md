@@ -1,4 +1,45 @@
 ﻿# Engineering Milestone Report
+## P23.S4 - Observation Answer Bridge (C-REA-002 rung 3, reusing C-OBS-001)
+
+| Field | Value |
+| --- | --- |
+| **Capability ID** | C-REA-002 (extended) reusing C-OBS-001 — no new ID |
+| **Artifacts** | `app/src/lib/observationAnswerSource.ts`, `ObservationAnswerSource`/`ObservationNeed` contract in `answerSource.ts`, `bridgeObservationRequest`, façade answer composition, `verify-observation-answer`, `tests/observation-answer.test.ts`, Atlas C-REA-002 + C-OBS-001 |
+| **Date** | 2026-08-08 |
+| **Status** | **Engineering complete** — Owner Product Proof required (Owner-visible answers) |
+| **Max layer** | Intent Layer + Conversation façade (no Kernel change, no new IPC, no Rust) |
+| **Readiness** | C-REA-002 **57%**, C-OBS-001 **71%** — unchanged; PP/Trusted/Production not advanced |
+| **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) |
+
+### Summary
+
+"What windows are currently open?" was refused — measured, before any change:
+comprehension already produced PERCEIVE_MACHINE in the desktop domain, but
+literal matching missed that phrasing and the request fell out as "I can work
+with open windows when I know which one you mean." "What applications are
+open?" got a generic refusal. Meanwhile "Which windows are open?" worked. The
+meaning was right and was being discarded.
+
+The audit found no missing Kernel interface: `execute_capability_intent` already
+carries `window/enumerate` through the Permission Gateway and returns structured
+`items`, and Conversation was already receiving them and showing the Kernel's
+bulleted operational text instead. So the bridge needed no new authority, no new
+IPC, and no Rust — only two connections. The comprehended need now reaches the
+*existing* authorized observation, and the observation that comes back is
+composed into an answer.
+
+The ladder gained its `capability-observation` rung, whose sources are
+structurally incapable of observing: a source declares a semantic
+`ObservationNeed` and composes whatever authorized observation returns. Exactly
+one need exists and widening it is verifier-rejected (falsified: adding
+`"active-window"` was refused), which is what prevents a second planner. The
+answer is derived only from observed items — proved with window titles that
+appear nowhere in the repository — and a refused or empty observation is
+reported as it stands rather than filled in.
+
+---
+
+# Engineering Milestone Report
 ## P23.S3 - Answer Source Ladder: Local Time and Date (C-REA-002 extension)
 
 | Field | Value |

@@ -11,8 +11,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const invoke = vi.fn();
-vi.mock("@tauri-apps/api/core", () => ({ invoke }));
+// Stands in for the single IPC entry. `@tauri-apps/api` resolves outside this
+// workspace package and cannot be replaced, so mocking it would silently
+// no-op and every "no IPC" assertion below would be vacuous.
+const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
+vi.mock("../app/src/lib/ipc", () => ({
+  invokeIpc: invoke,
+  IpcCommandError: class extends Error {},
+}));
 
 import { comprehend } from "../app/src/lib/goalContract";
 import {
@@ -32,6 +38,7 @@ import {
   timeIn,
 } from "../app/src/lib/temporalAnswerSource";
 import { classifyIntelligenceKind } from "../app/src/lib/intelligenceRouting";
+import { handleOperatorUtterance } from "../app/src/lib/operator/intelligence";
 import { resetWorkspaceContext } from "../app/src/lib/workspaceContext";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -244,6 +251,14 @@ describe("P23.S3 Queensland — the exact Owner failure", () => {
   beforeEach(() => {
     resetWorkspaceContext();
     invoke.mockClear();
+  });
+
+  it("answers through the real Conversation façade without any IPC", async () => {
+    const outcome = await handleOperatorUtterance(UTTERANCE);
+    expect(outcome.kind).toBe("reply");
+    const text = outcome.kind === "reply" ? outcome.text : "";
+    expect(text).toMatch(/^It’s \d{1,2}:\d{2} (AM|PM) in Queensland\.$/);
+    expect(invoke).not.toHaveBeenCalled();
   });
 
   it("answers locally end to end and reaches no external source", () => {

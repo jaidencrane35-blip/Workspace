@@ -3,6 +3,7 @@
  * No provider composition, execution order, or permission policy in TypeScript.
  */
 
+import { composeObservationAnswer } from "../answerSource";
 import { resolveIntentWithGoal } from "../intentBridge";
 import { invokeIpc } from "../ipc";
 import { getVoiceStatus } from "../voice";
@@ -85,5 +86,10 @@ export async function handleOperatorUtterance(
   // Boundary: the Goal Contract stops here. Kernel Operator owns capability
   // selection and composition, and `CapabilityIntent` carries no meaning field.
   const result = await executeCapabilityIntent(capabilityIntent);
-  return { kind: "reply", text: result.message, goal };
+
+  // P23.S4: when the Owner asked a question, the authorized observation the
+  // Kernel returned is the answer. Composition reads that result and nothing
+  // else, so an observation that reports nothing is reported as it stands.
+  const answer = composeObservationAnswer(goal, result);
+  return { kind: "reply", text: answer?.text ?? result.message, goal };
 }

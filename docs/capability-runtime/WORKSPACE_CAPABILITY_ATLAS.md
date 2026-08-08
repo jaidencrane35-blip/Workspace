@@ -208,11 +208,11 @@ Execution authority remains: Conversation → Intent → Kernel Operator → Run
 | **Layer** | L2 Reasoning |
 | **Status** | **IMPLEMENTED** |
 | **Lifecycle** | Engineering complete — P23.S3 extension awaiting Owner Product Proof |
-| **Dependencies** | C-REA-001; C-ITL-006 (Goal Contract); C-ITL-007 |
-| **Verification** | `verify-answer-source`; `tests/answer-source.test.ts`; intelligence-routing tests |
-| **Product Proof** | P22.S1 covers arith/units. The P23.S3 Answer Source Ladder extension requires Owner Product Proof — Owner-visible answers to time and date questions |
-| **Priority** | Architecture slice P23.S3 |
-| **Engineering Notes** | No world knowledge invent. P23.S3 gave this capability the **Answer Source Ladder** (`app/src/lib/answerSource.ts`): a rung-ordered contract answering "which trusted source knows this", never "which capability executes". Only the deterministic-local rung is implemented, by the temporal source (`app/src/lib/temporalAnswerSource.ts`), which owns the single time-zone authority for the repository — region phrase → IANA zone, then `Intl.DateTimeFormat`, so daylight saving comes from the runtime's time-zone database and never from offset arithmetic (verifier-enforced). Sources emit text only: no IPC, no action, no capability or provider identity. Ambiguous places (WA, Georgia) resolve to nothing and reach the existing clarification; unlisted places fall through to C-REA-003's handoff, which remains the only external route. Gated by the same predicates as C-ITL-007, so the ladder can never pre-empt a genuine desktop request. |
+| **Dependencies** | C-REA-001; C-ITL-006 (Goal Contract); C-ITL-007; C-OBS-001 (observation rung) |
+| **Verification** | `verify-answer-source`; `verify-observation-answer`; `tests/answer-source.test.ts`; `tests/observation-answer.test.ts`; intelligence-routing tests |
+| **Product Proof** | P22.S1 covers arith/units. The P23.S3 and P23.S4 Answer Source Ladder extensions require Owner Product Proof — Owner-visible answers to time, date, and open-window questions |
+| **Priority** | Architecture slices P23.S3, P23.S4 |
+| **Engineering Notes** | No world knowledge invent. P23.S3 gave this capability the **Answer Source Ladder** (`app/src/lib/answerSource.ts`): a rung-ordered contract answering "which trusted source knows this", never "which capability executes". Only the deterministic-local rung is implemented, by the temporal source (`app/src/lib/temporalAnswerSource.ts`), which owns the single time-zone authority for the repository — region phrase → IANA zone, then `Intl.DateTimeFormat`, so daylight saving comes from the runtime's time-zone database and never from offset arithmetic (verifier-enforced). Sources emit text only: no IPC, no action, no capability or provider identity. Ambiguous places (WA, Georgia) resolve to nothing and reach the existing clarification; unlisted places fall through to C-REA-003's handoff, which remains the only external route. Gated by the same predicates as C-ITL-007, so the ladder can never pre-empt a genuine desktop request. P23.S4 added the `capability-observation` rung, whose sources cannot observe: a source declares a semantic `ObservationNeed` and composes an answer from whatever authorized observation returns, so the Kernel stays the sole observer and the Permission Gateway still decides. Exactly one need exists (`open-windows`, served by C-OBS-001) and widening it is verifier-rejected, which is what keeps the rung from becoming a capability selector. |
 
 #### C-REA-003 Reasoning Provider Handoff (ChatGPT)
 | | |
@@ -373,10 +373,10 @@ Overall ................. 57%
 | **Status** | **IMPLEMENTED** |
 | **Lifecycle** | Trusted candidate (Owner use) |
 | **Dependencies** | Window Provider |
-| **Verification** | Window product-proof tests; batteries |
-| **Product Proof** | “What windows are open?” live path |
+| **Verification** | Window product-proof tests; batteries; `verify-observation-answer`; `tests/observation-answer.test.ts` |
+| **Product Proof** | “What windows are open?” live path — Owner Product Proof still required for the P23.S4 answer form |
 | **Priority** | — |
-| **Engineering Notes** | Title match — not tab/DOM |
+| **Engineering Notes** | Title match — not tab/DOM. P23.S4 reuses this observation unchanged as the first answer source at the `capability-observation` rung: the comprehended need reaches the existing `window/enumerate` request, and the returned `items` are composed into a conversational answer. No second enumeration, no new Kernel interface, no Rust change. `ApplicationWindowItem` carries no process name, so answers name window titles; naming applications would require carrying `process_name` through the item and belongs to its own slice. |
 
 #### C-OBS-002 Active Window
 | | |
@@ -1301,7 +1301,7 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 | C-CON-003 | Soft Send Continuity | IMPLEMENTED | ~71% |
 | C-CON-004 | First-Session Cue | IMPLEMENTED | ~71% |
 | C-REA-001 | Intelligence Routing | IMPLEMENTED | ~57% |
-| C-REA-002 | Local Reasoning (+ P23.S3 Answer Source Ladder) | IMPLEMENTED | ~57% |
+| C-REA-002 | Local Reasoning (+ P23.S3/S4 Answer Source Ladder) | IMPLEMENTED | ~57% |
 | C-REA-003 | Provider Handoff | IMPLEMENTED | ~57% |
 | C-REA-004 | In-Conversation Model | FUTURE | ~14% |
 | C-ITL-001..005 | Intent stack | IMPLEMENTED | ~71% |

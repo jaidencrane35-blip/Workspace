@@ -20,6 +20,7 @@ import {
   isAnswerOnlyGoal,
 } from "./substitutionProhibition";
 import { temporalAnswerSource } from "./temporalAnswerSource";
+import { openWindowsAnswerSource } from "./observationAnswerSource";
 
 /**
  * Precedence for obtaining an answer. Lower rungs are preferred because they
@@ -67,8 +68,41 @@ export interface AnswerSource {
   answer(goal: GoalContract): Answer | null;
 }
 
+/**
+ * A source at the `capability-observation` rung cannot answer on its own: the
+ * data belongs to the desktop, and only the Kernel may observe it. Such a
+ * source therefore splits in two — it declares *what* it needs observed, and it
+ * composes an answer once an authorized observation comes back. It never
+ * obtains the observation itself, so the authority boundary is structural
+ * rather than a matter of discipline.
+ *
+ * `need` is a semantic description of the observation, never a capability,
+ * provider, or operation identifier. Translating a need into the existing
+ * authorized request is the Intent Layer's job, exactly as it is for an
+ * utterance.
+ */
+export type ObservationNeed = "open-windows";
+
+/** Structural view of an authorized observation. Not a transport type. */
+export interface ObservationResult {
+  ok: boolean;
+  items?: Array<{ title: string }> | null;
+}
+
+export interface ObservationAnswerSource {
+  id: string;
+  rung: "capability-observation";
+  need: ObservationNeed;
+  covers(goal: GoalContract): boolean;
+  compose(goal: GoalContract, observation: ObservationResult): Answer | null;
+}
+
 /** Registered sources. Order within a rung is declaration order. */
 const SOURCES: readonly AnswerSource[] = [temporalAnswerSource];
+
+const OBSERVATION_SOURCES: readonly ObservationAnswerSource[] = [
+  openWindowsAnswerSource,
+];
 
 /** Walk the ladder and return the first truthful answer. */
 export function resolveAnswer(goal: GoalContract): Answer | null {
@@ -94,4 +128,35 @@ export function answerForGoal(goal: GoalContract): Answer | null {
     return null;
   }
   return resolveAnswer(goal);
+}
+
+/**
+ * Which observation, if any, this request needs before it can be answered.
+ * Returns a semantic need — the caller decides how to obtain it through the
+ * existing authorized path.
+ */
+export function observationNeededFor(goal: GoalContract): ObservationNeed | null {
+  for (const source of OBSERVATION_SOURCES) {
+    if (source.covers(goal)) return source.need;
+  }
+  return null;
+}
+
+/**
+ * Turn an authorized observation into the Owner's answer.
+ *
+ * Returns null when no source covers the request or the observation carries
+ * nothing to report, so the truthful result of the observation itself is used
+ * instead of an invented one.
+ */
+export function composeObservationAnswer(
+  goal: GoalContract,
+  observation: ObservationResult,
+): Answer | null {
+  for (const source of OBSERVATION_SOURCES) {
+    if (!source.covers(goal)) continue;
+    const answer = source.compose(goal, observation);
+    if (answer) return answer;
+  }
+  return null;
 }

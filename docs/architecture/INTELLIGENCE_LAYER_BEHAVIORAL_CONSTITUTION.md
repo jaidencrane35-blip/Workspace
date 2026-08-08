@@ -1179,6 +1179,21 @@ Three properties keep this from becoming a second planner:
 
 Comprehension gained clock/date *shapes* rather than phrases, so "Can you tell me the time in Queensland?" and "What is the time right now in QLD?" comprehend identically to "What time is it in Queensland?".
 
+### Status — P23.S4 delivered (the first observed answer)
+
+The measured failure: "What windows are currently open?" was refused with "I can work with open windows when I know which one you mean.", and "What applications are open?" got a generic refusal — while "Which windows are open?" worked. Comprehension had already produced `PERCEIVE_MACHINE` in the desktop domain for all three. **The meaning was correct and was being discarded**, which is the clearest demonstration so far of the gap this constitution describes.
+
+The audit found the Kernel side already complete. `execute_capability_intent` carries `window/enumerate` through the Permission Gateway and returns structured `items`; Conversation was already receiving them and displaying the Kernel's operational bullet list. No missing interface, no new IPC, and no Rust change — the slice needed two connections, not an authority model:
+
+1. **Meaning reaches the existing request.** When comprehension identifies the open-window inventory need and literal matching produced nothing, the need is carried to the *same* authorized observation `"Which windows are open?"` already used. An action the cascade resolved is never overridden, so this cannot select capabilities.
+2. **The observation becomes the answer.** The façade composes the returned items into "You've got 3 windows open: Chrome, Cursor, and File Explorer."
+
+The ladder gained its `capability-observation` rung, and its shape is the point: a source at this rung **cannot observe**. It declares a semantic `ObservationNeed` and composes whatever authorized observation returns — the authority boundary is structural rather than a matter of discipline. Exactly one need exists (`open-windows`), and widening it is verifier-rejected, so the rung cannot become a second planner without a deliberate slice.
+
+Truthfulness is enforced by derivation: the answer contains only observed titles (proved with titles that appear nowhere in the repository), and a refused or empty observation is reported as it stands. Because `ApplicationWindowItem` carries no process name, answers name window titles rather than applications; carrying `process_name` through is a separate slice.
+
+**Conflict C is narrowed, not resolved.** Meaning now reaches execution for exactly one semantic need, through the existing `CapabilityIntent`, which still has no meaning field. The general case — arbitrary comprehended goals driving Kernel composition — remains blocked on the same missing interface.
+
 **Blocking dependency — the missing interface.** The contract stops at the Conversation façade. `CapabilityIntent` is a flat `{ domain, operation, arguments }` record with no field for meaning, and the Intent Layer Specification forbids Intent from planning or choosing providers while the Kernel Authority Rule makes the Kernel Operator the sole composition authority. Sending the Goal Contract over `execute_capability_intent` today would either place a second planning input in front of the Operator or require Intent to pre-select the capability — both violations. Conflict C (§30) must be resolved, and the Kernel must expose a meaning-accepting entry point, before comprehension can drive execution.
 
 ## Stop

@@ -61,8 +61,13 @@ export function hasPositiveOutcomeEvidence(goal: GoalContract): boolean {
   return !goal.evidence.includes("bare_question");
 }
 
-function isSpeaking(action: IntentAction): boolean {
+/** True when the action only speaks — it changes neither machine nor surface. */
+export function isSpeakingAction(action: IntentAction): boolean {
   return SPEAKING_KINDS.has(action.kind);
+}
+
+function isSpeaking(action: IntentAction): boolean {
+  return isSpeakingAction(action);
 }
 
 function isSoftMiss(action: IntentAction): boolean {
