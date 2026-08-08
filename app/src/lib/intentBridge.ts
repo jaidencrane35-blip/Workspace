@@ -42,6 +42,7 @@ import {
 } from "./compoundOpen";
 import { resolvePrepareCodingWorkspace } from "./prepareCodingWorkspace";
 import { resolveIntelligenceRoute } from "./intelligenceRouting";
+import { comprehend, type GoalContract } from "./goalContract";
 
 export type IntentAction =
   | { kind: "navigate"; view: PilotPrimaryView; reply: string }
@@ -2244,14 +2245,30 @@ export function resolveIntentBeforeGoalResolution(raw: string): IntentAction {
  * Context-owned actions are final (Goal Resolution must not re-unbind referents).
  */
 export function resolveIntent(raw: string): IntentAction {
+  return resolveIntentWithGoal(raw).action;
+}
+
+/**
+ * P23.S1 — Outcome-First Comprehension.
+ *
+ * Meaning is comprehended before any desktop matching runs, and the resulting
+ * Goal Contract is preserved rather than discarded. It does not yet influence
+ * which action is chosen: capability selection is Kernel Operator authority and
+ * is out of scope for this slice.
+ */
+export function resolveIntentWithGoal(raw: string): {
+  goal: GoalContract;
+  action: IntentAction;
+} {
+  const goal = comprehend(raw);
   const fromContext = resolveFromWorkspaceContext(raw);
   if (fromContext) {
-    commitWorkspaceContext(raw, fromContext.action);
-    return fromContext.action;
+    commitWorkspaceContext(raw, fromContext.action, null, goal);
+    return { goal, action: fromContext.action };
   }
   const action = applyGoalResolution(raw, resolveIntentCore(raw));
-  commitWorkspaceContext(raw, action);
-  return action;
+  commitWorkspaceContext(raw, action, null, goal);
+  return { goal, action };
 }
 
 /** Progressive reveal for reply text (not model streaming). */

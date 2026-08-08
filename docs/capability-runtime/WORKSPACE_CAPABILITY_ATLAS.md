@@ -309,6 +309,32 @@ Execution authority remains: Conversation → Intent → Kernel Operator → Run
 | **Priority** | — |
 | **Engineering Notes** | Includes `desktop-ui-tree` node (C-OBS-003) |
 
+#### C-ITL-006 Goal Contract (Outcome-First Comprehension)
+| | |
+| --- | --- |
+| **Name** | Goal Contract (Outcome-First Comprehension) |
+| **Layer** | L3 Intent |
+| **Status** | **IMPLEMENTED** |
+| **Lifecycle** | Engineering complete |
+| **Dependencies** | C-ITL-001; C-ITL-002; C-ITL-003 |
+| **Verification** | `verify-goal-contract`; `tests/goal-contract.test.ts` |
+| **Product Proof** | Not applicable alone — comprehension is internal; proved through the capability that consumes it |
+| **Priority** | Architecture slice P23.S1 |
+| **Engineering Notes** | Meaning-only representation of the Owner's desired outcome, comprehended before desktop matching and preserved in Workspace Context. Selects no capability and performs no Effect. Distinct from C-ITL-004, which derives its outcome from an already-chosen action and carries an ExecutionPlan. Stops at the Kernel IPC boundary: `CapabilityIntent` carries no meaning field, pending Conflict C resolution. |
+
+Capability Readiness Score:
+
+```text
+Architecture ............ 100%
+Dependencies ............ 100%
+Implementation .......... 100%
+Verification ............ 100%
+Product Proof ........... 0%
+Trusted ................. 0%
+Production .............. 0%
+Overall ................. 57%
+```
+
 ---
 
 ### Layer 4 — Desktop Observation
@@ -1253,6 +1279,7 @@ Overall = mean of seven dimensions. Eng-complete without Owner PP defaults to **
 | C-REA-003 | Provider Handoff | IMPLEMENTED | ~57% |
 | C-REA-004 | In-Conversation Model | FUTURE | ~14% |
 | C-ITL-001..005 | Intent stack | IMPLEMENTED | ~71% |
+| **C-ITL-006** | **Goal Contract (Outcome-First Comprehension)** | **IMPLEMENTED (eng)** | **57%** |
 | C-OBS-001 | Enumerate Windows | IMPLEMENTED | ~71% |
 | C-OBS-002 | Active Window | IMPLEMENTED | ~71% |
 | **C-OBS-003** | **Desktop UI Tree** | **IMPLEMENTED (eng)** | **57%** |

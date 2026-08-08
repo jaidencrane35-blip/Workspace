@@ -3,7 +3,7 @@
  * No provider composition, execution order, or permission policy in TypeScript.
  */
 
-import { resolveIntent } from "../intentBridge";
+import { resolveIntentWithGoal } from "../intentBridge";
 import { invokeIpc } from "../ipc";
 import { getVoiceStatus } from "../voice";
 import { isCapabilityIntentAction, toCapabilityIntent } from "./intentMap";
@@ -25,7 +25,8 @@ export async function handleOperatorUtterance(
   utterance: string,
   options?: HandleOperatorUtteranceOptions,
 ): Promise<OperatorOutcome> {
-  const intent = resolveIntent(utterance);
+  // P23.S1: meaning is comprehended first and preserved alongside the action.
+  const { goal, action: intent } = resolveIntentWithGoal(utterance);
 
   if (
     intent.kind === "unknown" ||
@@ -37,6 +38,7 @@ export async function handleOperatorUtterance(
       kind: "reply",
       text: intent.reply,
       suggestion: "suggestion" in intent ? intent.suggestion : undefined,
+      goal,
     };
   }
 
@@ -46,6 +48,7 @@ export async function handleOperatorUtterance(
     return {
       kind: "reply",
       text: status.message,
+      goal,
     };
   }
 
@@ -56,17 +59,18 @@ export async function handleOperatorUtterance(
       const result = await invokeIpc<{ path: string; message: string }>(
         "export_support_bundle",
       );
-      return { kind: "reply", text: result.message };
+      return { kind: "reply", text: result.message, goal };
     } catch {
       return {
         kind: "reply",
         text: "I couldn’t create a support package. Try again in a moment.",
+        goal,
       };
     }
   }
 
   if (!isCapabilityIntentAction(intent)) {
-    return { kind: "shell", action: intent };
+    return { kind: "shell", action: intent, goal };
   }
 
   const capabilityIntent = toCapabilityIntent(intent);
@@ -74,9 +78,12 @@ export async function handleOperatorUtterance(
     return {
       kind: "reply",
       text: "I need a clearer request before I can act.",
+      goal,
     };
   }
 
+  // Boundary: the Goal Contract stops here. Kernel Operator owns capability
+  // selection and composition, and `CapabilityIntent` carries no meaning field.
   const result = await executeCapabilityIntent(capabilityIntent);
-  return { kind: "reply", text: result.message };
+  return { kind: "reply", text: result.message, goal };
 }

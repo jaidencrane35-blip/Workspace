@@ -1,4 +1,5 @@
 import type { IntentAction } from "../intentBridge";
+import type { GoalContract } from "../goalContract";
 
 /** Mirrors kernel `CapabilityIntent` (camelCase IPC). */
 export interface CapabilityIntent {
@@ -40,6 +41,12 @@ export interface OperatorTurnResult {
   compositionId?: string | null;
 }
 
+/**
+ * P23.S1 — `goal` carries comprehended meaning to the Conversation boundary.
+ * It is not sent over IPC: `CapabilityIntent` has no meaning field, and adding
+ * one would place a second planning input in front of the Kernel Operator
+ * before capability-selection authority is settled.
+ */
 export type OperatorOutcome =
-  | { kind: "reply"; text: string; suggestion?: string }
-  | { kind: "shell"; action: IntentAction };
+  | { kind: "reply"; text: string; suggestion?: string; goal?: GoalContract }
+  | { kind: "shell"; action: IntentAction; goal?: GoalContract };

@@ -13,9 +13,12 @@
 
 import type { IntentAction } from "./intentBridge";
 import type { ExecutionPlan } from "./executionPlanner";
+import type { GoalContract } from "./goalContract";
 
 export interface WorkspaceContextState {
   currentObjective: string | null;
+  /** P23.S1 — comprehended meaning for this turn (never execution detail). */
+  currentGoal: GoalContract | null;
   lastAction: IntentAction | null;
   lastUtterance: string | null;
   lastWindowQuery: string | null;
@@ -38,6 +41,7 @@ let state: WorkspaceContextState = emptyState();
 function emptyState(): WorkspaceContextState {
   return {
     currentObjective: null,
+    currentGoal: null,
     lastAction: null,
     lastUtterance: null,
     lastWindowQuery: null,
@@ -384,12 +388,14 @@ export function commitWorkspaceContext(
   utterance: string,
   action: IntentAction,
   plan?: ExecutionPlan | null,
+  goal?: GoalContract | null,
 ): void {
   state = {
     ...state,
     turn: state.turn + 1,
     lastUtterance: utterance.trim(),
     lastAction: cloneAction(action),
+    currentGoal: goal ?? state.currentGoal,
     currentObjective: action.reply || state.currentObjective,
     lastPlanSummary: plan
       ? plan.steps.map((s) => s.goal).join(" → ")

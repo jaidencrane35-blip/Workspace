@@ -1,4 +1,34 @@
 ﻿# Engineering Milestone Report
+## P23.S1 - Outcome-First Comprehension (C-ITL-006 Goal Contract)
+
+| Field | Value |
+| --- | --- |
+| **Capability ID** | C-ITL-006 |
+| **Artifacts** | `app/src/lib/goalContract.ts`, `resolveIntentWithGoal`, Workspace Context `currentGoal`, `verify-goal-contract`, `tests/goal-contract.test.ts`, Atlas C-ITL-006 |
+| **Date** | 2026-08-08 |
+| **Status** | **Engineering complete** — internal comprehension; no Owner Product Proof surface of its own |
+| **Max layer** | Intent Layer only (no Kernel, no provider, no IPC change) |
+| **Readiness** | Overall **57%** (Arch/Deps/Impl/Ver 100%; PP/Trusted/Production 0%) |
+| **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) |
+
+### Summary
+
+First implementation slice from the Intelligence Layer Behavioral Constitution.
+Comprehension now derives what the Owner wants to be true from accumulated
+signals over the whole utterance, before Workspace Context and before any
+desktop matching, and the result is preserved instead of discarded. Compound
+requests keep their final requested result rather than collapsing to the first
+verb; machine questions containing effect words stay observational; unresolved
+references and unrecognised targets are represented rather than invented.
+
+The Goal Contract carries no capability id, provider, operation, or step, and
+does not yet influence which action is chosen — capability selection remains
+Kernel Operator authority. It stops at the Conversation façade because
+`CapabilityIntent` has no meaning field; Conflict C (constitution §30) must be
+resolved before comprehension can drive execution. P22.S1 routing unchanged.
+
+---
+
 ## C-PROC-002 - Prepare Coding Workspace Runtime Implementation
 
 | Field | Value |

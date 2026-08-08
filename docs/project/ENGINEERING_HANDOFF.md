@@ -13,7 +13,9 @@
 | **Current priority** | Owner Product Proof (C-OBS-003/004 + C-ACT-004/005 + C-VER-003 + C-VER-002 + **C-PROC-002**); C-PROC-002 **IMPLEMENTED (eng)** — Product Proof required |
 | **Resume triggers** | `docs/production/R2_RELEASE_HOLD.md` + Capability Atlas Execution Loop |
 | **Capability Atlas** | `docs/capability-runtime/WORKSPACE_CAPABILITY_ATLAS.md` (**v2.0** — Pair Rule §0.1 active) |
-| **Latest program** | C-PROC-002 Prepare Coding Workspace runtime implementation — engineering complete; Owner Product Proof not started |
+| **Latest program** | P23.S1 Outcome-First Comprehension (**C-ITL-006** Goal Contract) — engineering complete; Intent Layer only; meaning preserved but not yet authoritative |
+| **Intelligence design** | `docs/architecture/INTELLIGENCE_LAYER_BEHAVIORAL_CONSTITUTION.md` — P23.S1 status + blocking dependency recorded at the end |
+| **Prior program** | C-PROC-002 Prepare Coding Workspace runtime implementation — engineering complete; Owner Product Proof not started |
 | **P22.S7 report** | `docs/capability-runtime/product-proof/P22_S7_PREPARE_CODING_WORKSPACE_BLOCKED.md` |
 | **P22.S6 report** | `docs/capability-runtime/product-proof/P22_S6_BOUNDED_RETRY.md` |
 | **P22.S5 report** | `docs/capability-runtime/product-proof/P22_S5_WAIT_CONDITIONS.md` |
