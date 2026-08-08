@@ -599,6 +599,11 @@ pub fn compose_user_reply(
                     .as_deref()
                     .unwrap_or("I couldn’t list controls in that window."),
             ),
+            ("window", "find_control") => strip_jargon(
+                last.message
+                    .as_deref()
+                    .unwrap_or("I couldn’t find that control."),
+            ),
             ("application", "enumerate") => {
                 let titles = last
                     .items

@@ -293,6 +293,34 @@ mod tests {
     }
 
     #[test]
+    fn window_find_control_through_router() {
+        let found = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::FindControl,
+                query: Some("Fixture Focus".into()),
+                text: Some("Save".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(found.ok);
+        assert_eq!(found.status.as_deref(), Some("control_found"));
+        assert!(found.text.as_ref().is_some_and(|t| t.contains("Save")));
+
+        let missing = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::FindControl,
+                query: Some("Fixture Focus".into()),
+                text: Some("NoSuchControlZZZ".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(!missing.ok);
+        assert_eq!(missing.status.as_deref(), Some("control_not_found"));
+    }
+
+    #[test]
     fn notifications_status_and_show_through_router() {
         let status = runtime()
             .invoke(ProviderInvokeRequest {

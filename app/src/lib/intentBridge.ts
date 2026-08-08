@@ -118,6 +118,7 @@ export type IntentAction =
   | { kind: "appEnumerate"; reply: string }
   | { kind: "winEnumerate"; reply: string }
   | { kind: "winEnumerateControls"; query: string; reply: string }
+  | { kind: "winFindControl"; control: string; query: string; reply: string }
   | { kind: "winActive"; reply: string }
   | { kind: "winMonitors"; reply: string }
   | { kind: "winBounds"; query: string; reply: string }
@@ -1028,6 +1029,52 @@ function resolveBrowserIntent(raw: string, text: string): IntentAction | null {
  * Architecture-driven Window intents (Conversation language → Window operations).
  * Must run before capability-evolution proposals that also match move/resize/show.
  */
+function resolveWindowControlDiscovery(text: string): IntentAction | null {
+  // C-OBS-004 — locate named control (observation only). Must run before semantic
+  // “find / where is” window-locate, which otherwise soft-misses control phrases.
+  const findControl =
+    text.match(
+      /^(?:find|locate|where(?:'s| is)|is there)\s+(?:the\s+)?(.+?)\s+(?:button|menu|control|field|item)?\s*(?:in|inside|on|within)\s+(.+)$/i,
+    ) ??
+    text.match(
+      /^(?:find|locate)\s+(?:the\s+)?(?:control\s+)?(?:named\s+|called\s+)?["']?(.+?)["']?\s+(?:in|inside|on)\s+(.+)$/i,
+    ) ??
+    text.match(
+      /^does\s+(.+)\s+have\s+(?:a\s+|an\s+|the\s+)?(.+?)(?:\s+button|\s+menu|\s+control)?\??$/i,
+    );
+  if (!findControl) {
+    return null;
+  }
+  const doesHave = /^does\s+/i.test(text);
+  const controlRaw = (doesHave ? findControl[2] : findControl[1])
+    .trim()
+    .replace(/[.!?]+$/g, "")
+    .replace(/^(the|a|an)\s+/i, "");
+  const windowRaw = (doesHave ? findControl[1] : findControl[2])
+    .trim()
+    .replace(/[.!?]+$/g, "");
+  const control = controlRaw
+    .replace(/\s+(button|menu|control|field|item)$/i, "")
+    .trim();
+  const query = /^(this|it|the window|this window|active|current)?$/i.test(
+    windowRaw,
+  )
+    ? "this"
+    : windowRaw || "this";
+  if (!control || /^(click|type|press|invoke)\b/i.test(control)) {
+    return null;
+  }
+  return {
+    kind: "winFindControl",
+    control,
+    query,
+    reply:
+      query === "this"
+        ? `Looking for “${control}” in the active window.`
+        : `Looking for “${control}” in “${query}”.`,
+  };
+}
+
 function resolveWindowIntent(raw: string, text: string): IntentAction | null {
   const utterance = stripTrailingPunctuation(raw);
 
@@ -1068,6 +1115,14 @@ function resolveWindowIntent(raw: string, text: string): IntentAction | null {
             ? "Checking controls in the active window."
             : `Checking controls in “${query}”.`,
       };
+    }
+  }
+
+  // C-OBS-004 — Window Control Discovery (locate named control; observation only).
+  {
+    const discovered = resolveWindowControlDiscovery(text);
+    if (discovered) {
+      return discovered;
     }
   }
 
@@ -1334,6 +1389,14 @@ function resolveIntentCore(raw: string): IntentAction {
 
   if (isVoiceCheckUtterance(text) || isVoiceCheckUtterance(matchText)) {
     return voiceCheckReply(raw);
+  }
+
+  // C-OBS-004 before semantic “find / where is” window locate (which soft-misses controls).
+  const controlDiscovery =
+    resolveWindowControlDiscovery(text) ??
+    (matchText !== text ? resolveWindowControlDiscovery(matchText) : null);
+  if (controlDiscovery) {
+    return controlDiscovery;
   }
 
   // Semantic Intent Engine — grammar + entity reasoning before app/exe fallthrough.

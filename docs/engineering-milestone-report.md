@@ -1,4 +1,22 @@
 ﻿# Engineering Milestone Report
+## P22.S3 - Window Control Discovery (C-OBS-004)
+
+| Field | Value |
+| --- | --- |
+| **Capability ID** | C-OBS-004 |
+| **Artifacts** | `docs/capability-runtime/product-proof/P22_S3_WINDOW_CONTROL_DISCOVERY.md`, `scripts/verify-window-control-discovery.mjs`, `tests/window-control-discovery.test.ts`, Atlas Readiness Scores |
+| **Date** | 2026-08-08 |
+| **Status** | Engineering complete — Product Proof required |
+| **Max layer** | Windows Integration + Window Provider + Intent |
+| **Readiness** | Overall **57%** (Arch/Deps/Impl/Ver 100%; PP/Trusted/Production 0%) |
+| **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` (Release Hold) |
+
+### Summary
+
+Window Control Discovery: locate a named UIA control via `find_control` / `match_control` under Kernel. Conversation → Intent (before semantic find-locate soft-miss) → Kernel → Window Provider. Observation only. Atlas v2.0 gained Capability Readiness Score schema + matrix. Owner Product Proof per P22.S3.
+
+---
+
 ## P22.S2 - Desktop UI Tree (C-OBS-003)
 
 | Field | Value |

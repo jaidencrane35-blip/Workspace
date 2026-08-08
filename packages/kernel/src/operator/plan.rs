@@ -476,6 +476,7 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
             | CapabilityOperation::Bounds
             | CapabilityOperation::Monitors
             | CapabilityOperation::EnumerateControls
+            | CapabilityOperation::FindControl
             | CapabilityOperation::Focus
             | CapabilityOperation::Minimize
             | CapabilityOperation::Restore
@@ -520,6 +521,26 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
         if title.is_empty() && body.is_empty() {
             return Err(KernelError::CapabilityRuntime {
                 message: "What should the notification say?".into(),
+            });
+        }
+    }
+
+    if domain.as_str() == "window" && operation == CapabilityOperation::FindControl {
+        let control = intent
+            .text
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .or_else(|| {
+                intent
+                    .title
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+            });
+        if control.is_none() {
+            return Err(KernelError::CapabilityRuntime {
+                message: "Name the control to look for (for example Save or Edit).".into(),
             });
         }
     }

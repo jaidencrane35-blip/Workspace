@@ -67,8 +67,8 @@ pub use mutator::{
 pub use stub::{dual_monitor_fixture, StubDesktopCapturer, StubProcessLauncher, StubWindowEnumerator};
 pub use stub_mutator::StubWindowMutator;
 pub use uia::{
-    platform_ui_automation, MemoryUiAutomationPort, StubUiAutomationPort, UiAutomationPort,
-    UiControlSnapshot,
+    match_control, platform_ui_automation, MemoryUiAutomationPort, StubUiAutomationPort,
+    UiAutomationPort, UiControlSnapshot,
 };
 #[cfg(windows)]
 pub use win32::{Win32ProcessLauncher, Win32WindowEnumerator};

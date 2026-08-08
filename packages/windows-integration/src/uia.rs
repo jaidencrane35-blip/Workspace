@@ -1,6 +1,6 @@
-//! UI Automation observation port (C-OBS-003 Desktop UI Tree).
+//! UI Automation observation port (C-OBS-003 Desktop UI Tree, C-OBS-004 Window Control Discovery).
 //!
-//! WRAP Windows UI Automation for control discovery only.
+//! WRAP Windows UI Automation for control list + locate-by-name.
 //! No click/type here — Interaction capabilities are separate Atlas items.
 
 use serde::{Deserialize, Serialize};
@@ -19,6 +19,47 @@ pub struct UiControlSnapshot {
 /// Bounded UI tree observation for a host window (hwnd string).
 pub trait UiAutomationPort: Send + Sync {
     fn enumerate_controls(&self, hwnd: &str, limit: usize) -> Result<Vec<UiControlSnapshot>>;
+
+    /// Locate a named control inside a window (C-OBS-004). Default: scan enumerate results.
+    fn find_control(&self, hwnd: &str, control_query: &str) -> Result<Option<UiControlSnapshot>> {
+        let needle = control_query.trim();
+        if needle.is_empty() {
+            return Ok(None);
+        }
+        let controls = self.enumerate_controls(hwnd, 80)?;
+        Ok(match_control(&controls, needle).cloned())
+    }
+}
+
+/// Prefer exact name, then case-insensitive equality, then starts-with, then contains.
+pub fn match_control<'a>(
+    controls: &'a [UiControlSnapshot],
+    needle: &str,
+) -> Option<&'a UiControlSnapshot> {
+    let n = needle.trim();
+    if n.is_empty() {
+        return None;
+    }
+    let n_lower = n.to_ascii_lowercase();
+    controls
+        .iter()
+        .find(|c| c.name == n)
+        .or_else(|| {
+            controls
+                .iter()
+                .find(|c| c.name.eq_ignore_ascii_case(n))
+        })
+        .or_else(|| {
+            controls.iter().find(|c| {
+                c.name.to_ascii_lowercase().starts_with(&n_lower)
+                    || c.automation_id.eq_ignore_ascii_case(n)
+            })
+        })
+        .or_else(|| {
+            controls
+                .iter()
+                .find(|c| c.name.to_ascii_lowercase().contains(&n_lower))
+        })
 }
 
 /// Non-Windows / unavailable stub.

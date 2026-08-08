@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-08T02:46:53.475Z",
+  "updatedAt": "2026-08-08T02:55:44.862Z",
   "constitution": {
     "document": "docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md",
     "version": "2.1",
@@ -17,7 +17,7 @@
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "note": "Release Hold (R2) + Capability Atlas v2.0. C-OBS-003 Desktop UI Tree eng complete (P22.S2) — Owner Product Proof required. Next Atlas eng: C-OBS-004. Parallel: A2 after Authenticode cert. File Provider blocked. nextReadyNow D1."
+    "note": "Release Hold (R2) + Capability Atlas v2.0 (Readiness Scores). C-OBS-003/004 eng complete — Owner Product Proof required. Next Atlas eng: C-ACT-004 (+ C-ACT-005). Parallel: A2 after Authenticode cert. File Provider blocked. nextReadyNow D1."
   },
   "completedExecutionPrograms": [
     {
@@ -777,6 +777,11 @@
         "present": true,
         "wiredInTest": true
       },
+      "verify:window-control-discovery": {
+        "script": "scripts/verify-window-control-discovery.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
       "verify:semantic-intent": {
         "script": "scripts/verify-semantic-intent.mjs",
         "present": true,
@@ -976,15 +981,15 @@
   "lastMilestone": {
     "date": "2026-08-08",
     "document": "docs/engineering-milestone-report.md",
-    "title": "P22.S2 Desktop UI Tree (C-OBS-003) — Product Proof pending",
-    "reviewBrief": "docs/capability-runtime/product-proof/P22_S2_DESKTOP_UI_TREE.md"
+    "title": "P22.S3 Window Control Discovery (C-OBS-004) — Product Proof pending",
+    "reviewBrief": "docs/capability-runtime/product-proof/P22_S3_WINDOW_CONTROL_DISCOVERY.md"
   },
   "handoffStatus": "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   "nextRecommendedExecutionProgram": {
-    "id": "c-obs-004-window-control-discovery",
-    "title": "C-OBS-004 Window Control Discovery",
-    "blockedUntil": "Atlas Execution Loop next session (after C-OBS-003 stop)",
-    "note": "Highest remaining Atlas capability after C-OBS-003 eng. File Provider remains blocked on Voice Accept. Release track: A2 after Authenticode cert."
+    "id": "c-act-004-mouse-click",
+    "title": "C-ACT-004 Mouse Click (+ C-ACT-005 Keyboard Input)",
+    "blockedUntil": "Atlas Execution Loop next session (after C-OBS-004 stop)",
+    "note": "Highest remaining Atlas capability after C-OBS-004 eng. File Provider remains blocked on Voice Accept. Release track: A2 after Authenticode cert."
   },
   "capabilityEvolution": {
     "document": "docs/capability-evolution/README.md",

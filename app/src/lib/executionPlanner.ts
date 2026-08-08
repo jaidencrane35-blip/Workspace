@@ -177,6 +177,22 @@ export function buildExecutionPlan(
           step("complete", "Present truthful desktop result", null),
         ],
       };
+    case "winFindControl":
+      return {
+        goal,
+        capabilities: caps("window-control-discovery", "desktop-ui-tree"),
+        multiStep: false,
+        action,
+        steps: [
+          step(
+            "observe",
+            "Locate the named control in the resolved window",
+            "window-control-discovery",
+            "delegated_to_kernel",
+          ),
+          step("complete", "Report whether the control was found — never invent clicks", null),
+        ],
+      };
     case "winEnumerateControls":
       return {
         goal,

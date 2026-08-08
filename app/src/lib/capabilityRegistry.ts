@@ -149,9 +149,9 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     ],
     failureRecovery:
       "Name an open window with standard controls, or ask what windows are open first.",
-    related: ["focus-window", "window-state"],
-    similar: ["focus-window"],
-    alternatives: ["focus-window"],
+    related: ["focus-window", "window-state", "window-control-discovery"],
+    similar: ["focus-window", "window-control-discovery"],
+    alternatives: ["focus-window", "window-control-discovery"],
     discoverability: "Ask what controls are in a named window.",
     documentation:
       "Enumerates named UI Automation controls in a resolved window; never invents clicks.",
@@ -165,6 +165,45 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     ],
     architecturalJustification:
       "Desktop observation must expose in-window structure before interaction capabilities.",
+  },
+  {
+    id: "window-control-discovery",
+    domain: "Windows",
+    summary: "Find a named control inside a window",
+    purpose: "Locate a specific button, menu, or field by name",
+    verbs: ["find", "locate", "where is", "is there"],
+    aliases: ["discover control", "look for control"],
+    objects: ["Save", "Edit", "File", "OK"],
+    modifiers: ["in", "inside", "button", "menu"],
+    arguments: ["control name", "window title hint or this/active"],
+    requirements: ["A matching window is open", "The control exposes a usable UIA name"],
+    limitations: [
+      "Observation only — does not click or type",
+      "Name match is deterministic (exact / starts-with / contains)",
+    ],
+    examples: [
+      "Find the Save button in Notepad",
+      "Where is Edit in Notepad?",
+      "Does Notepad have a File menu?",
+    ],
+    failureRecovery:
+      "List controls in that window, or name a different control or window.",
+    related: ["desktop-ui-tree", "focus-window"],
+    similar: ["desktop-ui-tree"],
+    alternatives: ["desktop-ui-tree"],
+    discoverability: "Ask to find a named control in an open window.",
+    documentation:
+      "Resolves one named UI Automation control in a window; never invents presence.",
+    ownership: "Owns locate-by-name observation; Wraps Windows UI Automation",
+    permissions: ["Window read", "UI Automation tree read"],
+    dependencies: ["C-OBS-003 Desktop UI Tree", "Window Provider", "Kernel Operator"],
+    benchmark: "Name lookup over the same tree as Desktop UI Tree",
+    tests: [
+      "tests/window-control-discovery.test.ts",
+      "scripts/verify-window-control-discovery.mjs",
+    ],
+    architecturalJustification:
+      "Click/type require truthful control resolve before interaction capabilities.",
   },
   {
     id: "window-state",

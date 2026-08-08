@@ -293,6 +293,7 @@ impl CapabilityProvider for WindowProvider {
                 "bounds",
                 "monitors",
                 "enumerate_controls",
+                "find_control",
                 "focus",
                 "minimize",
                 "restore",
@@ -370,6 +371,95 @@ impl CapabilityProvider for WindowProvider {
                     items: Some(vec![item]),
                     monitors: None,
                 })
+            }
+            CapabilityOperation::FindControl => {
+                let control_query = request
+                    .text
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .or_else(|| {
+                        request
+                            .title
+                            .as_deref()
+                            .map(str::trim)
+                            .filter(|s| !s.is_empty())
+                    });
+                let Some(control_query) = control_query else {
+                    return Ok(ProviderInvokeResponse {
+                        domain: CapabilityDomainId::window(),
+                        operation: CapabilityOperation::FindControl,
+                        ok: false,
+                        format: None,
+                        bytes: None,
+                        text: None,
+                        preview: None,
+                        message: Some(
+                            "Name the control to look for (for example Save or Edit).".into(),
+                        ),
+                        status: Some("need_control_name".into()),
+                        target: request.query.clone(),
+                        items: None,
+                        monitors: None,
+                    });
+                };
+                let Some(window) = self.resolve_one(&request)? else {
+                    return Ok(Self::not_found(CapabilityOperation::FindControl, &request));
+                };
+                let found = self
+                    .ports
+                    .ui_automation
+                    .find_control(&window.hwnd, control_query)
+                    .map_err(|error| KernelError::WindowsIntegration {
+                        message: error.to_string(),
+                    })?;
+                let item = Self::item(&window);
+                match found {
+                    Some(control) => {
+                        let detail = if control.automation_id.is_empty() {
+                            format!("{} ({})", control.name, control.control_type)
+                        } else {
+                            format!(
+                                "{} ({}) id={}",
+                                control.name, control.control_type, control.automation_id
+                            )
+                        };
+                        Ok(ProviderInvokeResponse {
+                            domain: CapabilityDomainId::window(),
+                            operation: CapabilityOperation::FindControl,
+                            ok: true,
+                            format: Some("control_match".into()),
+                            bytes: Some(1),
+                            text: Some(detail.clone()),
+                            preview: Some(text_preview(&control.name, 80)),
+                            message: Some(format!(
+                                "Found “{}” in “{}” — {}.",
+                                control.name, window.title, detail
+                            )),
+                            status: Some("control_found".into()),
+                            target: Some(window.title),
+                            items: Some(vec![item]),
+                            monitors: None,
+                        })
+                    }
+                    None => Ok(ProviderInvokeResponse {
+                        domain: CapabilityDomainId::window(),
+                        operation: CapabilityOperation::FindControl,
+                        ok: false,
+                        format: Some("control_match".into()),
+                        bytes: Some(0),
+                        text: None,
+                        preview: Some(text_preview(control_query, 80)),
+                        message: Some(format!(
+                            "I couldn’t find a control named “{control_query}” in “{}”.",
+                            window.title
+                        )),
+                        status: Some("control_not_found".into()),
+                        target: Some(window.title),
+                        items: Some(vec![item]),
+                        monitors: None,
+                    }),
+                }
             }
             CapabilityOperation::Enumerate => {
                 let items: Vec<_> = self.windows()?.iter().map(Self::item).collect();
